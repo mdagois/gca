@@ -1,0 +1,124 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_UI_NUMBER_0				equ (80)
+
+TILES_COUNT						equ (384)
+BYTES_PER_TILE					equ (16)
+TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+
+TILEMAPS_COUNT					equ (1)
+BYTES_PER_TILEMAP				equ (1024)
+TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+
+GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+
+; load the graphics data from ROM to VRAM
+LoadGraphicsDataIntoVRAM: macro
+	ld de, GRAPHICS_DATA_ADDRESS_START
+	ld hl, _VRAM8000
+	.load_tile\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(GRAPHICS_DATA_ADDRESS_END)
+		jr nz, .load_tile\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample:
+	; init the WRAM state
+	InitPadInput WRAM_PAD_INPUT
+
+	; init the sound
+	copy [rNR52], AUDENA_ON
+	copy [rNR50], $77
+	copy [rNR51], $FF
+
+	; init graphics
+	copy [rBGP], %11100100
+	LoadGraphicsDataIntoVRAM
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		copy [rNR41], $00
+		copy [rNR42], $F3
+		copy [rNR43], $27
+		copy [rNR44], $80
+	.left
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
+	jr nz, .up
+		copy [rNR41], $00
+		copy [rNR42], $F4
+		copy [rNR43], $46
+		copy [rNR44], $80
+	.up
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		copy [rNR41], $00
+		copy [rNR42], $0F
+		copy [rNR43], $57
+		copy [rNR44], $80
+	.right
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
+	jr nz, .down
+		copy [rNR41], $00
+		copy [rNR42], $F3
+		copy [rNR43], $1F
+		copy [rNR44], $80
+	.down
+
+	ret
+
+export InitSample, UpdateSample
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
+incbin "tileset.chr"
+incbin "ch4_example.tlm"
+

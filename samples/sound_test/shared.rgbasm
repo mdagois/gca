@@ -1,0 +1,117 @@
+include "shared.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Interrupts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Graphics
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0
+Tileset:
+incbin "sound_test.chr"
+TilemapCH1:
+incbin "ch1.tlm"
+TilemapCH2:
+incbin "ch2.tlm"
+TilemapCH3:
+incbin "ch3.tlm"
+TilemapCH4:
+incbin "ch4.tlm"
+
+BYTES_PER_TILES			equ (16)
+TILES_COUNT				equ (384)
+TILESET_TOTAL_BYTES		equ (TILES_COUNT * BYTES_PER_TILES)
+INNER_LOOP_SIZE			equ (128)
+OUTER_LOOP_SIZE			equ (TILESET_TOTAL_BYTES / INNER_LOOP_SIZE)
+
+; load the graphics tileset from ROM to VRAM
+LoadTileset:
+	ld de, Tileset
+	ld hl, _VRAM8000
+	ld b, OUTER_LOOP_SIZE
+	.outer_loop
+		ld c, INNER_LOOP_SIZE
+		.inner_loop
+			ld a, [de]
+			inc de
+			ld [hli], a
+			dec c
+			jr nz, .inner_loop
+		dec b
+		jr nz, .outer_loop
+	ret
+
+export LoadTileset, TilemapCH1, TilemapCH2, TilemapCH3, TilemapCH4
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Hexadecimal to tile conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "hexadecimal", rom0
+
+HexToTileTable:
+db $90, $91, $92, $93
+db $94, $95, $96, $97
+db $98, $99, $A1, $A2
+db $A3, $A4, $A5, $A6
+
+export HexToTileTable
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; VRAM vblank transfer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vram_transfer", rom0
+
+; push a single transfer into the transfer list
+PushTransferFunc:
+	; skip the transfer if the list is full
+	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
+	ld a, [hl]
+	cp a, TRANSFER_LIST_MAX_SIZE
+	ret z
+
+	; increment the list size
+	inc a
+	ld [hl], a
+
+	; read the tilemap address into (bc)
+	ld hl, sp + 2 + PUSH_TRANSFER_PARAM_TILEMAP_PTR
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	ld b, a
+
+	; read the tile index into (e)
+	ld a, [hl]
+	ld e, a
+
+	; get a pointer to the transfer list next element in (hl)
+	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+
+	; push the transfer data into the list
+	ld [hl], c
+	inc hl
+	ld [hl], b
+	inc hl
+	ld [hl], e
+
+	; compute and store the update next pointer value
+	inc hl
+	ld a, low(hl)
+	ld [WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT + 0], a
+	ld a, high(hl)
+	ld [WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT + 1], a
+
+	ret
+
+export PushTransferFunc
+

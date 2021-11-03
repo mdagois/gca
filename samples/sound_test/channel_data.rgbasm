@@ -1,0 +1,3 @@
+section "channel_data", rom0
+include "channel_data.rgbinc"
+

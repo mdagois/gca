@@ -1,0 +1,401 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_UI_NUMBER_0				equ (80)
+
+TILES_COUNT						equ (384)
+BYTES_PER_TILE					equ (16)
+TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+
+TILEMAPS_COUNT					equ (1)
+BYTES_PER_TILEMAP				equ (1024)
+TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+
+GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+
+; load the graphics data from ROM to VRAM
+LoadGraphicsDataIntoVRAM: macro
+	ld de, GRAPHICS_DATA_ADDRESS_START
+	ld hl, _VRAM8000
+	.load_tile\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(GRAPHICS_DATA_ADDRESS_END)
+		jr nz, .load_tile\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SERIAL_BYTES_COUNT				equ (3)
+
+SERIAL_TRANSFER_INTERVAL		equ (60)
+SERIAL_TIMEOUT					equ (SERIAL_TRANSFER_INTERVAL * 2)
+
+SERIAL_VALUE_MASK				equ ($7F)
+
+SERIAL_ROLE_SYNC				equ ($00)
+SERIAL_ROLE_PARENT				equ ($01)
+SERIAL_ROLE_CHILD				equ ($02)
+
+SERIAL_NO_DATA					equ ($FF)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+WRAM_IS_VBLANK					rb 1
+
+WRAM_ROLE						rb 1
+WRAM_DATA_RECV					rb SERIAL_BYTES_COUNT
+WRAM_DATA_SEND					rb SERIAL_BYTES_COUNT
+WRAM_DATA_IS_ERROR				rb 1
+WRAM_DATA_INDEX					rb 1
+
+WRAM_TRANSFER_COUNTER			rb 1
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; call a function from a function table
+; \1 = table, \2 = index
+CallFromTable: macro
+	; compute a pointer to the address of the function
+	; pointer = table address + (index * 2)
+	ld a, [\2]
+	sla a
+	ld h, 0
+	ld l, a
+	ld de, \1
+	add hl, de
+
+	; unpack the function address and call it
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	CallHL
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	push af
+	ld a, 1
+	ld [WRAM_IS_VBLANK], a
+	pop af
+	reti
+
+section "timer_interrupt", rom0[$0050]
+	push af
+	call TimerInterrupt
+	pop af
+	reti
+
+section "serial_interrupt", rom0[$0058]
+	call SerialInterrupt
+	reti
+
+section "interrupt_handlers", rom0
+
+StartTimer:
+	ld a, 256 - 66
+	ld [rTMA], a
+	ld [rTIMA], a
+	ld [rDIV], a
+	copy [rTAC], TACF_START | TACF_16KHZ
+	ret
+
+StopTimer:
+	copy [rTAC], TACF_STOP
+	ret
+
+TimerInterrupt:
+	call StopTimer
+
+	ld a, [WRAM_DATA_INDEX]
+	or a
+	ret z
+
+	copy [rSC], $81
+	call StartTimer
+
+	ret
+
+SerialInterrupt_Sync:
+	; check for error
+	ld hl, WRAM_DATA_IS_ERROR
+	set 0, [hl]
+	ld a, [rSB]
+	cp a, SERIAL_NO_DATA
+	ret z
+	res 0, [hl]
+
+	; initialize based on the role
+	ld [WRAM_ROLE], a
+	cp a, SERIAL_ROLE_CHILD
+	jr nz, .parent
+	.child
+		copy [WRAM_TRANSFER_COUNTER], SERIAL_TIMEOUT
+		copy [rSC], $80
+		jr .init_end
+	.parent
+		copy [WRAM_TRANSFER_COUNTER], SERIAL_TRANSFER_INTERVAL
+	.init_end
+
+	; reset the index
+	xor a
+	ld [WRAM_DATA_INDEX], a
+
+	; initialize the send buffers
+	ld [rSB], a
+	ld hl, WRAM_DATA_SEND
+	ld [hli], a
+	inc a
+	ld [hli], a
+	inc a
+	ld [hl], a
+
+	; initialize the receive buffers
+	ld a, SERIAL_NO_DATA
+	ld hl, WRAM_DATA_RECV
+	ld [hli], a
+	ld [hli], a
+	ld [hl], a
+
+	ret
+
+ProcessSerialTransfer:
+	ld a, [WRAM_DATA_INDEX]
+	ld d, 0
+	ld e, a
+	ld hl, WRAM_DATA_RECV
+	add hl, de
+	ld a, [rSB]
+	ld [hl], a
+
+	ld a, e
+	inc a
+	cp a, SERIAL_BYTES_COUNT
+	jr nz, .overflow
+		ld a, [WRAM_DATA_SEND + 2]
+		ld hl, WRAM_DATA_SEND
+		inc a
+		and a, SERIAL_VALUE_MASK
+		ld [hli], a
+		inc a
+		and a, SERIAL_VALUE_MASK
+		ld [hli], a
+		inc a
+		and a, SERIAL_VALUE_MASK
+		ld [hl], a
+		xor a
+	.overflow
+	ld [WRAM_DATA_INDEX], a
+
+	ld e, a
+	ld hl, WRAM_DATA_SEND
+	add hl, de
+	ld a, [hl]
+	ld [rSB], a
+
+	ret
+
+SerialInterrupt_Parent:
+	; reset the counter
+	copy [WRAM_TRANSFER_COUNTER], SERIAL_TRANSFER_INTERVAL
+
+	; check for error
+	ld a, [rSB]
+	cp a, SERIAL_NO_DATA
+	jr nz, .error
+		; go back to the "sync" role on error
+		copy [WRAM_ROLE], SERIAL_ROLE_SYNC
+		copy [rSB], SERIAL_ROLE_PARENT
+		copy [rSC], $80
+		ret
+	.error
+
+	call ProcessSerialTransfer
+	ret
+
+SerialInterrupt_Child:
+	; reset the timeout
+	copy [WRAM_TRANSFER_COUNTER], SERIAL_TIMEOUT
+
+	call ProcessSerialTransfer
+	copy [rSC], $80
+	ret
+
+SerialInterruptTable:
+dw SerialInterrupt_Sync
+dw SerialInterrupt_Parent
+dw SerialInterrupt_Child
+
+SerialInterrupt:
+	push af
+	push de
+	push hl
+	CallFromTable SerialInterruptTable, WRAM_ROLE
+	pop hl
+	pop de
+	pop af
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+; convert (a) from hexadecimal to a tile index
+HexToTileA: macro
+	ld h, 0
+	ld l, a
+	ld de, HexToTileTable
+	add hl, de
+	ld a, [hl]
+endm
+
+HexToTileTable:
+db $50, $51, $52, $53
+db $54, $55, $56, $57
+db $58, $59, $61, $62
+db $63, $64, $65, $66
+
+; \1 = line, \2 = offset x
+DisplayRegisterA: macro
+	push af
+	swap a
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
+	pop af
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+InitSample:
+	; init the WRAM state
+	InitPadInput WRAM_PAD_INPUT
+	copy [WRAM_ROLE], SERIAL_ROLE_SYNC
+	ld a, SERIAL_NO_DATA
+	ld [WRAM_DATA_RECV + 0], a
+	ld [WRAM_DATA_RECV + 1], a
+	ld [WRAM_DATA_RECV + 2], a
+	xor a
+	ld [WRAM_IS_VBLANK], a
+	ld [WRAM_DATA_IS_ERROR], a
+	ld [WRAM_DATA_INDEX], a
+	ld [WRAM_DATA_SEND + 0], a
+	ld [WRAM_DATA_SEND + 1], a
+	ld [WRAM_DATA_SEND + 2], a
+	copy [rSB], SERIAL_ROLE_PARENT
+	copy [rSC], $80
+	copy [WRAM_TRANSFER_COUNTER], 0
+	call StopTimer
+
+	; init graphics
+	copy [rBGP], %11100100
+	LoadGraphicsDataIntoVRAM
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK | IEF_TIMER | IEF_SERIAL
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Update_Sync:
+	; check whether the DMG becomes the parent
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_START
+	ret nz
+	copy [rSB], SERIAL_ROLE_CHILD
+	copy [rSC], $81
+	ret
+
+Update_Parent:
+	; check whether the transfer timer has expired
+	ld hl, WRAM_TRANSFER_COUNTER
+	dec [hl]
+	ret nz
+
+	; perform the transfers
+	copy [rSC], $81
+	call StartTimer
+
+	ret
+
+Update_Child:
+	; timeout check
+	ld hl, WRAM_TRANSFER_COUNTER
+	dec [hl]
+	ret nz
+
+	; go back to the "sync" role if timeout
+	copy [WRAM_ROLE], SERIAL_ROLE_SYNC
+	copy [rSB], SERIAL_ROLE_PARENT
+	copy [rSC], $80
+	ret
+
+UpdateTable:
+dw Update_Sync
+dw Update_Parent
+dw Update_Child
+
+UpdateSample:
+	ld hl, WRAM_IS_VBLANK
+	xor a
+	.wait_vblank
+		halt
+		cp a, [hl]
+		jr z, .wait_vblank
+		ld [hl], a
+
+	ld a, [WRAM_DATA_SEND + 0]
+	DisplayRegisterA 3, 9
+	ld a, [WRAM_DATA_SEND + 1]
+	DisplayRegisterA 3, 12
+	ld a, [WRAM_DATA_SEND + 2]
+	DisplayRegisterA 3, 15
+
+	ld a, [WRAM_DATA_RECV + 0]
+	DisplayRegisterA 4, 9
+	ld a, [WRAM_DATA_RECV + 1]
+	DisplayRegisterA 4, 12
+	ld a, [WRAM_DATA_RECV + 2]
+	DisplayRegisterA 4, 15
+
+	ld a, [WRAM_ROLE]
+	DisplayRegisterA 5, 9
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput WRAM_PAD_INPUT
+	CallFromTable UpdateTable, WRAM_ROLE
+
+	ret
+
+export InitSample, UpdateSample
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
+incbin "tileset.chr"
+incbin "serial_multibytes_timer.tlm"
+

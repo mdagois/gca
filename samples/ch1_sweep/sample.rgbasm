@@ -1,0 +1,136 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_UI_NUMBER_0				equ (80)
+
+TILES_COUNT						equ (384)
+BYTES_PER_TILE					equ (16)
+TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+
+TILEMAPS_COUNT					equ (1)
+BYTES_PER_TILEMAP				equ (1024)
+TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+
+GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+
+; load the graphics data from ROM to VRAM
+LoadGraphicsDataIntoVRAM: macro
+	ld de, GRAPHICS_DATA_ADDRESS_START
+	ld hl, _VRAM8000
+	.load_tile\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(GRAPHICS_DATA_ADDRESS_END)
+		jr nz, .load_tile\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+WRAM_STOP_COUNTER				rb 1
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+STOP_SOUND_THRESHOLD		equ (60 * 2) ; about 2 seconds
+STOP_SOUND_COUNTER_INIT		equ (255 - STOP_SOUND_THRESHOLD)
+
+section "sample", rom0
+
+InitSample:
+	; init the WRAM state
+	InitPadInput WRAM_PAD_INPUT
+	copy [WRAM_STOP_COUNTER], STOP_SOUND_COUNTER_INIT
+
+	; init the sound
+	copy [rNR52], AUDENA_ON
+	copy [rNR50], $77
+	copy [rNR51], $FF
+
+	; init graphics
+	copy [rBGP], %11100100
+	LoadGraphicsDataIntoVRAM
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_INDEX_ZERO				equ (80)
+STEP_LENGTH_TILE_ADDRESS	equ (_SCRN0 + 6 * SCRN_VX_B + 12)
+
+UpdateSample:
+	halt
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	; play addition sample
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_A
+	jr nz, .play_sound_add
+		copy [rNR10], $45
+		copy [rNR11], $80
+		copy [rNR12], $F0
+		copy [rNR13], $0B
+		copy [rNR14], $86
+
+		copy [WRAM_STOP_COUNTER], STOP_SOUND_COUNTER_INIT
+	.play_sound_add
+
+	; play subtraction sample
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_B
+	jr nz, .play_sound_sub
+		copy [rNR10], $4E
+		copy [rNR11], $80
+		copy [rNR12], $F0
+		copy [rNR13], $E1
+		copy [rNR14], $87
+
+		copy [WRAM_STOP_COUNTER], STOP_SOUND_COUNTER_INIT
+	.play_sound_sub
+
+	; stop the sound when the counter reaches zero to avoid any infinite sound
+	ld a, [WRAM_STOP_COUNTER]
+	inc a
+	ld [WRAM_STOP_COUNTER], a
+	jr nz, .stop_sound
+		copy [rNR10], $00
+		copy [rNR11], $3F
+		copy [rNR12], $00
+		copy [rNR13], $00
+		copy [rNR14], $C0
+	.stop_sound
+
+	ret
+
+export InitSample, UpdateSample
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
+incbin "tileset.chr"
+incbin "sound_sweep.tlm"
+

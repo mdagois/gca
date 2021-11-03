@@ -1,0 +1,144 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILES_COUNT						equ (384)
+BYTES_PER_TILE					equ (16)
+TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+TILEMAP_BYTE_SIZE				equ (1024)
+GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
+GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+
+; load the graphics data from ROM to VRAM
+LoadGraphicsDataIntoVRAM: macro
+	ld de, GRAPHICS_DATA_ADDRESS_START
+	ld hl, _VRAM8000
+	.load_tile\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(GRAPHICS_DATA_ADDRESS_END)
+		jr nz, .load_tile\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_IS_VBLANK					rb 1
+WRAM_BG_SCROLL_X				rb 3
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	push af
+	ld a, 1
+	ld [WRAM_IS_VBLANK], a
+	pop af
+	reti
+
+section "lcd_interrupt", rom0[$0048]
+	push af
+	call LcdInterrupt
+	pop af
+	reti
+
+section "interrupts", rom0
+
+LcdInterrupt:
+	; check that we are in mode 0 on the target line
+	ld a, [rSTAT]
+	and a, STATF_LYCF | %00000011
+	cp a, STATF_LYCF
+	ret nz
+
+	; sand scrolling setup
+	ld a, [rLY]
+	cp a, 47
+	jr nz, .middle_section
+		copy [rSCX], [WRAM_BG_SCROLL_X + 1]
+		copy [rLYC], 111
+		ret
+	.middle_section
+
+	; wall scrolling setup
+	copy [rSCX], [WRAM_BG_SCROLL_X + 2]
+	copy [rLYC], 255
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample:
+	; init the WRAM state
+	xor a
+	ld [WRAM_IS_VBLANK], a
+	ld [WRAM_BG_SCROLL_X + 0], a
+	ld [WRAM_BG_SCROLL_X + 1], a
+	ld [WRAM_BG_SCROLL_X + 2], a
+
+	; init the palette
+	ld a, %11100100
+	ld [rBGP], a
+
+	LoadGraphicsDataIntoVRAM
+
+	; setup interrupts
+	copy [rLYC], 255
+	copy [rSTAT], STATF_MODE00
+	ld a, IEF_VBLANK | IEF_LCDC
+	ld [rIE], a
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
+
+	ret
+
+UpdateSample:
+	ld hl, WRAM_IS_VBLANK
+	xor a
+	.wait_vblank
+		halt
+		cp a, [hl]
+		jr z, .wait_vblank
+		ld [hl], a
+
+	; update the 3 scrolling values
+	ld a, [WRAM_BG_SCROLL_X + 0]
+
+	inc a
+	ld [rSCX], a ; set the scrolling to the sky value
+	ld [WRAM_BG_SCROLL_X + 0], a
+
+	ld b, a
+	sla a
+	ld [WRAM_BG_SCROLL_X + 1], a
+
+	add a, b
+	ld [WRAM_BG_SCROLL_X + 2], a
+
+	; set the next target line
+	copy [rLYC], 47
+
+	ret
+
+export InitSample, UpdateSample
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
+incbin "parallax.chr"
+incbin "parallax.tlm"
+

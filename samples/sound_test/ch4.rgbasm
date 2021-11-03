@@ -1,0 +1,629 @@
+include "shared.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Channel data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+LENGTH_COUNT					equ 65
+OCTAVE_NOTES_COUNT				equ 12
+NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
+
+CLOCK_SHIFT_MAX					equ (13)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; WRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+CONTROL_FLAG_PLAY_SOUND			rb 1
+CONTROL_FLAGS_COUNT				rb 0
+assert CONTROL_FLAGS_COUNT < 8, "Too many control flags declared"
+
+rsset WRAM_CHANNEL_START
+WRAM_CONTROL_FLAGS				rb 1
+WRAM_SELECTION_INDEX			rb 1
+WRAM_CH4_REGISTER				rb 4
+
+WRAM_CLOCK_DIVIDE				rb 1
+WRAM_CLOCK_SHIFT				rb 1
+WRAM_LFSR_BITS_COUNT			rb 1
+WRAM_ENV_INIT					rb 1
+WRAM_ENV_STEP					rb 1
+WRAM_ENV_DIR					rb 1
+WRAM_LENGTH_INDEX				rb 1
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "CH4 WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Update functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "ch4_update", rom0
+
+; macro to handle the menu navigation
+; \1 = previous line, \2 = current line, \3 = next line
+; \4 = previous index, \5 = next index
+ProcessSelection: macro
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
+	jr nz, .down\@
+		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
+		PushTransfer _SCRN0 + SCRN_VX_B * \3, TILE_INDEX_CURSOR
+		ld hl, WRAM_SELECTION_INDEX
+		ld [hl], \5
+	.down\@
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_UP
+	jr nz, .up\@
+		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
+		PushTransfer _SCRN0 + SCRN_VX_B * \1, TILE_INDEX_CURSOR
+		ld hl, WRAM_SELECTION_INDEX
+		ld [hl], \4
+	.up\@
+endm
+
+; update functions table
+UpdateFunc:
+dw UpdateClockDivide
+dw UpdateClockShift
+dw UpdateLfsrBitsCount
+dw UpdateEnvInit
+dw UpdateEnvStep
+dw UpdateEnvDir
+dw UpdateLength
+UpdateFunc_End:
+
+; line numbers
+LINE_CLOCK_DIVIDE				equ (2)
+LINE_CLOCK_SHIFT				equ (3)
+LINE_LFSR_BITS_COUNT			equ (4)
+LINE_ENV_INIT					equ (6)
+LINE_ENV_STEP					equ (7)
+LINE_ENV_DIR					equ (8)
+LINE_LENGTH						equ (10)
+
+; selection indices
+rsreset
+SELECTION_CLOCK_DIVIDE			rb 1
+SELECTION_CLOCK_SHIFT			rb 1
+SELECTION_LFSR_BITS_COUNT		rb 1
+SELECTION_ENV_INIT				rb 1
+SELECTION_ENV_STEP				rb 1
+SELECTION_ENV_DIR				rb 1
+SELECTION_LENGTH				rb 1
+SELECTIONS_COUNT				rb 0
+assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateClockDivide:
+	ProcessSelection LINE_LENGTH, LINE_CLOCK_DIVIDE, LINE_CLOCK_SHIFT, SELECTION_LENGTH, SELECTION_CLOCK_SHIFT
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		ld a, [WRAM_CLOCK_DIVIDE]
+		dec a
+		and a, $07
+		ld [WRAM_CLOCK_DIVIDE], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		ld a, [WRAM_CLOCK_DIVIDE]
+		inc a
+		and a, $07
+		ld [WRAM_CLOCK_DIVIDE], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_CLOCK_DIVIDE]
+		ld b, a
+		sla a
+		add a, b
+		ld h, 0
+		ld l, a
+		ld de, ClockDivideTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_CLOCK_DIVIDE + 17, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_CLOCK_DIVIDE + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_CLOCK_DIVIDE + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateClockShift:
+	ProcessSelection LINE_CLOCK_DIVIDE, LINE_CLOCK_SHIFT, LINE_LFSR_BITS_COUNT, SELECTION_CLOCK_DIVIDE, SELECTION_LFSR_BITS_COUNT
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		ld a, [WRAM_CLOCK_SHIFT]
+		dec a
+		bit 7, a
+		jr z, .lower_bound_check
+			ld a, CLOCK_SHIFT_MAX
+		.lower_bound_check
+		ld [WRAM_CLOCK_SHIFT], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		ld a, [WRAM_CLOCK_SHIFT]
+		inc a
+		cp a, CLOCK_SHIFT_MAX + 1
+		jr nz, .upper_bound_check
+			xor a
+		.upper_bound_check
+		ld [WRAM_CLOCK_SHIFT], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_CLOCK_SHIFT]
+		sla a
+		ld h, 0
+		ld l, a
+		ld de, ClockShiftTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_CLOCK_SHIFT + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_CLOCK_SHIFT + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateLfsrBitsCount:
+	ProcessSelection LINE_CLOCK_SHIFT, LINE_LFSR_BITS_COUNT, LINE_ENV_INIT, SELECTION_CLOCK_SHIFT, SELECTION_ENV_INIT
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .left_right
+		ld a, [WRAM_LFSR_BITS_COUNT]
+		inc a
+		and a, $01
+		ld [WRAM_LFSR_BITS_COUNT], a
+		jr .update_ui
+	.left_right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_LFSR_BITS_COUNT]
+		sla a
+		ld h, 0
+		ld l, a
+		ld de, LfsrBitsCountTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LFSR_BITS_COUNT + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LFSR_BITS_COUNT + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateEnvInit:
+	ProcessSelection LINE_LFSR_BITS_COUNT, LINE_ENV_INIT, LINE_ENV_STEP, SELECTION_LFSR_BITS_COUNT, SELECTION_ENV_STEP
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		ld a, [WRAM_ENV_INIT]
+		dec a
+		and a, $0F
+		ld [WRAM_ENV_INIT], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		ld a, [WRAM_ENV_INIT]
+		inc a
+		and a, $0F
+		ld [WRAM_ENV_INIT], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ENV_INIT]
+		sla a
+		ld h, 0
+		ld l, a
+		ld de, EnvelopeInitTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_INIT + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_INIT + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateEnvStep:
+	ProcessSelection LINE_ENV_INIT, LINE_ENV_STEP, LINE_ENV_DIR, SELECTION_ENV_INIT, SELECTION_ENV_DIR
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		ld a, [WRAM_ENV_STEP]
+		dec a
+		and a, $07
+		ld [WRAM_ENV_STEP], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		ld a, [WRAM_ENV_STEP]
+		inc a
+		and a, $07
+		ld [WRAM_ENV_STEP], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ENV_STEP]
+		ld b, a
+		sla a
+		sla a
+		add a, b
+		ld h, 0
+		ld l, a
+		ld de, EnvelopeStepLengthTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_STEP + 15, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_STEP + 16, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_STEP + 17, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_STEP + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_STEP + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateEnvDir:
+	ProcessSelection LINE_ENV_STEP, LINE_ENV_DIR, LINE_LENGTH, SELECTION_ENV_STEP, SELECTION_LENGTH
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .left_right
+		ld a, [WRAM_ENV_DIR]
+		inc a
+		and a, $01
+		ld [WRAM_ENV_DIR], a
+		jr .update_ui
+	.left_right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ENV_DIR]
+		sla a
+		sla a
+		ld h, 0
+		ld l, a
+		ld de, EnvelopeUpDownTable
+		add hl, de
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_DIR + 16, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_DIR + 17, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_DIR + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ENV_DIR + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateLength:
+	ProcessSelection LINE_ENV_DIR, LINE_LENGTH, LINE_CLOCK_DIVIDE, SELECTION_ENV_DIR, SELECTION_CLOCK_DIVIDE
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+		ld a, [WRAM_LENGTH_INDEX]
+		jr nz, .fast_mode_left
+			add a, -10
+			jr .fast_mode_left_end
+		.fast_mode_left
+			dec a
+		.fast_mode_left_end
+		bit 7, a
+		jr z, .out_of_left_bound
+			ld a, LENGTH_COUNT - 1
+		.out_of_left_bound
+		ld [WRAM_LENGTH_INDEX], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+		ld a, [WRAM_LENGTH_INDEX]
+		jr nz, .fast_mode_right
+			add a, 10
+			jr .fast_mode_right_end
+		.fast_mode_right
+			inc a
+		.fast_mode_right_end
+		cp a, LENGTH_COUNT
+		jr c, .out_of_right_bound
+			xor a
+		.out_of_right_bound
+		ld [WRAM_LENGTH_INDEX], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_LENGTH_INDEX]
+		ld b, 0
+		ld c, a
+		sla a
+		ld h, 0
+		ld l, a
+		sla l
+		rl h
+		ld de, LengthTable
+		add hl, de
+		add hl, bc
+
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 15, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 16, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 17, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		push hl
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 18, a
+		pop hl
+		inc hl
+		ld a, [hl]
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 19, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Public
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "ch4_public", rom0
+
+InitializeCH4:
+	xor a
+	ld [WRAM_CONTROL_FLAGS], a
+	ld [WRAM_SELECTION_INDEX], a
+
+	PushTransfer _SCRN0 + SCRN_VX_B * 2, TILE_INDEX_CURSOR
+
+	xor a
+	ld [WRAM_CLOCK_DIVIDE], a
+	ld [WRAM_CLOCK_SHIFT], a
+	ld [WRAM_LFSR_BITS_COUNT], a
+
+	ld hl, WRAM_ENV_INIT
+	ld [hl], 15
+	xor a
+	ld [WRAM_ENV_STEP], a
+	ld [WRAM_ENV_DIR], a
+
+	ld hl, WRAM_LENGTH_INDEX
+	ld [hl], LENGTH_COUNT - 1
+
+	; init the sound
+	copy [rNR52], AUDENA_ON
+	copy [rNR50], $77
+	copy [rNR51], $FF
+
+	; init graphics
+	copy [rBGP], %11100100
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateCH4:
+	halt
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; vblank
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	ProcessTransferList
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; logic
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	; call the proper menu update function
+	ld a, [WRAM_SELECTION_INDEX]
+	sla a
+	ld_r16_r8 hl, a
+	ld de, UpdateFunc
+	add hl, de
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	ld de, .call_return_address
+	push de
+	jp hl
+	.call_return_address
+
+	; request to play a sound based on the parameters
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_A
+	jp nz, .request_play_sound
+		ld hl, WRAM_CONTROL_FLAGS
+		set CONTROL_FLAG_PLAY_SOUND, [hl]
+	.request_play_sound
+
+	; set the length
+	ld a, LENGTH_COUNT - 1
+	ld hl, WRAM_LENGTH_INDEX
+	sub a, [hl]
+	and a, $3F
+
+	ld [WRAM_CH4_REGISTER + 0], a
+
+	DisplayRegisterA 15, 17
+
+	; set the envelope parameters
+	ld a, [WRAM_ENV_INIT]
+	swap a
+	ld b, a
+
+	ld a, [WRAM_ENV_DIR]
+	sla a
+	sla a
+	sla a
+	ld c, a
+
+	ld a, [WRAM_ENV_STEP]
+
+	or a, b
+	or a, c
+	ld [WRAM_CH4_REGISTER + 1], a
+
+	DisplayRegisterA 16, 7
+
+	; set the clock parameters
+	ld a, [WRAM_CLOCK_DIVIDE]
+	ld b, a
+
+	ld a, [WRAM_CLOCK_SHIFT]
+	swap a
+	or a, b
+	ld b, a
+
+	ld a, [WRAM_LFSR_BITS_COUNT]
+	swap a
+	srl a
+	or a, b
+
+	ld [WRAM_CH4_REGISTER + 2], a
+
+	DisplayRegisterA 16, 17
+
+	; set the start/length flags
+	ld b, $C0
+	ld a, [WRAM_LENGTH_INDEX]
+	or a, a
+	jr nz, .length_off
+		ld b, $80
+	.length_off
+
+	ld a, b
+	ld [WRAM_CH4_REGISTER + 3], a
+
+	DisplayRegisterA 17, 7
+
+	; play sound if requested
+	ld hl, WRAM_CONTROL_FLAGS
+	bit CONTROL_FLAG_PLAY_SOUND, [hl]
+	jp z, .play_sound
+		ld hl, WRAM_CONTROL_FLAGS
+		res CONTROL_FLAG_PLAY_SOUND, [hl]
+
+		copy [rNR41], [WRAM_CH4_REGISTER + 0]
+		copy [rNR42], [WRAM_CH4_REGISTER + 1]
+		copy [rNR43], [WRAM_CH4_REGISTER + 2]
+		copy [rNR44], [WRAM_CH4_REGISTER + 3]
+	.play_sound
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+FinalizeCH4:
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitializeCH4, UpdateCH4, FinalizeCH4
+
