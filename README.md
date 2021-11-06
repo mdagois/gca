@@ -1,6 +1,6 @@
 # Game Boy Coding Adventure
 
-Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn), by Maximilien Dagois.
+Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
 
 All the code samples referenced in the book are available in the **samples** folder.
 
