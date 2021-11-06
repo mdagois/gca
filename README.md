@@ -8,11 +8,12 @@ All the code samples referenced in the book are available in the **samples** fol
 
 ### RGBDS
 
-The samples have been tested with [RGBDS](https://rgbds.gbdev.io/) v0.5.1.
+To build the sample, you need the [RGBDS](https://rgbds.gbdev.io/) toolchain.
+RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path for the provided build scripts to work as expected.
+
+The samples have been tested with RGBDS v0.5.1.
 The samples will be updated if there are any compilation issues introduced with newer versions of the RGBDS toolchain,
 Older versions of the toolchain are not supported.
-
-RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path.
 
 ### Scripts
 
@@ -20,7 +21,7 @@ There are build scripts in each sample's folder.
 For Windows, use the batch file named **build.bat**.
 For other operating systems, use the shell script named **build.sh**.
 
-There are also build scripts to build all samples at once at the root of the repository.
+There are also scripts to build all samples at once at the root of the repository.
 Use **build_samples.bat** for Windows, and **build_samples.sh** for the other operating systems.
 
 ## Issue reporting
