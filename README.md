@@ -8,7 +8,7 @@ All the code samples referenced in the book are available in the **samples** fol
 
 ### RGBDS
 
-To build the sample, you need the [RGBDS](https://rgbds.gbdev.io/) toolchain.
+To build the samples, you need the [RGBDS](https://rgbds.gbdev.io/) toolchain.
 RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path for the provided build scripts to work as expected.
 
 The samples have been tested with RGBDS v0.5.1.
