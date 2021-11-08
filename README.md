@@ -23,7 +23,7 @@ For other operating systems, use the shell script named **build.sh**.
 
 There are also scripts to build all the samples at once.
 They are located at the root of the repository: **build_samples.bat** for Windows and **build_samples.sh** for the other operating systems.
-The built ROMs are placed into a **roms** folder at the root of the repository.
+The built ROMs are gathered into a generated **roms** folder at the root of the repository.
 
 ## Issue reporting
 
