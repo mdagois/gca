@@ -2,11 +2,13 @@
 
 Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
 
+## Samples
+
 All the code samples referenced in the book are available in the **samples** folder.
 
-## Building the samples
+### Building the samples
 
-### RGBDS
+#### RGBDS
 
 To build the samples, you need the [RGBDS](https://rgbds.gbdev.io/) toolchain.
 RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path for the provided build scripts to work as expected.
@@ -15,7 +17,7 @@ The samples have been tested with RGBDS v0.5.1.
 The samples will be updated if there are any compilation issues introduced with newer versions of the RGBDS toolchain.
 Older versions of the toolchain are not supported.
 
-### Scripts
+#### Scripts
 
 There are build scripts in each sample's folder.
 For Windows, use the batch file named **build.bat**.
@@ -24,7 +26,33 @@ For other operating systems, use the shell script named **build.sh**.
 There are also scripts to build all samples at once at the root of the repository.
 Use **build_samples.bat** for Windows, and **build_samples.sh** for the other operating systems.
 
-## Issue reporting
+## Assets
 
-Please report any issues [here](https://github.com/mdagois/gca/issues).
+All the sample assets are available in the **assets** folder.
+There are two types of graphics assets: tilesets and tilemaps.
+Both types of asset are PNG files.
+
+### Converting assets
+
+Assets are already converted and ready to use in the samples.
+It is possible to convert them again using the **gfxconv** tool.
+
+## Tools
+
+### Binaries
+
+Tools binaries for Windows are available in the **bin** folder.
+It is possible to rebuild them for any operating system.
+
+### The gfxconv tool
+
+The **gfxconv** can used to convert tilesets and tilemaps used in samples.
+A cmake file is available to generate the project in the **tools/conv** folder.
+The code fits into a single source file, so it is possible to use any other building system.
+The only dependency is **libpng**.
+
+## Support
+
+Please report any repository issues [here](https://github.com/mdagois/gca/issues).
+For other topics, please contact the [support](support@codingadventures.xyz).
 
