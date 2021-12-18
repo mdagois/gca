@@ -47,13 +47,16 @@ The tool takes one tileset PNG and any number of tilemap PNG files as parameters
 Here are a few example of using ***gfxconv***.
 
 ```
-# converting a tileset (this generated tileset.chr)
+# Converting a tileset
+# The output file is tileset.chr.
 gfxconv tileset.png
 
-# converting a tileset and a tilemap (output files are tileset.chr and tilemap.tlm)
+# Converting a tileset and a tilemap.
+# The output files are tileset.chr and tilemap.tlm.
 gfxconv tileset.png tilemap.png
 
-# converting a tileset and two tilemaps (output files are tileset.chr, tilemap_0.tlm and tilemap_1.tlm)
+# Converting a tileset and two tilemaps.
+# The output files are tileset.chr, tilemap_0.tlm and tilemap_1.tlm.
 gfxconv tileset.png tilemap_0.png tilemap_1.png
 ```
 
