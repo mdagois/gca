@@ -23,8 +23,9 @@ There are build scripts in each sample's folder.
 For Windows, use the batch file named **build.bat**.
 For other operating systems, use the shell script named **build.sh**.
 
-There are also scripts to build all samples at once at the root of the repository.
-Use **build_samples.bat** for Windows, and **build_samples.sh** for the other operating systems.
+There are also scripts to build all the samples at once.
+They are located at the root of the repository: **build_samples.bat** for Windows and **build_samples.sh** for the other operating systems.
+The built ROMs are gathered into a generated **roms** folder at the root of the repository.
 
 ## Assets
 
