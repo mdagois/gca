@@ -1,6 +1,8 @@
+*.chr
 *.gb
 *.map
 *.o
 *.swp
 *.sym
+*.tlm
 

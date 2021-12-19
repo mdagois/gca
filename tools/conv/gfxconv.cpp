@@ -41,6 +41,34 @@ static double computeBrightness(const Color color)
 	return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
 }
 
+static bool checkColorSetCompatibility(const ColorSet& super_color_set, const ColorSet& sub_color_set)
+{
+	assert(super_color_set.size() > sub_color_set.size());
+
+	auto hasColor= [](const ColorSet& color_set, const Color color)
+	{
+		for(ColorSet::const_iterator it = color_set.cbegin(); it != color_set.cend(); ++it)
+		{
+			if(it->rgba == color.rgba)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	ColorSet work_color_set = sub_color_set;
+
+	for(ColorSet::const_iterator it = super_color_set.cbegin(); it != super_color_set.cend(); ++it)
+	{
+		if(!hasColor(work_color_set, *it))
+		{
+			work_color_set.push_back(*it);
+		}
+	}
+	return work_color_set.size() == super_color_set.size();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Tiles
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +160,6 @@ public:
 	bool read(const char* filename);
 	bool validateSize() const;
 
-	const Color* getPixels() const;
 	uint32_t getWidth() const;
 	uint32_t getHeight() const;
 
@@ -196,11 +223,6 @@ bool Image::validateSize() const
 	return ((getWidth() % kTileSize) == 0) && ((getHeight() % kTileSize) == 0);
 }
 
-const Color* Image::getPixels() const
-{
-	return m_pixels;
-}
-
 uint32_t Image::getWidth() const
 {
 	return m_png.width;
@@ -243,7 +265,7 @@ uint32_t Image::extractColors(ColorSet& out_color_set) const
 			return computeBrightness(lhs) > computeBrightness(rhs);
 		});
 
-	return out_color_set.size();
+	return static_cast<uint32_t>(out_color_set.size());
 }
 
 uint32_t Image::extractTiles(TileSet& out_tile_set, const ColorSet& color_set) const
@@ -263,7 +285,7 @@ uint32_t Image::extractTiles(TileSet& out_tile_set, const ColorSet& color_set) c
 		}
 	}
 
-	return out_tile_set.size();
+	return static_cast<uint32_t>(out_tile_set.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -321,7 +343,7 @@ static bool writeTilemap(const Tilemap& tilemap, const char* filename)
 // Main logic
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool extractTilesFromFile(TileSet& tile_set, const char* filename)
+static bool extractTilesFromFile(TileSet& out_tile_set, ColorSet& inout_color_set, const char* filename)
 {
 	Image image;
 	if(!image.read(filename))
@@ -337,38 +359,61 @@ static bool extractTilesFromFile(TileSet& tile_set, const char* filename)
 		cout
 			<< "FAILED: invalid file [" << filename << "]" << endl
 			<< "The image width and height must be multiples of 8 ("
-			<< image_width << "x" << image_height << ")" << endl;
+			<< image_width << "x" << image_height << ") in [" << filename << "]" << endl;
 		return false;
 	}
 
-	const Color* pixels = image.getPixels();
-	ColorSet color_set;
-	const uint32_t color_count = image.extractColors(color_set);
-	if(color_count > kMaxColorCount)
+	if(inout_color_set.empty())
 	{
-		cout << "FAILED: too many colors (got " << color_count << " colors)" << endl;
-		return false;
+		const uint32_t color_count = image.extractColors(inout_color_set);
+		if(color_count > kMaxColorCount)
+		{
+			cout << "FAILED: too many colors (got " << color_count << " colors) in [" << filename << "]" << endl;
+			return false;
+		}
+	}
+	else
+	{
+		ColorSet color_set;
+		const uint32_t color_count = image.extractColors(color_set);
+		if(inout_color_set.size() < color_set.size())
+		{
+			cout
+				<< "FAILED: the tileset has less colors than the tilemap ("
+				<< inout_color_set.size() << " < " << color_set.size() << ") in ["
+				<< filename << "]" << endl;
+			return false;
+		}
+
+		if(inout_color_set.size() != color_set.size())
+		{
+			if(!checkColorSetCompatibility(inout_color_set, color_set))
+			{
+				cout << "FAILED: the tileset and tilemap colors are not compatible in [" << filename << "]" << endl;
+				return false;
+			}
+		}
 	}
 
-	image.extractTiles(tile_set, color_set);
+	image.extractTiles(out_tile_set, inout_color_set);
 	return true;
 }
 
-static bool exportTileset(TileSet& tile_set, const char* filename)
+static bool exportTileset(TileSet& out_tile_set, ColorSet& out_color_set, const char* filename)
 {
-	if(!extractTilesFromFile(tile_set, filename))
+	if(!extractTilesFromFile(out_tile_set, out_color_set, filename))
 	{
 		return false;
 	}
 
-	if(tile_set.size() != kTileSetTilesCount)
+	if(out_tile_set.size() != kTileSetTilesCount)
 	{
-		cout << "FAILED: the tileset must contain " << kTileSetTilesCount << " tiles" << endl;
+		cout << "FAILED: the tileset must contain " << kTileSetTilesCount << " tiles in [" << filename << "]" << endl;
 		return false;
 	}
 
 	const string output_filename = getOutputFilename(filename, ".chr");
-	if(!writeTiles(tile_set, output_filename.c_str()))
+	if(!writeTiles(out_tile_set, output_filename.c_str()))
 	{
 		cout << "FAILED: cannot write the tile file [" << output_filename << "]" << endl;
 		return false;
@@ -377,7 +422,7 @@ static bool exportTileset(TileSet& tile_set, const char* filename)
 	return true;
 }
 
-static bool exportTilemaps(const vector<string>& filenames, const TileSet& tile_set)
+static bool exportTilemaps(const vector<string>& filenames, const TileSet& tile_set, ColorSet& tile_set_colors)
 {
 	if(filenames.empty())
 	{
@@ -389,7 +434,7 @@ static bool exportTilemaps(const vector<string>& filenames, const TileSet& tile_
 		const string& input_filename = *it;
 
 		TileSet tiles;
-		if(!extractTilesFromFile(tiles, input_filename.c_str()))
+		if(!extractTilesFromFile(tiles, tile_set_colors, input_filename.c_str()))
 		{
 			return false;
 		}
@@ -431,19 +476,20 @@ int main(int argc, char** argv)
 
 	vector<string> input_tilemap_filenames;
 	{
-		for(uint32_t i = 2; i < argc; ++i)
+		for(int32_t i = 2; i < argc; ++i)
 		{
 			input_tilemap_filenames.push_back(argv[i]);
 		}
 	}
 
 	TileSet tile_set;
-	if(!exportTileset(tile_set, input_tileset_filename.c_str()))
+	ColorSet tile_set_colors;
+	if(!exportTileset(tile_set, tile_set_colors, input_tileset_filename.c_str()))
 	{
 		return 1;
 	}
 
-	if(!exportTilemaps(input_tilemap_filenames, tile_set))
+	if(!exportTilemaps(input_tilemap_filenames, tile_set, tile_set_colors))
 	{
 		return 1;
 	}
