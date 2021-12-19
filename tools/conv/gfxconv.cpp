@@ -395,12 +395,12 @@ static bool exportTilemaps(const vector<string>& filenames, const TileSet& tile_
 		}
 
 		Tilemap tilemap;
-		for(TileSet::const_iterator it = tiles.cbegin(); it != tiles.cend(); ++it)
+		for(size_t i = 0; i < tiles.size(); ++i) 
 		{
 			TileIndex index;
-			if(!getTileIndexInTileSet(index, *it, tile_set))
+			if(!getTileIndexInTileSet(index, tiles[i], tile_set))
 			{
-				cout << "FAILED: could not find the tile in the tileset" << endl;
+				cout << "FAILED: could not find the tile [" << i << "] in the tileset [" << input_filename << "]" << endl;
 				return false;
 			}
 			tilemap.push_back(index);
