@@ -112,7 +112,7 @@ InitSample:
 	ei
 
 	; set the graphics parameters and turn back LCD on
-	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ld [rLCDC], a
 
 	ret

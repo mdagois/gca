@@ -2,6 +2,7 @@
 *.gb
 *.map
 *.o
+*.sav
 *.swp
 *.sym
 *.tlm
