@@ -1,9 +1,8 @@
-*.chr
+generated
 *.gb
 *.map
 *.o
 *.sav
 *.swp
 *.sym
-*.tlm
 

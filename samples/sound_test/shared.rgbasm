@@ -15,13 +15,13 @@ section "graphics_data", rom0
 Tileset:
 incbin "sound_test.chr"
 TilemapCH1:
-incbin "ch1.tlm"
+incbin "ch1_test.tlm"
 TilemapCH2:
-incbin "ch2.tlm"
+incbin "ch2_test.tlm"
 TilemapCH3:
-incbin "ch3.tlm"
+incbin "ch3_test.tlm"
 TilemapCH4:
-incbin "ch4.tlm"
+incbin "ch4_test.tlm"
 
 BYTES_PER_TILES			equ (16)
 TILES_COUNT				equ (384)

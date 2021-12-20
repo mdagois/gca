@@ -4,7 +4,7 @@ FULL_PATH=$(realpath "$0")
 BASE_DIR=$(dirname $FULL_PATH)
 
 SAMPLE_DIR=samples
-ROMS_DIR=$(realpath roms)
+ROMS_DIR=$(realpath generated/roms)
 
 echo ROMS: $ROMS_DIR
 

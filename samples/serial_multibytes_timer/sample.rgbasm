@@ -397,5 +397,5 @@ export InitSample, UpdateSample
 
 section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
 incbin "tileset.chr"
-incbin "serial_multibytes_timer.tlm"
+incbin "serial_multibytes.tlm"
 

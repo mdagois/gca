@@ -187,5 +187,5 @@ export InitSample, UpdateSample
 
 section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
 incbin "tileset.chr"
-incbin "jump_table.tlm"
+incbin "frame.tlm"
 

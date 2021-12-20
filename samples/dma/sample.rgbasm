@@ -229,5 +229,5 @@ export InitSample, UpdateSample
 
 section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
 incbin "tileset.chr"
-incbin "dma.tlm"
+incbin "frame.tlm"
 

@@ -25,7 +25,7 @@ For other operating systems, use the shell script named ***build.sh***.
 
 There are also scripts to build all the samples at once.
 They are located at the root of the repository: ***build_samples.bat*** for Windows and ***build_samples.sh*** for the other operating systems.
-The built ROMs are gathered into a generated ***roms*** folder at the root of the repository.
+The built ROMs are gathered into the ***generated/roms*** folder at the root of the repository.
 
 ## Assets
 
@@ -86,7 +86,7 @@ The only dependency is [libpng](http://www.libpng.org/pub/png/libpng.html).
 #### Script
 
 A Windows batch file, ***build_assets.bat***, is available to rebuild all the assets.
-It puts the tilesets and tilemaps in the **chr** and **tlm** folders respectively.
+It puts the tilesets and tilemaps in the **generated/chr** and **generated/tlm** folders respectively.
 The batch uses ***gfxconv*** from the **bin** folder, so there is no need to rebuild it.
 
 For other operating systems, it is necessary to rebuild ***gfxconv*** and write an equivalent script.

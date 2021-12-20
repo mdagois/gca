@@ -128,5 +128,5 @@ export InitSample, UpdateSample
 
 section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
 incbin "tileset.chr"
-incbin "sound_simple.tlm"
+incbin "frame.tlm"
 
