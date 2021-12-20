@@ -67,7 +67,8 @@ It is converted to a CHR file.
 A CHR file contains tiles in the right format for the VRAM.
 
 Any extra parameter after the tileset PNG is considered as a tilemap PNG.
-Tilemap PNGs are converted to TLM files.
+Tilemap PNGs are expected to use the same color as the tileset.
+They are converted to TLM files.
 TLM files contain tile indices referring tiles inside the tileset.
 They can be copied as is in VRAM.
 
@@ -81,6 +82,14 @@ For other operating system, it is necessary to build the tool.
 A cmake file is available in the ***tools/conv*** folder.
 As the code fits into a single source file, it should be easy to use any other building system.
 The only dependency is [libpng](http://www.libpng.org/pub/png/libpng.html).
+
+#### Script
+
+A Windows batch file, ***build_assets.bat***, is available to rebuild all the assets.
+It puts the tilesets and tilemaps in the **chr** and **tlm** folders respectively.
+The batch uses ***gfxconv*** from the **bin** folder, so there is no need to rebuild it.
+
+For other operating systems, it is necessary to rebuild ***gfxconv*** and write an equivalent script.
 
 ## Support
 
