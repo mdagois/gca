@@ -41,9 +41,9 @@ InitSample:
 	ret
 
 UpdateSample:
-	ld a, 176
+	ld a, 0
 	ld [rSCX], a
-	ld a, 184
+	ld a, 0
 	ld [rSCY], a
 	ret
 
