@@ -94,5 +94,5 @@ For other operating systems, it is necessary to rebuild ***gfxconv*** and write 
 ## Support
 
 Please report any repository issues [here](https://github.com/mdagois/gca/issues).
-For other topics, please contact the [support](support@codingadventures.xyz).
+For other topics, please contact the support at support@codingadventures.xyz.
 
