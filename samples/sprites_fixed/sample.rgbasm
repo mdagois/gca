@@ -35,7 +35,7 @@ endm
 ; clear the OAM
 InitOAM: macro
 	ld c, OAM_COUNT
-	ld hl, _OAMRAM
+	ld hl, _OAMRAM + OAMA_Y
 	ld de, sizeof_OAM_ATTRS
 	.init_oam\@
 		ld [hl], 0
