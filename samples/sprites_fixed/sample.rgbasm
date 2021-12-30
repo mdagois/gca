@@ -32,6 +32,18 @@ LoadGraphicsDataIntoVRAM: macro
 		jr nz, .load_tile\@
 endm
 
+; clear the OAM
+InitOAM: macro
+	ld c, OAM_COUNT
+	ld hl, _OAMRAM
+	ld de, sizeof_OAM_ATTRS
+	.init_oam\@
+		ld [hl], 0
+		add hl, de
+		dec c
+		jr nz, .init_oam\@
+endm
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0
@@ -45,6 +57,7 @@ InitSample:
 	ld [rOBP1], a
 
 	; init graphics data
+	InitOAM
 	LoadGraphicsDataIntoVRAM
 
 	; enable the vblank interrupt
@@ -71,6 +84,20 @@ UpdateSample:
 	xor a
 	ld [rSCX], a
 	ld [rSCY], a
+
+	; set the first sprite
+SPRITE_0_ADDRESS equ (_OAMRAM)
+	copy [SPRITE_0_ADDRESS + OAMA_X], 16
+	copy [SPRITE_0_ADDRESS + OAMA_Y], 32
+	copy [SPRITE_0_ADDRESS + OAMA_TILEID], 16
+	copy [SPRITE_0_ADDRESS + OAMA_FLAGS], OAMF_PAL0
+
+	; set the second sprite
+SPRITE_1_ADDRESS equ (_OAMRAM + sizeof_OAM_ATTRS)
+	copy [SPRITE_1_ADDRESS + OAMA_Y], 80
+	copy [SPRITE_1_ADDRESS + OAMA_X], 80
+	copy [SPRITE_1_ADDRESS + OAMA_TILEID], 0
+	copy [SPRITE_1_ADDRESS + OAMA_FLAGS], OAMF_PAL0 | OAMF_XFLIP
 
 	ret
 
