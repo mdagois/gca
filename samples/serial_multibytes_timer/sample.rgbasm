@@ -113,7 +113,7 @@ StartTimer:
 	ld [rTMA], a
 	ld [rTIMA], a
 	ld [rDIV], a
-	copy [rTAC], TACF_START | TACF_16KHZ
+	copy [rTAC], TACF_START | TACF_65KHZ
 	ret
 
 StopTimer:
