@@ -139,25 +139,22 @@ UpdateSample:
 	halt
 
 	ld a, [WRAM_FUNC_INDEX]
-	or a
+	cp a, 0
 	jr nz, .zero
 		call Update_0
 		jr .done
 	.zero
-	dec a
-	or a, a
+	cp a, 1
 	jr nz, .one
 		call Update_1
 		jr .done
 	.one
-	dec a
-	or a
+	cp a, 2
 	jr nz, .two
 		call Update_2
 		jr .done
 	.two
-	dec a
-	or a
+	cp a, 3
 	jr nz, .three
 		call Update_3
 		jr .done
