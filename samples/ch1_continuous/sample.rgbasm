@@ -146,7 +146,7 @@ UpdateSample:
 		ld hl, Notes
 		ld a, [hli]
 		ld [rNR13], a
-		ld a, [hli]
+		ld a, [hl]
 		or a, $80
 		ld [rNR14], a
 
