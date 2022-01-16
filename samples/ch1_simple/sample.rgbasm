@@ -87,7 +87,7 @@ UpdateSample:
 	; skip counter check if the counter is disabled (equals $FF)
 	ld a, $FF
 	ld hl, WRAM_FRAME_COUNTER
-	xor a, [hl]
+	cp a, [hl]
 	jr z, .no_trigger_sound_2
 
 		; play sound 2 when the counter reaches zero
