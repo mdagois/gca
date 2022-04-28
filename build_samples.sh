@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 FULL_PATH=$(realpath "$0")
 BASE_DIR=$(dirname $FULL_PATH)
