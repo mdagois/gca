@@ -77,6 +77,7 @@ public:
 
 	uint32_t getWidth() const;
 	uint32_t getHeight() const;
+	const ColorRGBA* getPixels() const;
 
 private:
 	png_image m_png;
@@ -86,6 +87,8 @@ private:
 		ColorRGBA* m_pixels;
 	};
 };
+
+typedef vector<Image> ImageList;
 
 Image::Image()
 : m_buffer(nullptr)
@@ -145,6 +148,11 @@ uint32_t Image::getHeight() const
 	return m_png.height;
 }
 
+const ColorRGBA* Image::getPixels() const
+{
+	return m_pixels;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 struct TileFlip
@@ -170,8 +178,6 @@ struct Tile
 	TileFlip flips[kTileFlip_Count];
 };
 
-typedef vector<const char*> FileList;
-
 int main(int argc, const char** argv)
 {
 	if(argc < 2)
@@ -182,12 +188,23 @@ int main(int argc, const char** argv)
 		return 0;
 	}
 
-	const char* input_tileset_filename = argv[1];
-	FileList input_tilemap_filenames;
+	ImageList images;
+	images.resize(argc - 1);
+	for(int32_t i = 0; i < images.size(); ++i)
 	{
-		for(int32_t i = 2; i < argc; ++i)
+		const char* filename = argv[i + 1];
+		Image& image = images[i];
+		if(!image.read(filename))
 		{
-			input_tilemap_filenames.push_back(argv[i]);
+			cout << "Could not read file [" << filename << "]" << endl;
+			return 1;
+		}
+		if(!image.validateSize())
+		{
+			cout
+				<< "The image size (" << image.getWidth() << "x" << image.getHeight() << ") is invalid "
+				<< "for file [" << filename << "]" << endl;
+			return 1;
 		}
 	}
 
