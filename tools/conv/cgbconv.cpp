@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <png.h>
+#include <set>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -16,6 +19,11 @@ enum : uint32_t
 	kRowsPerTile = 8,
 	kColorsPerPalette = 4,
 	kPaletteMaxCount = 8,
+};
+
+enum : uint16_t
+{
+	kBGR555_Invalid = 0x8000,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +49,14 @@ typedef uint16_t ColorBGR555;
 
 struct Palette
 {
+	Palette()
+	{
+		for(int32_t i = 0; i < kColorsPerPalette; ++i)
+		{
+			colors[i] = kBGR555_Invalid;
+		}
+	}
+
 	union
 	{
 		ColorBGR555 colors[kColorsPerPalette];
@@ -77,9 +93,11 @@ public:
 
 	uint32_t getWidth() const;
 	uint32_t getHeight() const;
+	const char* getFilename() const;
 	const ColorRGBA* getPixels() const;
 
 private:
+	string m_filename;
 	png_image m_png;
 	union
 	{
@@ -130,6 +148,7 @@ bool Image::read(const char* filename)
 		return false;
 	}
 
+	m_filename = filename;
 	return true;
 }
 
@@ -148,13 +167,128 @@ uint32_t Image::getHeight() const
 	return m_png.height;
 }
 
+const char* Image::getFilename() const
+{
+	return m_filename.c_str();
+}
+
 const ColorRGBA* Image::getPixels() const
 {
 	return m_pixels;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Palette extraction
+////////////////////////////////////////////////////////////////////////////////
 
+static bool ExtractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch)
+{
+	set<ColorBGR555> colors;
+	for(uint32_t j = 0; j < kTileSize; ++j)
+	{
+		const ColorRGBA* row_pixels = pixels + (j * row_pitch);
+		for(uint32_t i = 0; i < kTileSize; ++i)
+		{
+			colors.insert(ConvertColor(row_pixels[i]));
+		}
+	}
+	if(colors.size() > kColorsPerPalette)
+	{
+		cout << "Too many colors (" << colors.size() << ") in tile" << endl;
+		return false;
+	}
+
+	uint32_t c = 0;
+	for(ColorBGR555 color : colors)
+	{
+		out_tile_palette.colors[c] = color;
+		++c;
+	}
+	sort(out_tile_palette.colors, out_tile_palette.colors + c);
+
+	return true;
+}
+
+static bool MergePalettes(Palette& out_palette, const Palette lhs, const Palette rhs)
+{
+	set<ColorBGR555> colors;
+	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
+	{
+		if(lhs.colors[i] == kBGR555_Invalid)
+		{
+			break;
+		}
+		colors.insert(lhs.colors[i]);
+	}
+	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
+	{
+		if(rhs.colors[i] == kBGR555_Invalid)
+		{
+			break;
+		}
+		colors.insert(rhs.colors[i]);
+	}
+
+	if(colors.size() > kColorsPerPalette)
+	{
+		return false;
+	}
+
+	uint32_t c = 0;
+	for(ColorBGR555 color : colors)
+	{
+		out_palette.colors[c] = color;
+		++c;
+	}
+	sort(out_palette.colors, out_palette.colors + c);
+	return true;
+}
+
+static bool MergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palette)
+{
+	for(uint32_t p = 0; p < kPaletteMaxCount; ++p)
+	{
+		Palette& set_palette = out_palette_set.palettes[p];
+		if(MergePalettes(set_palette, palette, set_palette))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool ExtractPalettes(PaletteSet& out_palette_set, const Image& image)
+{
+	const ColorRGBA* pixels = image.getPixels();
+	const uint32_t tile_row_count = image.getHeight() / kTileSize;
+	const uint32_t tile_column_count = image.getWidth() / kTileSize;
+	for(uint32_t j = 0; j < tile_row_count; ++j)
+	{
+		for(uint32_t i = 0; i < tile_column_count; ++i)
+		{
+			Palette tile_palette;
+			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth()) + (i * kTileSize);
+			if(!ExtractTilePalette(tile_palette, tile_pixels, image.getWidth()))
+			{
+				cout << "Could not extract tile palette for tile (" << j << "," << i << ")" << endl;
+				return false;
+			}
+			if(!MergePaletteIntoSet(out_palette_set, tile_palette))
+			{
+				cout << "Could not merge palette for tile (" << j << "," << i << ")" << endl;
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// main
+////////////////////////////////////////////////////////////////////////////////
+
+#if 0
 struct TileFlip
 {
 	union
@@ -177,6 +311,7 @@ struct Tile
 {
 	TileFlip flips[kTileFlip_Count];
 };
+#endif
 
 int main(int argc, const char** argv)
 {
@@ -209,11 +344,11 @@ int main(int argc, const char** argv)
 	}
 
 	PaletteSet palette_set = {};
-
-	// TODO Extract palettes (up to 8)
-	// - Build an ordered list of four BGRA555 colors for each tile
-	// - Merge the lists into 8 palettes
-	// - Build a palette set
+	if(!ExtractPalettes(palette_set, images[0]))
+	{
+		cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
+		return 1;
+	}
 
 	// TODO Extract tiles
 	// - Build an ordered list of four BGRA555 colors and find the best matching palette
