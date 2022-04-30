@@ -69,7 +69,7 @@ struct PaletteSet
 	Palette palettes[kPaletteMaxCount];
 };
 
-static ColorBGR555 ConvertColor(ColorRGBA rgba)
+static ColorBGR555 convertColor(ColorRGBA rgba)
 {
 	const uint8_t red = rgba.r / 8;
 	const uint8_t green = rgba.g / 8;
@@ -181,7 +181,7 @@ const ColorRGBA* Image::getPixels() const
 // Palette extraction
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool ExtractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch)
+static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch)
 {
 	set<ColorBGR555> colors;
 	for(uint32_t j = 0; j < kTileSize; ++j)
@@ -189,7 +189,7 @@ static bool ExtractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixel
 		const ColorRGBA* row_pixels = pixels + (j * row_pitch);
 		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
-			colors.insert(ConvertColor(row_pixels[i]));
+			colors.insert(convertColor(row_pixels[i]));
 		}
 	}
 	if(colors.size() > kColorsPerPalette)
@@ -209,7 +209,7 @@ static bool ExtractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixel
 	return true;
 }
 
-static bool MergePalettes(Palette& out_palette, const Palette lhs, const Palette rhs)
+static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette rhs)
 {
 	set<ColorBGR555> colors;
 	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
@@ -244,12 +244,12 @@ static bool MergePalettes(Palette& out_palette, const Palette lhs, const Palette
 	return true;
 }
 
-static bool MergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palette)
+static bool mergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palette)
 {
 	for(uint32_t p = 0; p < kPaletteMaxCount; ++p)
 	{
 		Palette& set_palette = out_palette_set.palettes[p];
-		if(MergePalettes(set_palette, palette, set_palette))
+		if(mergePalettes(set_palette, palette, set_palette))
 		{
 			return true;
 		}
@@ -258,7 +258,7 @@ static bool MergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palet
 	return false;
 }
 
-static bool ExtractPalettes(PaletteSet& out_palette_set, const Image& image)
+static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 {
 	const ColorRGBA* pixels = image.getPixels();
 	const uint32_t tile_row_count = image.getHeight() / kTileSize;
@@ -269,12 +269,12 @@ static bool ExtractPalettes(PaletteSet& out_palette_set, const Image& image)
 		{
 			Palette tile_palette;
 			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth()) + (i * kTileSize);
-			if(!ExtractTilePalette(tile_palette, tile_pixels, image.getWidth()))
+			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth()))
 			{
 				cout << "Could not extract tile palette for tile (" << j << "," << i << ")" << endl;
 				return false;
 			}
-			if(!MergePaletteIntoSet(out_palette_set, tile_palette))
+			if(!mergePaletteIntoSet(out_palette_set, tile_palette))
 			{
 				cout << "Could not merge palette for tile (" << j << "," << i << ")" << endl;
 				return false;
@@ -282,6 +282,45 @@ static bool ExtractPalettes(PaletteSet& out_palette_set, const Image& image)
 		}
 	}
 	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// File output
+////////////////////////////////////////////////////////////////////////////////
+
+enum : uint32_t
+{
+	kExtensionLength = 4,
+};
+
+static string getOutputFilename(const char* filename, const char* extension)
+{
+	assert(strlen(extension) == kExtensionLength);
+
+	string output = filename;
+	if(output.find_last_of('.') == output.size() - kExtensionLength)
+	{
+		output.pop_back();
+		output.pop_back();
+		output.pop_back();
+		output.pop_back();
+	}
+	output.append(extension);
+	return output;
+}
+
+static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
+{
+	FILE* file = fopen(filename, "wb");
+	if(!file)
+	{
+		return false;
+	}
+
+	assert(sizeof(Palette) == 8);
+	const size_t written = fwrite(palette_set.palettes, sizeof(Palette), kPaletteMaxCount, file);
+	fclose(file);
+	return written == sizeof(Palette) * kPaletteMaxCount;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -344,9 +383,14 @@ int main(int argc, const char** argv)
 	}
 
 	PaletteSet palette_set = {};
-	if(!ExtractPalettes(palette_set, images[0]))
+	if(!extractPalettes(palette_set, images[0]))
 	{
 		cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
+		return 1;
+	}
+	if(!writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+	{
+		cout << "Could not write the palette file" << endl;
 		return 1;
 	}
 
@@ -362,7 +406,6 @@ int main(int argc, const char** argv)
 	// - Build the index and parameter maps
 
 	// TODO Output one palette file (.pal), one tileset (.chr) and several tilemaps (.tm1 and .tm2)
-	// - Palette set into .pal
 	// - First tile of tile description into .chr
 	// - Indices into .tm1
 	// - Parameters into .tm2
