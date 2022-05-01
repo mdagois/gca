@@ -24,7 +24,7 @@ do
 	if [ $? -eq 0 ]; then
 		echo SUCCESS
 		SUCCESS=`expr $SUCCESS + 1`
-		cp *.gb $ROMS_DIR
+		cp *.gb* $ROMS_DIR
 	else
 		echo ERROR
 		ERROR=`expr $ERROR + 1`

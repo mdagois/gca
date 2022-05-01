@@ -1,0 +1,89 @@
+include "utils.rgbinc"
+
+section "sample", rom0
+
+InitSample:
+	ld a, 0 | BCPSF_AUTOINC
+	ld [rBCPS], a
+
+	ld hl, rBCPD
+
+	; Red
+	ld a, $1F
+	ld [hl], a
+	ld a, $00
+	ld [hl], a
+
+	; Orange
+	ld a, $FF
+	ld [hl], a
+	ld a, $01
+	ld [hl], a
+
+	; Yellow
+	ld a, $FF
+	ld [hl], a
+	ld a, $03
+	ld [hl], a
+
+	; Chartreuse green
+	ld a, $EF
+	ld [hl], a
+	ld a, $03
+	ld [hl], a
+
+	; Green
+	ld a, $E0
+	ld [hl], a
+	ld a, $03
+	ld [hl], a
+
+	; Spring green
+	ld a, $E0
+	ld [hl], a
+	ld a, $3F
+	ld [hl], a
+
+	; Cyan
+	ld a, $E0
+	ld [hl], a
+	ld a, $7F
+	ld [hl], a
+
+	; Azure
+	ld a, $E0
+	ld [hl], a
+	ld a, $7D
+	ld [hl], a
+
+	; Blue
+	ld a, $00
+	ld [hl], a
+	ld a, $7C
+	ld [hl], a
+
+	; Violet
+	ld a, $0F
+	ld [hl], a
+	ld a, $7C
+	ld [hl], a
+
+	; Magenta
+	ld a, $1F
+	ld [hl], a
+	ld a, $7C
+	ld [hl], a
+
+	; Rose
+	ld a, $1F
+	ld [hl], a
+	ld a, $3C
+	ld [hl], a
+	
+	ret
+
+UpdateSample:
+	ret
+
+export InitSample, UpdateSample
+

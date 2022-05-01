@@ -1,5 +1,6 @@
 generated
 *.gb
+*.gbc
 *.map
 *.o
 *.sav
