@@ -78,6 +78,24 @@ static ColorBGR555 convertColor(ColorRGBA rgba)
 	return (blue << 10) | (green << 5) | red;
 }
 
+static double getLuminance(const ColorBGR555 color)
+{
+	const double red = ((color >> 10) & 0x1F) / 32.0;
+	const double green = ((color >> 5) & 0x1F) / 32.0;
+	const double blue = (color & 0x1F) / 32.0;
+	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+static void sortColors(ColorBGR555* colors, uint32_t count)
+{
+	sort(
+		colors, colors + count,
+		[](const ColorBGR555 lhs, const ColorBGR555 rhs)
+		{
+			return getLuminance(lhs) < getLuminance(rhs);
+		});
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Image
 ////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +222,7 @@ static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixel
 		out_tile_palette.colors[c] = color;
 		++c;
 	}
-	sort(out_tile_palette.colors, out_tile_palette.colors + c);
+	sortColors(out_tile_palette.colors, c);
 
 	return true;
 }
@@ -240,7 +258,7 @@ static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette
 		out_palette.colors[c] = color;
 		++c;
 	}
-	sort(out_palette.colors, out_palette.colors + c);
+	sortColors(out_palette.colors, c);
 	return true;
 }
 
