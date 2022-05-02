@@ -286,15 +286,15 @@ static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 		for(uint32_t i = 0; i < tile_column_count; ++i)
 		{
 			Palette tile_palette;
-			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth()) + (i * kTileSize);
+			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth() * kTileSize) + (i * kTileSize);
 			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth()))
 			{
-				cout << "Could not extract tile palette for tile (" << j << "," << i << ")" << endl;
+				cout << "Could not extract tile palette for tile (" << i << "," << j << ")" << endl;
 				return false;
 			}
 			if(!mergePaletteIntoSet(out_palette_set, tile_palette))
 			{
-				cout << "Could not merge palette for tile (" << j << "," << i << ")" << endl;
+				cout << "Could not merge palette for tile (" << i << "," << j << ")" << endl;
 				return false;
 			}
 		}
@@ -338,7 +338,7 @@ static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
 	assert(sizeof(Palette) == 8);
 	const size_t written = fwrite(palette_set.palettes, sizeof(Palette), kPaletteMaxCount, file);
 	fclose(file);
-	return written == sizeof(Palette) * kPaletteMaxCount;
+	return written == kPaletteMaxCount;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
