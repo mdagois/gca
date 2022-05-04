@@ -307,6 +307,7 @@ static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
 	FILE* file = fopen(filename, "wb");
 	if(!file)
 	{
+		cout << "Could not open file [" << filename << "]" << endl;
 		return false;
 	}
 
@@ -320,7 +321,6 @@ static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
 // Tile
 ////////////////////////////////////////////////////////////////////////////////
 
-#if 0
 enum : uint32_t
 {
 	kTileFlip_None,
@@ -343,7 +343,32 @@ struct Tile
 {
 	TileFlip flips[kTileFlip_Count];
 };
-#endif
+
+typedef vector<Tile> Tileset;
+
+static bool writeTileset(const Tileset& tileset, const char* filename)
+{
+	FILE* file = fopen(filename, "wb");
+	if(!file)
+	{
+		cout << "Could not open file [" << filename << "]" << endl;
+		return false;
+	}
+	bool success = true;
+	for(size_t i = 0; i < tileset.size(); ++i)
+	{
+		const Tile& tile = tileset[i];
+		const size_t written = fwrite(&tile.flips[kTileFlip_None], sizeof(TileFlip), 1, file);
+		if(written != 1)
+		{
+			cout << "Could not write tile [" << i << "]" << endl;
+			success = false;
+			break;
+		}
+	}
+	fclose(file);
+	return success;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // File
@@ -420,12 +445,18 @@ int main(int argc, const char** argv)
 		}
 	}
 
+	Tileset tileset;
 	{
 		// TODO Extract tiles
 		// - Build an ordered list of four BGRA555 colors and find the best matching palette
 		// - Compute the four flipped variations of the tile based on the palette
 		// - Build a tile set (map that assigns the same tile index to each flip of a tile)
 		// - First tile of tile description into .chr
+		if(!writeTileset(tileset, getOutputFilename(images[0].getFilename(), ".chr").c_str()))
+		{
+			cout << "Could not write the tileset file" << endl;
+			return 1;
+		}
 	}
 
 	{
