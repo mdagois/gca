@@ -18,9 +18,11 @@ using namespace std;
 enum : uint32_t
 {
 	kTileSize = 8,
-	kRowsPerTile = 8,
 	kColorsPerPalette = 4,
 	kPaletteMaxCount = 8,
+
+	kColorIndex_Invalid = 0xFFFFFFFFU,
+	kPaletteIndex_Invalid = 0xFFFFFFFFU,
 };
 
 enum : uint16_t
@@ -350,8 +352,8 @@ struct TileFlip
 {
 	union
 	{
-		uint16_t rows[kRowsPerTile];
-		uint64_t values[kRowsPerTile * sizeof(uint16_t) / sizeof(uint64_t)];
+		uint16_t rows[kTileSize];
+		uint64_t values[kTileSize * sizeof(uint16_t) / sizeof(uint64_t)];
 	};
 
 	bool operator<(const TileFlip& other) const
@@ -376,7 +378,7 @@ static void generateTileFlips(Tile& out_tile)
 	const TileFlip& none = out_tile.flips[kTileFlip_None];
 	{
 		TileFlip& horizontal = out_tile.flips[kTileFlip_Horizontal];
-		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
 			const uint16_t row = none.rows[i];
 			horizontal.rows[i] =
@@ -392,45 +394,126 @@ static void generateTileFlips(Tile& out_tile)
 	}
 	{
 		TileFlip& vertical = out_tile.flips[kTileFlip_Vertical];
-		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
-			vertical.rows[(kRowsPerTile - 1) - i] = none.rows[i];
+			vertical.rows[(kTileSize - 1) - i] = none.rows[i];
 		}
 	}
 	{
 		TileFlip& both = out_tile.flips[kTileFlip_Both];
 		const TileFlip& horizontal = out_tile.flips[kTileFlip_Horizontal];
-		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
-			both.rows[(kRowsPerTile - 1) - i] = horizontal.rows[i];
+			both.rows[(kTileSize - 1) - i] = horizontal.rows[i];
 		}
 	}
 }
 
-static bool extractTile(Tile& out_tile, const ColorRGBA* pixels, uint32_t row_pitch)
+static bool isSuperPalette(const Palette& super_palette, const Palette& sub_palette)
 {
-	for(uint32_t i = 0; i < kRowsPerTile; ++i)
+	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
 	{
-		out_tile.flips[kTileFlip_None].rows[i] = 0;
+		const ColorBGR555 color = sub_palette.colors[i];
+		if(color == kBGR555_Invalid)
+		{
+			break;
+		}
+		bool found = false;
+		for(uint32_t j = 0; j < kColorsPerPalette; ++j)
+		{
+			if(color == super_palette.colors[j])
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool findMatchingPaletteInSet(uint32_t& out_palette_index, const PaletteSet& palette_set, const Palette& palette)
+{
+	for(uint32_t i = 0; i < kPaletteMaxCount; ++i)
+	{
+		if(isSuperPalette(palette_set.palettes[i], palette))
+		{
+			out_palette_index = i;
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const ColorRGBA* pixels, uint32_t row_pitch)
+{
+	Palette tile_palette;
+	{
+		Palette palette;
+		if(!extractTilePalette(palette, pixels, row_pitch))
+		{
+			cout << "Could not extract tile color" << endl;
+			return false;
+		}
+		uint32_t palette_index;
+		if(!findMatchingPaletteInSet(palette_index, palette_set, palette))
+		{
+			cout << "Could not find a matching palette in the palette set" << endl;
+			return false;
+		}
+		tile_palette = palette_set.palettes[palette_index];
 	}
 
-	// TODO
-	// - Build an ordered list of four BGRA555 colors and find the best matching palette
-	// - Compute the four flipped variations of the tile based on the palette
-	// - Build a tile set (map that assigns the same tile index to each flip of a tile)
+	auto getColorIndex = [&tile_palette](ColorBGR555 color)
+	{
+		for(uint32_t i = 0; i < kColorsPerPalette; ++i)
+		{
+			if(color == tile_palette.colors[i])
+			{
+				return i;
+			}
+		}
+		return static_cast<uint32_t>(kColorIndex_Invalid);
+	};
+
+	TileFlip& none = out_tile.flips[kTileFlip_None];
+	for(uint32_t j = 0; j < kTileSize; ++j)
+	{
+		uint16_t& row_value = none.rows[j];
+		row_value = 0;
+		uint8_t* bytes = reinterpret_cast<uint8_t*>(&row_value);
+
+		const ColorRGBA* row_pixels = pixels + (j * row_pitch);
+		for(uint32_t i = 0; i < kTileSize; ++i)
+		{
+			const ColorBGR555 color = convertColor(row_pixels[i]);
+			const size_t color_index = getColorIndex(color);
+			if(color_index == kColorIndex_Invalid)
+			{
+				cout << "The color referenced by the tile was not found in the tile palette" << endl;
+				return false;
+			}
+			assert(color_index < kColorsPerPalette);
+			bytes[0] |= (color_index & 0x1) << i;
+			bytes[1] |= ((color_index >> 1) & 0x1) << i;
+		}
+	}
 
 	generateTileFlips(out_tile);
 	return true;
 }
 
-static bool extractTileset(Tileset& out_tileset, const Image& image)
+static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image)
 {
 	return iterateImageTiles(
 		image,
-		[&image, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		[&image, &palette_set, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
 			Tile tile;
-			if(!extractTile(tile, tile_pixels, image.getWidth()))
+			if(!extractTile(tile, palette_set, tile_pixels, image.getWidth()))
 			{
 				cout << "Could not extract tile (" << tile_column << "," << tile_row << ")" << endl;
 				return false;
@@ -552,7 +635,7 @@ int main(int argc, const char** argv)
 
 	Tileset tileset;
 	{
-		if(!extractTileset(tileset, images[0]))
+		if(!extractTileset(tileset, palette_set, images[0]))
 		{
 			cout << "Could not extract the tiles for file [" << images[0].getFilename() << "]" << endl;
 			return 1;
