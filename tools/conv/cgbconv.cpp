@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <png.h>
 #include <set>
@@ -276,7 +277,7 @@ static bool mergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palet
 	return false;
 }
 
-static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
+static bool iterateImageTiles(const Image& image, function<bool(const ColorRGBA*, uint32_t, uint32_t)> tile_callback)
 {
 	const ColorRGBA* pixels = image.getPixels();
 	const uint32_t tile_row_count = image.getHeight() / kTileSize;
@@ -285,21 +286,35 @@ static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 	{
 		for(uint32_t i = 0; i < tile_column_count; ++i)
 		{
-			Palette tile_palette;
 			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth() * kTileSize) + (i * kTileSize);
-			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth()))
+			if(!tile_callback(tile_pixels, i, j))
 			{
-				cout << "Could not extract tile palette for tile (" << i << "," << j << ")" << endl;
-				return false;
-			}
-			if(!mergePaletteIntoSet(out_palette_set, tile_palette))
-			{
-				cout << "Could not merge palette for tile (" << i << "," << j << ")" << endl;
 				return false;
 			}
 		}
 	}
 	return true;
+}
+
+static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
+{
+	return iterateImageTiles(
+		image,
+		[&image, &out_palette_set](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		{
+			Palette tile_palette;
+			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth()))
+			{
+				cout << "Could not extract tile palette for tile (" << tile_column << "," << tile_row << ")" << endl;
+				return false;
+			}
+			if(!mergePaletteIntoSet(out_palette_set, tile_palette))
+			{
+				cout << "Could not merge palette for tile (" << tile_column << "," << tile_row << ")" << endl;
+				return false;
+			}
+			return true;
+		});
 }
 
 static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
@@ -345,6 +360,15 @@ struct Tile
 };
 
 typedef vector<Tile> Tileset;
+
+static bool extractTileset(Tileset& out_tileset, const Image& image)
+{
+	// TODO Extract tiles
+	// - Build an ordered list of four BGRA555 colors and find the best matching palette
+	// - Compute the four flipped variations of the tile based on the palette
+	// - Build a tile set (map that assigns the same tile index to each flip of a tile)
+	return true;
+}
 
 static bool writeTileset(const Tileset& tileset, const char* filename)
 {
@@ -447,11 +471,11 @@ int main(int argc, const char** argv)
 
 	Tileset tileset;
 	{
-		// TODO Extract tiles
-		// - Build an ordered list of four BGRA555 colors and find the best matching palette
-		// - Compute the four flipped variations of the tile based on the palette
-		// - Build a tile set (map that assigns the same tile index to each flip of a tile)
-		// - First tile of tile description into .chr
+		if(!extractTileset(tileset, images[0]))
+		{
+			cout << "Could not extract the tiles for file [" << images[0].getFilename() << "]" << endl;
+			return 1;
+		}
 		if(!writeTileset(tileset, getOutputFilename(images[0].getFilename(), ".chr").c_str()))
 		{
 			cout << "Could not write the tileset file" << endl;
