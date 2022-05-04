@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <png.h>
 #include <set>
 #include <string>
@@ -174,6 +175,25 @@ const ColorRGBA* Image::getPixels() const
 	return m_pixels;
 }
 
+static bool iterateImageTiles(const Image& image, function<bool(const ColorRGBA*, uint32_t, uint32_t)> tile_callback)
+{
+	const ColorRGBA* pixels = image.getPixels();
+	const uint32_t tile_row_count = image.getHeight() / kTileSize;
+	const uint32_t tile_column_count = image.getWidth() / kTileSize;
+	for(uint32_t j = 0; j < tile_row_count; ++j)
+	{
+		for(uint32_t i = 0; i < tile_column_count; ++i)
+		{
+			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth() * kTileSize) + (i * kTileSize);
+			if(!tile_callback(tile_pixels, i, j))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Palette
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,25 +297,6 @@ static bool mergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palet
 	return false;
 }
 
-static bool iterateImageTiles(const Image& image, function<bool(const ColorRGBA*, uint32_t, uint32_t)> tile_callback)
-{
-	const ColorRGBA* pixels = image.getPixels();
-	const uint32_t tile_row_count = image.getHeight() / kTileSize;
-	const uint32_t tile_column_count = image.getWidth() / kTileSize;
-	for(uint32_t j = 0; j < tile_row_count; ++j)
-	{
-		for(uint32_t i = 0; i < tile_column_count; ++i)
-		{
-			const ColorRGBA* tile_pixels = pixels + (j * image.getWidth() * kTileSize) + (i * kTileSize);
-			if(!tile_callback(tile_pixels, i, j))
-			{
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
 static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 {
 	return iterateImageTiles(
@@ -352,6 +353,11 @@ struct TileFlip
 		uint16_t rows[kRowsPerTile];
 		uint64_t values[kRowsPerTile * sizeof(uint16_t) / sizeof(uint64_t)];
 	};
+
+	bool operator<(const TileFlip& other) const
+	{
+		return tie(values[0], values[1]) < tie(other.values[0], other.values[1]);
+	}
 };
 
 struct Tile
@@ -359,15 +365,89 @@ struct Tile
 	TileFlip flips[kTileFlip_Count];
 };
 
-typedef vector<Tile> Tileset;
-
-static bool extractTileset(Tileset& out_tileset, const Image& image)
+struct Tileset
 {
-	// TODO Extract tiles
+	vector<Tile> tiles;
+	map<TileFlip, size_t> flipToIndex;
+};
+
+static void generateTileFlips(Tile& out_tile)
+{
+	const TileFlip& none = out_tile.flips[kTileFlip_None];
+	{
+		TileFlip& horizontal = out_tile.flips[kTileFlip_Horizontal];
+		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		{
+			const uint16_t row = none.rows[i];
+			horizontal.rows[i] =
+				((row >> 14) & 0x3) |
+				(((row >> 12) & 0x3) << 2) |
+				(((row >> 10) & 0x3) << 4) |
+				(((row >> 8) & 0x3) << 6) |
+				(((row >> 6) & 0x3) << 8) |
+				(((row >> 4) & 0x3) << 10) |
+				(((row >> 2) & 0x3) << 12) |
+				((row & 0x3) << 14);
+		}
+	}
+	{
+		TileFlip& vertical = out_tile.flips[kTileFlip_Vertical];
+		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		{
+			vertical.rows[(kRowsPerTile - 1) - i] = none.rows[i];
+		}
+	}
+	{
+		TileFlip& both = out_tile.flips[kTileFlip_Both];
+		const TileFlip& horizontal = out_tile.flips[kTileFlip_Horizontal];
+		for(uint32_t i = 0; i < kRowsPerTile; ++i)
+		{
+			both.rows[(kRowsPerTile - 1) - i] = horizontal.rows[i];
+		}
+	}
+}
+
+static bool extractTile(Tile& out_tile, const ColorRGBA* pixels, uint32_t row_pitch)
+{
+	for(uint32_t i = 0; i < kRowsPerTile; ++i)
+	{
+		out_tile.flips[kTileFlip_None].rows[i] = 0;
+	}
+
+	// TODO
 	// - Build an ordered list of four BGRA555 colors and find the best matching palette
 	// - Compute the four flipped variations of the tile based on the palette
 	// - Build a tile set (map that assigns the same tile index to each flip of a tile)
+
+	generateTileFlips(out_tile);
 	return true;
+}
+
+static bool extractTileset(Tileset& out_tileset, const Image& image)
+{
+	return iterateImageTiles(
+		image,
+		[&image, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		{
+			Tile tile;
+			if(!extractTile(tile, tile_pixels, image.getWidth()))
+			{
+				cout << "Could not extract tile (" << tile_column << "," << tile_row << ")" << endl;
+				return false;
+			}
+			if(out_tileset.flipToIndex.find(tile.flips[0]) != out_tileset.flipToIndex.end())
+			{
+				return true;
+			}
+
+			const size_t tile_index = out_tileset.tiles.size();
+			for(uint32_t i = 0; i < kTileFlip_Count; ++i)
+			{
+				out_tileset.flipToIndex.insert(pair<TileFlip, size_t>(tile.flips[i], tile_index));
+			}
+			out_tileset.tiles.push_back(tile);
+			return true;
+		});
 }
 
 static bool writeTileset(const Tileset& tileset, const char* filename)
@@ -379,9 +459,10 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 		return false;
 	}
 	bool success = true;
-	for(size_t i = 0; i < tileset.size(); ++i)
+	const vector<Tile>& tiles = tileset.tiles;
+	for(size_t i = 0; i < tiles.size(); ++i)
 	{
-		const Tile& tile = tileset[i];
+		const Tile& tile = tiles[i];
 		const size_t written = fwrite(&tile.flips[kTileFlip_None], sizeof(TileFlip), 1, file);
 		if(written != 1)
 		{
