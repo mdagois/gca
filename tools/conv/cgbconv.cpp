@@ -47,28 +47,6 @@ struct ColorRGBA
 
 typedef uint16_t ColorBGR555;
 
-struct Palette
-{
-	Palette()
-	{
-		for(int32_t i = 0; i < kColorsPerPalette; ++i)
-		{
-			colors[i] = kBGR555_Invalid;
-		}
-	}
-
-	union
-	{
-		ColorBGR555 colors[kColorsPerPalette];
-		uint64_t value;
-	};
-};
-
-struct PaletteSet
-{
-	Palette palettes[kPaletteMaxCount];
-};
-
 static ColorBGR555 convertColor(ColorRGBA rgba)
 {
 	const uint8_t red = rgba.r / 8;
@@ -196,8 +174,30 @@ const ColorRGBA* Image::getPixels() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Palette extraction
+// Palette
 ////////////////////////////////////////////////////////////////////////////////
+
+struct Palette
+{
+	Palette()
+	{
+		for(int32_t i = 0; i < kColorsPerPalette; ++i)
+		{
+			colors[i] = kBGR555_Invalid;
+		}
+	}
+
+	union
+	{
+		ColorBGR555 colors[kColorsPerPalette];
+		uint64_t value;
+	};
+};
+
+struct PaletteSet
+{
+	Palette palettes[kPaletteMaxCount];
+};
 
 static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch)
 {
@@ -302,8 +302,51 @@ static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 	return true;
 }
 
+static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
+{
+	FILE* file = fopen(filename, "wb");
+	if(!file)
+	{
+		return false;
+	}
+
+	assert(sizeof(Palette) == 8);
+	const size_t written = fwrite(palette_set.palettes, sizeof(Palette), kPaletteMaxCount, file);
+	fclose(file);
+	return written == kPaletteMaxCount;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-// File output
+// Tile
+////////////////////////////////////////////////////////////////////////////////
+
+#if 0
+enum : uint32_t
+{
+	kTileFlip_None,
+	kTileFlip_Horizontal,
+	kTileFlip_Vertical,
+	kTileFlip_Both,
+	kTileFlip_Count,
+};
+
+struct TileFlip
+{
+	union
+	{
+		uint16_t rows[kRowsPerTile];
+		uint64_t values[kRowsPerTile * sizeof(uint16_t) / sizeof(uint64_t)];
+	};
+};
+
+struct Tile
+{
+	TileFlip flips[kTileFlip_Count];
+};
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// File
 ////////////////////////////////////////////////////////////////////////////////
 
 enum : uint32_t
@@ -327,48 +370,9 @@ static string getOutputFilename(const char* filename, const char* extension)
 	return output;
 }
 
-static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
-{
-	FILE* file = fopen(filename, "wb");
-	if(!file)
-	{
-		return false;
-	}
-
-	assert(sizeof(Palette) == 8);
-	const size_t written = fwrite(palette_set.palettes, sizeof(Palette), kPaletteMaxCount, file);
-	fclose(file);
-	return written == kPaletteMaxCount;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
-
-#if 0
-struct TileFlip
-{
-	union
-	{
-		uint16_t rows[kRowsPerTile];
-		uint64_t values[kRowsPerTile * sizeof(uint16_t) / sizeof(uint64_t)];
-	};
-};
-
-enum : uint32_t
-{
-	kTileFlip_None,
-	kTileFlip_Horizontal,
-	kTileFlip_Vertical,
-	kTileFlip_Both,
-	kTileFlip_Count,
-};
-
-struct Tile
-{
-	TileFlip flips[kTileFlip_Count];
-};
-#endif
 
 int main(int argc, const char** argv)
 {
@@ -381,52 +385,58 @@ int main(int argc, const char** argv)
 	}
 
 	ImageList images;
-	images.resize(argc - 1);
-	for(int32_t i = 0; i < images.size(); ++i)
 	{
-		const char* filename = argv[i + 1];
-		Image& image = images[i];
-		if(!image.read(filename))
+		images.resize(argc - 1);
+		for(int32_t i = 0; i < images.size(); ++i)
 		{
-			cout << "Could not read file [" << filename << "]" << endl;
-			return 1;
-		}
-		if(!image.validateSize())
-		{
-			cout
-				<< "The image size (" << image.getWidth() << "x" << image.getHeight() << ") is invalid "
-				<< "for file [" << filename << "]" << endl;
-			return 1;
+			const char* filename = argv[i + 1];
+			Image& image = images[i];
+			if(!image.read(filename))
+			{
+				cout << "Could not read file [" << filename << "]" << endl;
+				return 1;
+			}
+			if(!image.validateSize())
+			{
+				cout
+					<< "The image size (" << image.getWidth() << "x" << image.getHeight() << ") is invalid "
+					<< "for file [" << filename << "]" << endl;
+				return 1;
+			}
 		}
 	}
 
 	PaletteSet palette_set = {};
-	if(!extractPalettes(palette_set, images[0]))
 	{
-		cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
-		return 1;
+		if(!extractPalettes(palette_set, images[0]))
+		{
+			cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
+			return 1;
+		}
+		if(!writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+		{
+			cout << "Could not write the palette file" << endl;
+			return 1;
+		}
 	}
-	if(!writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+
 	{
-		cout << "Could not write the palette file" << endl;
-		return 1;
+		// TODO Extract tiles
+		// - Build an ordered list of four BGRA555 colors and find the best matching palette
+		// - Compute the four flipped variations of the tile based on the palette
+		// - Build a tile set (map that assigns the same tile index to each flip of a tile)
+		// - First tile of tile description into .chr
 	}
 
-	// TODO Extract tiles
-	// - Build an ordered list of four BGRA555 colors and find the best matching palette
-	// - Compute the four flipped variations of the tile based on the palette
-	// - Build a tile set (map that assigns the same tile index to each flip of a tile)
-
-	// TODO Extract maps
-	// For each map
-	// - Extract each tile flip
-	// - Find the flip into the tileset
-	// - Build the index and parameter maps
-
-	// TODO Output one palette file (.pal), one tileset (.chr) and several tilemaps (.tm1 and .tm2)
-	// - First tile of tile description into .chr
-	// - Indices into .tm1
-	// - Parameters into .tm2
+	{
+		// TODO Extract maps
+		// For each map
+		// - Extract each tile flip
+		// - Find the flip into the tileset
+		// - Build the index and parameter maps
+		// - Indices into .tm1
+		// - Parameters into .tm2
+	}
 
 	return 0;
 }
