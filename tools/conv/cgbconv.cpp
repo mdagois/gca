@@ -497,8 +497,9 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 				return false;
 			}
 			assert(color_index < kColorsPerPalette);
-			bytes[0] |= (color_index & 0x1) << i;
-			bytes[1] |= ((color_index >> 1) & 0x1) << i;
+			const uint32_t shift = (kTileSize - 1) - i;
+			bytes[0] |= (color_index & 0x1) << shift;
+			bytes[1] |= ((color_index >> 1) & 0x1) << shift;
 		}
 	}
 
