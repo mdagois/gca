@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-// TODO Pad tileset to 256 or 512 tiles?
-
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +23,7 @@ enum : uint32_t
 	kVramBankCount = 2,
 	kTilesPerVramBank = 256,
 	kTilesMaxCount = kTilesPerVramBank * kVramBankCount,
+	kTilemapIndexMaxCount = 1024,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
 	kPaletteIndex_Invalid = 0xFFFFFFFFU,
@@ -32,7 +31,7 @@ enum : uint32_t
 
 enum : uint16_t
 {
-	kBGR555_Invalid = 0x8000,
+	kBGR555_Invalid = 0x8000U,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -581,10 +580,10 @@ static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, 
 	{
 		return false;
 	}
-	const size_t tileCount = out_tileset.tiles.size();
-	if(tileCount > kTilesMaxCount)
+	const size_t tile_count = out_tileset.tiles.size();
+	if(tile_count > kTilesMaxCount)
 	{
-		cout << "Too many tiles in the tileset (" << tileCount << " > " << kTilesMaxCount << ")" << endl;
+		cout << "Too many tiles in the tileset (" << tile_count << " > " << kTilesMaxCount << ")" << endl;
 		return false;
 	}
 	return true;
@@ -611,6 +610,20 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 			break;
 		}
 	}
+
+	const size_t padding_size = kTilesPerVramBank - (tiles.size() % kTilesPerVramBank);
+	const TileFlip padding_flip = {0};
+	for(size_t i = 0; i < padding_size; ++i)
+	{
+		const size_t written = fwrite(&padding_flip, sizeof(TileFlip), 1, file);
+		if(written != 1)
+		{
+			cout << "Could not write tile padding [" << i << "]" << endl;
+			success = false;
+			break;
+		}
+	}
+
 	fclose(file);
 	return success;
 }
@@ -630,7 +643,7 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 	out_tilemap.indices.clear();
 	out_tilemap.parameters.clear();
 
-	return iterateImageTiles(
+	const bool success = iterateImageTiles(
 		image,
 		[&image, &palette_set, &out_tilemap, &tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
@@ -664,12 +677,23 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 			out_tilemap.parameters.push_back(parameters);
 			return true;
 		});
+	if(!success)
+	{
+		return false;
+	}
+	const size_t index_count = out_tilemap.indices.size();
+	assert(index_count == out_tilemap.parameters.size());
+	if(index_count > kTilemapIndexMaxCount)
+	{
+		cout << "Too many indices in the tilemap (" << index_count << " > " << kTilemapIndexMaxCount << ")" << endl;
+		return false;
+	}
 	return true;
 }
 
 static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* parameter_filename)
 {
-	auto writeData = [](const void* data, size_t data_size, const char* filename)
+	auto writeData = [](const uint8_t* data, size_t data_size, const char* filename)
 	{
 		FILE* file = fopen(filename, "wb");
 		if(!file)
@@ -678,16 +702,35 @@ static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, con
 			return false;
 		}
 		const size_t written = fwrite(data, 1, data_size, file);
+		if(written != data_size)
+		{
+			cout << "Could not write the data to file [" << filename << "]" << endl;
+			fclose(file);
+			return false;
+		}
+		const size_t padding_size = kTilemapIndexMaxCount - data_size;
+		for(uint32_t i = 0; i < padding_size; ++i)
+		{
+			const uint8_t padding = 0;
+			const size_t written = fwrite(&padding, sizeof(padding), 1, file);
+			if(written != 1)
+			{
+				cout << "Could not write the padding to file [" << filename << "]" << endl;
+				fclose(file);
+				return false;
+			}
+		}
 		fclose(file);
-		return written == data_size;
+		return true;
 	};
 
-	if(!writeData(tilemap.indices.data(), tilemap.indices.size() * sizeof(tilemap.indices[0]), index_filename))
+	const size_t index_count = tilemap.indices.size();
+	if(!writeData(tilemap.indices.data(), index_count * sizeof(tilemap.indices[0]), index_filename))
 	{
 		cout << "Could not write the index file [" << index_filename << "]" << endl;
 		return false;
 	}
-	if(!writeData(tilemap.parameters.data(), tilemap.parameters.size() * sizeof(tilemap.parameters[0]), parameter_filename))
+	if(!writeData(tilemap.parameters.data(), index_count * sizeof(tilemap.parameters[0]), parameter_filename))
 	{
 		cout << "Could not write the parameter file [" << parameter_filename << "]" << endl;
 		return false;
