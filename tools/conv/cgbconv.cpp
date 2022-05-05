@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+// TODO Pad tileset to 256 or 512 tiles?
+
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -415,16 +417,20 @@ static void generateTileFlips(Tile& out_tile)
 		TileFlip& horizontal = out_tile.flips[kTileFlipType_Horizontal];
 		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
-			const uint16_t row = none.rows[i];
-			horizontal.rows[i] =
-				((row >> 14) & 0x3) |
-				(((row >> 12) & 0x3) << 2) |
-				(((row >> 10) & 0x3) << 4) |
-				(((row >> 8) & 0x3) << 6) |
-				(((row >> 6) & 0x3) << 8) |
-				(((row >> 4) & 0x3) << 10) |
-				(((row >> 2) & 0x3) << 12) |
-				((row & 0x3) << 14);
+			const uint8_t* src_bytes = reinterpret_cast<const uint8_t*>(none.rows + i);
+			uint8_t* dst_bytes = reinterpret_cast<uint8_t*>(horizontal.rows + i);
+			for(uint32_t b = 0; b < 2; ++b)
+			{
+				dst_bytes[b] =
+					((src_bytes[b] & 0x01) << 7) |
+					((src_bytes[b] & 0x02) << 5) |
+					((src_bytes[b] & 0x04) << 3) |
+					((src_bytes[b] & 0x08) << 1) |
+					((src_bytes[b] & 0x10) >> 1) |
+					((src_bytes[b] & 0x20) >> 3) |
+					((src_bytes[b] & 0x40) >> 5) |
+					((src_bytes[b] & 0x80) >> 7);
+			}
 		}
 	}
 	{
