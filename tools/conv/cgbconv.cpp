@@ -393,6 +393,7 @@ struct TileFlip
 struct Tile
 {
 	TileFlip flips[kTileFlipType_Count];
+	uint32_t palette_index;
 };
 
 struct TileFlipIndex
@@ -499,6 +500,7 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 			return false;
 		}
 		tile_palette = palette_set.palettes[palette_index];
+		out_tile.palette_index = palette_index;
 	}
 
 	auto getColorIndex = [&tile_palette](ColorBGR555 color)
@@ -645,8 +647,7 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 			const uint8_t tile_index = index % kTilesPerVramBank;
 			out_tilemap.indices.push_back(tile_index);
 
-			//TODO
-			const uint8_t palette_number = 0 & 0x7;
+			const uint8_t palette_number = tile.palette_index & 0x7;
 			const uint8_t vram_bank = (index / kTilesPerVramBank) & 0x1;
 			const uint8_t flip_type = tile_flip_index.flip_type;
 
