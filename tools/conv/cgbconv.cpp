@@ -588,17 +588,15 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 // Tilemap
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO Extract maps
-// For each map
+// TODO Extract tilemap
 // - Extract each tile flip
 // - Find the flip into the tileset
 // - Build the index and parameter maps
-// - Indices into .tm1
-// - Parameters into .tm2
 
 struct Tilemap
 {
-	uint32_t dummy;
+	vector<uint8_t> indices;
+	vector<uint8_t> parameters;
 };
 
 static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const PaletteSet& palette_set, const Image& images)
@@ -608,6 +606,29 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 
 static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* parameter_filename)
 {
+	auto writeData = [](const void* data, size_t data_size, const char* filename)
+	{
+		FILE* file = fopen(filename, "wb");
+		if(!file)
+		{
+			cout << "Could not open file [" << filename << "]" << endl;
+			return false;
+		}
+		const size_t written = fwrite(data, 1, data_size, file);
+		fclose(file);
+		return written == data_size;
+	};
+
+	if(!writeData(tilemap.indices.data(), tilemap.indices.size() * sizeof(tilemap.indices[0]), index_filename))
+	{
+		cout << "Could not write the index file [" << index_filename << "]" << endl;
+		return false;
+	}
+	if(!writeData(tilemap.parameters.data(), tilemap.parameters.size() * sizeof(tilemap.parameters[0]), parameter_filename))
+	{
+		cout << "Could not write the parameter file [" << parameter_filename << "]" << endl;
+		return false;
+	}
 	return true;
 }
 
