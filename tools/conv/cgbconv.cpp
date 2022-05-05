@@ -31,6 +31,31 @@ enum : uint16_t
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// File
+////////////////////////////////////////////////////////////////////////////////
+
+enum : uint32_t
+{
+	kExtensionLength = 4,
+};
+
+static string getOutputFilename(const char* filename, const char* extension)
+{
+	assert(strlen(extension) == kExtensionLength);
+
+	string output = filename;
+	if(output.find_last_of('.') == output.size() - kExtensionLength)
+	{
+		output.pop_back();
+		output.pop_back();
+		output.pop_back();
+		output.pop_back();
+	}
+	output.append(extension);
+	return output;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Color
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -560,28 +585,30 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// File
+// Tilemap
 ////////////////////////////////////////////////////////////////////////////////
 
-enum : uint32_t
+// TODO Extract maps
+// For each map
+// - Extract each tile flip
+// - Find the flip into the tileset
+// - Build the index and parameter maps
+// - Indices into .tm1
+// - Parameters into .tm2
+
+struct Tilemap
 {
-	kExtensionLength = 4,
+	uint32_t dummy;
 };
 
-static string getOutputFilename(const char* filename, const char* extension)
+static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const PaletteSet& palette_set, const Image& images)
 {
-	assert(strlen(extension) == kExtensionLength);
+	return true;
+}
 
-	string output = filename;
-	if(output.find_last_of('.') == output.size() - kExtensionLength)
-	{
-		output.pop_back();
-		output.pop_back();
-		output.pop_back();
-		output.pop_back();
-	}
-	output.append(extension);
-	return output;
+static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* parameter_filename)
+{
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -649,13 +676,20 @@ int main(int argc, const char** argv)
 	}
 
 	{
-		// TODO Extract maps
-		// For each map
-		// - Extract each tile flip
-		// - Find the flip into the tileset
-		// - Build the index and parameter maps
-		// - Indices into .tm1
-		// - Parameters into .tm2
+		for(uint32_t i = 1; i < images.size(); ++i)
+		{
+			Tilemap tilemap;
+			if(!extractTilemaps(tilemap, tileset, palette_set, images[i]))
+			{
+				cout << "Could not extract the tiles for file [" << images[i].getFilename() << "]" << endl;
+				return 1;
+			}
+			if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".tm1").c_str(), getOutputFilename(images[i].getFilename(), ".tm2").c_str()))
+			{
+				cout << "Could not write the tilemap files for file [" << images[i].getFilename() << "]" << endl;
+				return 1;
+			}
+		}
 	}
 
 	return 0;
