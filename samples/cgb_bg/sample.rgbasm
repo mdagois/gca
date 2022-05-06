@@ -1,0 +1,98 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+palette_data:
+incbin "ship.pal"
+palette_data_end:
+
+tileset:
+incbin "ship.chr"
+tileset_end:
+
+tilemap_indices:
+incbin "ship.tm1"
+tilemap_indices_end:
+
+tilemap_parameters:
+incbin "ship.tm2"
+tilemap_parameters_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample:
+	; copy all the palettes
+	ld a, 0 | BCPSF_AUTOINC
+	ld [rBCPS], a
+	ld hl, palette_data
+	ld c, palette_data_end - palette_data
+	.palette_copy
+		ld a, [hli]
+		ld [rBCPD], a
+		dec c
+		jr nz, .palette_copy
+
+	; copy the tileset
+	ld de, _VRAM8000
+	ld hl, tileset
+	.tileset_copy
+		ld a, [hli]
+		ld [de], a
+		inc de
+
+		ld a, l
+		cp a, low(tileset_end)
+		jr nz, .tileset_copy
+		ld a, h
+		cp a, high(tileset_end)
+		jr nz, .tileset_copy
+
+	; copy the tile indices into VRAM bank 0
+	xor a
+	ld [rVBK], a
+	ld de, _SCRN0
+	ld hl, tilemap_indices
+	.tilemap_indices_copy
+		ld a, [hli]
+		ld [de], a
+		inc de
+
+		ld a, l
+		cp a, low(tilemap_indices_end)
+		jr nz, .tilemap_indices_copy
+		ld a, h
+		cp a, high(tilemap_indices_end)
+		jr nz, .tilemap_indices_copy
+
+	; copy the tile parameters into VRAM bank 1
+	ld a, 1
+	ld [rVBK], a
+	ld de, _SCRN0
+	ld hl, tilemap_parameters
+	.tilemap_parameters_copy
+		ld a, [hli]
+		ld [de], a
+		inc de
+
+		ld a, l
+		cp a, low(tilemap_parameters_end)
+		jr nz, .tilemap_parameters_copy
+		ld a, h
+		cp a, high(tilemap_parameters_end)
+		jr nz, .tilemap_parameters_copy
+
+	; set LCD parameters
+	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
+
+	ret
+
+UpdateSample:
+	ret
+
+export InitSample, UpdateSample
+
