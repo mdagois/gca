@@ -13,11 +13,11 @@ incbin "ship.chr"
 tileset_end:
 
 tilemap_indices:
-incbin "ship.tm1"
+incbin "ship.idx"
 tilemap_indices_end:
 
 tilemap_parameters:
-incbin "ship.tm2"
+incbin "ship.prm"
 tilemap_parameters_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

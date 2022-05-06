@@ -811,7 +811,7 @@ int main(int argc, const char** argv)
 				cout << "Could not extract the tiles for file [" << images[i].getFilename() << "]" << endl;
 				return 1;
 			}
-			if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".tm1").c_str(), getOutputFilename(images[i].getFilename(), ".tm2").c_str()))
+			if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".idx").c_str(), getOutputFilename(images[i].getFilename(), ".prm").c_str()))
 			{
 				cout << "Could not write the tilemap files for file [" << images[i].getFilename() << "]" << endl;
 				return 1;

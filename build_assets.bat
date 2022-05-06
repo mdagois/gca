@@ -12,8 +12,8 @@ set GENERATED_DIR=generated\
 set CHR_EXTENSION=chr
 set PAL_EXTENSION=pal
 set TLM_EXTENSION=tlm
-set TM1_EXTENSION=tm1
-set TM2_EXTENSION=tm2
+set TM1_EXTENSION=idx
+set TM2_EXTENSION=prm
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: DMG
