@@ -35,7 +35,7 @@ Graphics assets (tilesets and tilemaps) are PNG files.
 ### Converting assets
 
 Assets are already converted and ready to use in the samples.
-However, it is possible to convert them again using the ***gfxconv*** tool.
+However, it is possible to convert them again using the ***gfxconv*** and ***cgbconv*** tools.
 
 ### The gfxconv tool
 
@@ -72,24 +72,24 @@ They are converted to TLM files.
 TLM files contain tile indices referring tiles inside the tileset.
 They can be copied as is in VRAM.
 
-#### Binaries
+### Binaries
 
-Windows binaries for ***gfxconv*** are available in the ***bin*** folder.
+Windows binaries for ***gfxconv*** and ***cgbconv*** are available in the ***bin*** folder.
 For other operating systems, it is necessary to build the tool.
 
-#### Building gfxconv
+### Building the tools
 
 A cmake file is available in the ***tools/conv*** folder.
-As the code fits into a single source file, it should be easy to use any other build system.
+As each tool's code fits into a single source file, it should be straightforward to use any other build system.
 The only dependency is [libpng](http://www.libpng.org/pub/png/libpng.html).
 
-#### Script
+### Conversion script
 
 A Windows batch file, ***build_assets.bat***, is available to rebuild all the assets.
-It puts the tilesets and tilemaps in the **generated/chr** and **generated/tlm** folders respectively.
-The batch uses ***gfxconv*** from the **bin** folder, so there is no need to rebuild it.
+It puts the converted files (tilesets, palettes, tilemaps, etc.) into the **generated** folder.
+The batch uses ***gfxconv*** and ***cgbconv*** from the **bin** folder, so there is no need to rebuild them.
 
-For other operating systems, it is necessary to rebuild ***gfxconv*** and write an equivalent script.
+For other operating systems, it is necessary to rebuild the conversion tool and write an equivalent script.
 
 ## Support
 
