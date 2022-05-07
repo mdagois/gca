@@ -39,7 +39,7 @@ However, it is possible to convert them again using the ***gfxconv*** and ***cgb
 
 ### The gfxconv tool
 
-The ***gfxconv*** converts PNG files into tilesets and tilemaps compatible with the DMG VRAM.
+The ***gfxconv*** tool converts PNG files into tilesets and tilemaps compatible with the DMG VRAM.
 
 #### Usage
 
@@ -67,10 +67,47 @@ It is converted to a CHR file.
 A CHR file contains tiles in the right format for the VRAM.
 
 Any extra parameter after the tileset PNG is considered as a tilemap PNG.
-Tilemap PNGs are expected to use the same color as the tileset.
+Tilemap PNGs are expected to use the same colors as the tileset.
 They are converted to TLM files.
 TLM files contain tile indices referring tiles inside the tileset.
 They can be copied as is in VRAM.
+
+### The cgbconv tool
+
+The ***cgbconv*** tool converts PNG files into tilesets, palettes and tilemaps compatible with the CGB VRAM.
+
+#### Usage
+
+The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
+Here are a few example of using ***cgbconv***.
+
+```
+# Converting a tileset
+# The output file is tileset.chr.
+cgbconv tileset.png
+
+# Converting a tileset and a tilemap.
+# The output files are tileset.chr, tileset.pal, tilemap.idx and tilemap.prm.
+cgbconv tileset.png tilemap.png
+
+# Converting a tileset and two tilemaps.
+# The output files are tileset.chr, tileset.pal, tilemap_0.idx, tilemap_0.prm, tilemap_1.idx and tilemap_1.prm.
+gfxconv tileset.png tilemap_0.png tilemap_1.png
+```
+
+The tileset PNG must be the first parameter.
+It is the only mandatory parameter.
+It should contain up to 512 tiles (excluding flipped versions).
+It is converted into two files: a CHR file containing tiles and a PAL file containing palettes.
+
+Any extra parameter after the tileset PNG is considered as a tilemap PNG.
+Tilemap PNGs are expected to use the tiles and colors from the tileset.
+They should be either 256x144 or 256x256 pixels.
+They are converted to IDX and PRM files.
+IDX files contain tile indices referring tiles inside the tileset.
+They are meant to be copied into bank 0 of the VRAM.
+PRM files contain tile parameters to control the tile display (palette number, flip, etc.).
+They are meant to be copied into bank 1 of the VRAM.
 
 ### Tool binaries
 
