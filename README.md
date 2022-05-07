@@ -15,7 +15,7 @@ RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path f
 
 The samples have been tested with RGBDS v0.5.1.
 The samples will be updated if there are any compilation issues introduced with newer versions of the RGBDS toolchain.
-Older versions of the toolchain are not supported.
+Older versions of the toolchain might work, but they are not actively supported.
 
 #### Scripts
 
@@ -30,7 +30,7 @@ The built ROMs are gathered into the ***generated/roms*** folder at the root of 
 ## Assets
 
 All the sample assets are available in the ***assets*** folder.
-Graphics assets (tilesets and tilemaps) are PNG files.
+The graphics assets (tilesets and tilemaps) are PNG files.
 
 ### Converting assets
 
@@ -72,12 +72,12 @@ They are converted to TLM files.
 TLM files contain tile indices referring tiles inside the tileset.
 They can be copied as is in VRAM.
 
-### Binaries
+### Tool binaries
 
 Windows binaries for ***gfxconv*** and ***cgbconv*** are available in the ***bin*** folder.
-For other operating systems, it is necessary to build the tool.
+For other operating systems, it is necessary to build the tools.
 
-### Building the tools
+#### Building the tools
 
 A cmake file is available in the ***tools/conv*** folder.
 As each tool's code fits into a single source file, it should be straightforward to use any other build system.
@@ -89,7 +89,7 @@ A Windows batch file, ***build_assets.bat***, is available to rebuild all the as
 It puts the converted files (tilesets, palettes, tilemaps, etc.) into the **generated** folder.
 The batch uses ***gfxconv*** and ***cgbconv*** from the **bin** folder, so there is no need to rebuild them.
 
-For other operating systems, it is necessary to rebuild the conversion tool and write an equivalent script.
+For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
 
 ## Support
 
