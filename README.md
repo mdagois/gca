@@ -47,7 +47,7 @@ The tool takes one tileset PNG and any number of tilemap PNG files as parameters
 Here are a few example of using ***gfxconv***.
 
 ```
-# Converting a tileset
+# Converting a tileset.
 # The output file is tileset.chr.
 gfxconv tileset.png
 
@@ -82,7 +82,7 @@ The tool takes one tileset PNG and any number of tilemap PNG files as parameters
 Here are a few example of using ***cgbconv***.
 
 ```
-# Converting a tileset
+# Converting a tileset.
 # The output file is tileset.chr.
 cgbconv tileset.png
 
@@ -91,13 +91,14 @@ cgbconv tileset.png
 cgbconv tileset.png tilemap.png
 
 # Converting a tileset and two tilemaps.
-# The output files are tileset.chr, tileset.pal, tilemap_0.idx, tilemap_0.prm, tilemap_1.idx and tilemap_1.prm.
+# The output files are tileset.chr, tileset.pal, tilemap_0.idx, tilemap_0.prm,
+# tilemap_1.idx and tilemap_1.prm.
 gfxconv tileset.png tilemap_0.png tilemap_1.png
 ```
 
 The tileset PNG must be the first parameter.
 It is the only mandatory parameter.
-It should contain up to 512 tiles (excluding flipped versions).
+It can contain up to 512 tiles (256 for each VRAM bank).
 It is converted into two files: a CHR file containing tiles and a PAL file containing palettes.
 
 Any extra parameter after the tileset PNG is considered as a tilemap PNG.
@@ -106,7 +107,7 @@ They should be either 256x144 or 256x256 pixels.
 They are converted to IDX and PRM files.
 IDX files contain tile indices referring tiles inside the tileset.
 They are meant to be copied into bank 0 of the VRAM.
-PRM files contain tile parameters to control the tile display (palette number, flip, etc.).
+PRM files contain tile parameters to control the tiles rendering (palette number, flip, etc.).
 They are meant to be copied into bank 1 of the VRAM.
 
 ### Tool binaries
