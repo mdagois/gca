@@ -611,19 +611,6 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 		}
 	}
 
-	const size_t padding_size = kTilesPerVramBank - (tiles.size() % kTilesPerVramBank);
-	const TileFlip padding_flip = {0};
-	for(size_t i = 0; i < padding_size; ++i)
-	{
-		const size_t written = fwrite(&padding_flip, sizeof(TileFlip), 1, file);
-		if(written != 1)
-		{
-			cout << "Could not write tile padding [" << i << "]" << endl;
-			success = false;
-			break;
-		}
-	}
-
 	fclose(file);
 	return success;
 }
