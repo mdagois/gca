@@ -61,7 +61,9 @@ set CGB_CHR_DIR=%CGB_GENERATED_DIR%%CHR_EXTENSION%\
 set CGB_PAL_DIR=%CGB_GENERATED_DIR%%PAL_EXTENSION%\
 set CGB_TLM_DIR=%CGB_GENERATED_DIR%%TLM_EXTENSION%\
 
-%CGB_CONV% %CGB_ASSETS_DIR%ship.png %CGB_ASSETS_DIR%ship.png
+%CGB_CONV% -mpt %CGB_ASSETS_DIR%ship.png %CGB_ASSETS_DIR%ship.png
+if %errorlevel% neq 0 goto end
+%CGB_CONV% %CGB_ASSETS_DIR%coins.png %CGB_ASSETS_DIR%coins.png
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul

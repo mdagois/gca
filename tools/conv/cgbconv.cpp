@@ -35,6 +35,17 @@ enum : uint16_t
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// Export parameters
+////////////////////////////////////////////////////////////////////////////////
+
+struct ExportParameters
+{
+	bool export_palettes;
+	bool optimize_tileset;
+	bool generate_tilemaps;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // File
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -548,11 +559,11 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 	return true;
 }
 
-static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image)
+static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image, bool optimize_tileset)
 {
 	const bool success = iterateImageTiles(
 		image,
-		[&image, &palette_set, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		[&image, &palette_set, optimize_tileset, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
 			Tile tile;
 			if(!extractTile(tile, palette_set, tile_pixels, image.getWidth()))
@@ -560,7 +571,7 @@ static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, 
 				cout << "Could not extract tile (" << tile_column << "," << tile_row << ")" << endl;
 				return false;
 			}
-			if(out_tileset.flipToIndex.find(tile.flips[kTileFlipType_None]) != out_tileset.flipToIndex.end())
+			if(optimize_tileset && out_tileset.flipToIndex.find(tile.flips[kTileFlipType_None]) != out_tileset.flipToIndex.end())
 			{
 				return true;
 			}
@@ -735,16 +746,57 @@ int main(int argc, const char** argv)
 	{
 		cout
 			<< "USAGE" << endl
-			<< argv[0] << " <tileset_png_filename> [tilemap_png ...]" << endl;
+			<< argv[0] << " [-mpt] <tileset_png_filename> [tilemap_png ...]" << endl
+			<< "Options" << endl
+			<< "\tm\tGenerate tilemaps" << endl
+			<< "\tp\tOutput a palette file" << endl
+			<< "\tt\tOptimize the tileset" << endl;
 		return 0;
+	}
+
+	ExportParameters parameters = {};
+
+	int32_t first_filename = 1;
+	if(argv[1][0] == '-')
+	{
+		const char* options = argv[1];
+		const size_t option_len = strlen(options);
+		for(size_t i = 1; i < option_len; ++i)
+		{
+			const char o = options[i];
+			switch(o)
+			{
+				case 'm':
+				{
+					parameters.generate_tilemaps = true;
+					break;
+				}
+				case 'p':
+				{
+					parameters.export_palettes = true;
+					break;
+				}
+				case 't':
+				{
+					parameters.optimize_tileset = true;
+					break;
+				}
+				default:
+				{
+					cout << "Unknown option: [" << o << "]" << endl;
+					break;
+				}
+			}
+		}
+		first_filename = 2;
 	}
 
 	ImageList images;
 	{
-		images.resize(argc - 1);
+		images.resize(argc - first_filename);
 		for(int32_t i = 0; i < images.size(); ++i)
 		{
-			const char* filename = argv[i + 1];
+			const char* filename = argv[i + first_filename];
 			Image& image = images[i];
 			if(!image.read(filename))
 			{
@@ -768,7 +820,7 @@ int main(int argc, const char** argv)
 			cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
 			return 1;
 		}
-		if(!writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+		if(parameters.export_palettes && !writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
 		{
 			cout << "Could not write the palette file" << endl;
 			return 1;
@@ -777,7 +829,7 @@ int main(int argc, const char** argv)
 
 	Tileset tileset;
 	{
-		if(!extractTileset(tileset, palette_set, images[0]))
+		if(!extractTileset(tileset, palette_set, images[0], parameters.optimize_tileset))
 		{
 			cout << "Could not extract the tiles for file [" << images[0].getFilename() << "]" << endl;
 			return 1;
@@ -789,6 +841,7 @@ int main(int argc, const char** argv)
 		}
 	}
 
+	if(parameters.generate_tilemaps)
 	{
 		for(uint32_t i = 1; i < images.size(); ++i)
 		{
