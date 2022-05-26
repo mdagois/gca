@@ -2,6 +2,14 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+OAM_OFFSET_X					equ (8)
+OAM_OFFSET_Y					equ (16)
+
+COINS_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
+COIN_SPRITE_0_X					equ (OAM_OFFSET_X + 24)
+COIN_WIDTH						equ (16)
+COIN_SPRITE_1_X					equ (SCRN_X + OAM_OFFSET_X - 24 - COIN_WIDTH)
+
 COIN_SPRITE_0_LEFT				equ (_OAMRAM)
 COIN_SPRITE_0_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS)
 COIN_SPRITE_1_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 2)
@@ -200,19 +208,19 @@ InitSample:
 		jr nz, .obj_palette_clear
 
 	; set coin parameters that are fixed
-	copy [COIN_SPRITE_0_LEFT + OAMA_Y], 80
-	copy [COIN_SPRITE_0_LEFT + OAMA_X], 80
+	copy [COIN_SPRITE_0_LEFT + OAMA_Y], COINS_SPRITE_Y
+	copy [COIN_SPRITE_0_LEFT + OAMA_X], COIN_SPRITE_0_X
 	copy [COIN_SPRITE_0_LEFT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
-	copy [COIN_SPRITE_0_RIGHT + OAMA_Y], 80
-	copy [COIN_SPRITE_0_RIGHT + OAMA_X], 88
+	copy [COIN_SPRITE_0_RIGHT + OAMA_Y], COINS_SPRITE_Y
+	copy [COIN_SPRITE_0_RIGHT + OAMA_X], COIN_SPRITE_0_X + 8
 	copy [COIN_SPRITE_0_RIGHT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
 
-	copy [COIN_SPRITE_1_LEFT + OAMA_Y], 80
-	copy [COIN_SPRITE_1_LEFT + OAMA_X], 96
-	copy [COIN_SPRITE_1_LEFT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1
-	copy [COIN_SPRITE_1_RIGHT + OAMA_Y], 80
-	copy [COIN_SPRITE_1_RIGHT + OAMA_X], 104
-	copy [COIN_SPRITE_1_RIGHT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1
+	copy [COIN_SPRITE_1_LEFT + OAMA_Y], COINS_SPRITE_Y
+	copy [COIN_SPRITE_1_LEFT + OAMA_X], COIN_SPRITE_1_X
+	copy [COIN_SPRITE_1_LEFT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
+	copy [COIN_SPRITE_1_RIGHT + OAMA_Y], COINS_SPRITE_Y
+	copy [COIN_SPRITE_1_RIGHT + OAMA_X], COIN_SPRITE_1_X + 8
+	copy [COIN_SPRITE_1_RIGHT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
 
 	; enable interrupts
 	copy [rIE], IEF_VBLANK
@@ -234,10 +242,10 @@ UpdateSample:
 	sla a
 	sla a
 	copy [COIN_SPRITE_0_LEFT + OAMA_TILEID], a
-	copy [COIN_SPRITE_1_LEFT + OAMA_TILEID], a
+	copy [COIN_SPRITE_1_RIGHT + OAMA_TILEID], a
 	add a, 2
 	copy [COIN_SPRITE_0_RIGHT + OAMA_TILEID], a
-	copy [COIN_SPRITE_1_RIGHT + OAMA_TILEID], a
+	copy [COIN_SPRITE_1_LEFT + OAMA_TILEID], a
 
 	; update the coins animation frame
 	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
