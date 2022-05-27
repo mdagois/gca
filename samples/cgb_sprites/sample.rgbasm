@@ -140,9 +140,6 @@ InitSample:
 		cp a, high(coins_end)
 		jr nz, .coins_copy
 
-	; clear the OAM
-	InitOAM
-
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
 
@@ -179,6 +176,9 @@ InitSample:
 		copy [rOCPD], $80
 		dec c
 		jr nz, .obj_palette_clear
+
+	; clear the OAM
+	InitOAM
 
 	; set coin parameters that are fixed
 	copy [COIN_SPRITE_0_LEFT + OAMA_Y], COINS_SPRITE_Y
