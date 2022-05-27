@@ -22,6 +22,11 @@ tilemap_parameters_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "sample", rom0
 
 InitSample:
@@ -85,6 +90,11 @@ InitSample:
 		cp a, high(tilemap_parameters_end)
 		jr nz, .tilemap_parameters_copy
 
+	; enable interrupts
+	ld a, IEF_VBLANK
+	ld [rIE], a
+	ei
+
 	; set LCD parameters
 	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 	ld [rLCDC], a
@@ -92,6 +102,7 @@ InitSample:
 	ret
 
 UpdateSample:
+	halt
 	ret
 
 export InitSample, UpdateSample
