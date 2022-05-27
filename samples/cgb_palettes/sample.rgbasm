@@ -3,82 +3,57 @@ include "utils.rgbinc"
 section "sample", rom0
 
 InitSample:
-	ld a, 0 | BCPSF_AUTOINC
-	ld [rBCPS], a
+	copy [rBCPS], 0 | BCPSF_AUTOINC
 
 	ld hl, rBCPD
 
 	; Red
-	ld a, $1F
-	ld [hl], a
-	ld a, $00
-	ld [hl], a
+	copy [hl], $1F
+	copy [hl], $00
 
 	; Orange
-	ld a, $FF
-	ld [hl], a
-	ld a, $01
-	ld [hl], a
+	copy [hl], $FF
+	copy [hl], $01
 
 	; Yellow
-	ld a, $FF
-	ld [hl], a
-	ld a, $03
-	ld [hl], a
+	copy [hl], $FF
+	copy [hl], $03
 
 	; Chartreuse green
-	ld a, $EF
-	ld [hl], a
-	ld a, $03
-	ld [hl], a
+	copy [hl], $EF
+	copy [hl], $03
 
 	; Green
-	ld a, $E0
-	ld [hl], a
-	ld a, $03
-	ld [hl], a
+	copy [hl], $E0
+	copy [hl], $03
 
 	; Spring green
-	ld a, $E0
-	ld [hl], a
-	ld a, $3F
-	ld [hl], a
+	copy [hl], $E0
+	copy [hl], $3F
 
 	; Cyan
-	ld a, $E0
-	ld [hl], a
-	ld a, $7F
-	ld [hl], a
+	copy [hl], $E0
+	copy [hl], $7F
 
 	; Azure
-	ld a, $E0
-	ld [hl], a
-	ld a, $7D
-	ld [hl], a
+	copy [hl], $E0
+	copy [hl], $7D
 
 	; Blue
-	ld a, $00
-	ld [hl], a
-	ld a, $7C
-	ld [hl], a
+	copy [hl], $00
+	copy [hl], $7C
 
 	; Violet
-	ld a, $0F
-	ld [hl], a
-	ld a, $7C
-	ld [hl], a
+	copy [hl], $0F
+	copy [hl], $7C
 
 	; Magenta
-	ld a, $1F
-	ld [hl], a
-	ld a, $7C
-	ld [hl], a
+	copy [hl], $1F
+	copy [hl], $7C
 
 	; Rose
-	ld a, $1F
-	ld [hl], a
-	ld a, $3C
-	ld [hl], a
+	copy [hl], $1F
+	copy [hl], $3C
 	
 	ret
 

@@ -2,6 +2,11 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "graphics", rom0
 
 palette_data:
@@ -22,22 +27,15 @@ tilemap_parameters_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-section "vblank_interrupt", rom0[$0040]
-	reti
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 section "sample", rom0
 
 InitSample:
-	; copy all the palettes
-	ld a, 0 | BCPSF_AUTOINC
-	ld [rBCPS], a
+	; copy all the bg palettes
+	copy [rBCPS], 0 | BCPSF_AUTOINC
 	ld hl, palette_data
 	ld c, palette_data_end - palette_data
 	.palette_copy
-		ld a, [hli]
-		ld [rBCPD], a
+		copy [rBCPD], [hli]
 		dec c
 		jr nz, .palette_copy
 
@@ -45,8 +43,7 @@ InitSample:
 	ld de, _VRAM8000
 	ld hl, tileset
 	.tileset_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -57,13 +54,11 @@ InitSample:
 		jr nz, .tileset_copy
 
 	; copy the tile indices into VRAM bank 0
-	xor a
-	ld [rVBK], a
+	copy [rVBK], 0
 	ld de, _SCRN0
 	ld hl, tilemap_indices
 	.tilemap_indices_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -74,13 +69,11 @@ InitSample:
 		jr nz, .tilemap_indices_copy
 
 	; copy the tile parameters into VRAM bank 1
-	ld a, 1
-	ld [rVBK], a
+	copy [rVBK], 1
 	ld de, _SCRN0
 	ld hl, tilemap_parameters
 	.tilemap_parameters_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -91,19 +84,21 @@ InitSample:
 		jr nz, .tilemap_parameters_copy
 
 	; enable interrupts
-	ld a, IEF_VBLANK
-	ld [rIE], a
+	copy [rIE], IEF_VBLANK
 	ei
 
 	; set LCD parameters
-	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
-	ld [rLCDC], a
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
 	halt
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 export InitSample, UpdateSample
 

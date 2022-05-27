@@ -74,13 +74,11 @@ InitSample:
 	copy [WRAM_COIN_FRAME], 0
 
 	; copy all the bg palettes
-	ld a, 0 | BCPSF_AUTOINC
-	ld [rBCPS], a
+	copy [rBCPS], 0 | BCPSF_AUTOINC
 	ld hl, palette_data
 	ld c, palette_data_end - palette_data
 	.palette_copy
-		ld a, [hli]
-		ld [rBCPD], a
+		copy [rBCPD], [hli]
 		dec c
 		jr nz, .palette_copy
 
@@ -88,8 +86,7 @@ InitSample:
 	ld de, _VRAM8000
 	ld hl, tileset
 	.tileset_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -100,13 +97,11 @@ InitSample:
 		jr nz, .tileset_copy
 
 	; copy the tile indices into VRAM bank 0
-	xor a
-	ld [rVBK], a
+	copy [rVBK], 0
 	ld de, _SCRN0
 	ld hl, tilemap_indices
 	.tilemap_indices_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -117,13 +112,11 @@ InitSample:
 		jr nz, .tilemap_indices_copy
 
 	; copy the tile parameters into VRAM bank 1
-	ld a, 1
-	ld [rVBK], a
+	copy [rVBK], 1
 	ld de, _SCRN0
 	ld hl, tilemap_parameters
 	.tilemap_parameters_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -137,8 +130,7 @@ InitSample:
 	ld de, _VRAM8000
 	ld hl, coins
 	.coins_copy
-		ld a, [hli]
-		ld [de], a
+		copy [de], [hli]
 		inc de
 
 		ld a, l
@@ -152,58 +144,39 @@ InitSample:
 	InitOAM
 
 	; set sprites palettes
-	ld a, 0 | BCPSF_AUTOINC
-	ld [rOCPS], a
+	copy [rOCPS], 0 | BCPSF_AUTOINC
 
 		; black
-		ld a, $00
-		ld [rOCPD], a
-		ld a, $00
-		ld [rOCPD], a
+		copy [rOCPD], $00
+		copy [rOCPD], $00
 		; orange
-		ld a, $7F
-		ld [rOCPD], a
-		ld a, $02
-		ld [rOCPD], a
+		copy [rOCPD], $7F
+		copy [rOCPD], $02
 		; yellow
-		ld a, $BF
-		ld [rOCPD], a
-		ld a, $1F
-		ld [rOCPD], a
+		copy [rOCPD], $BF
+		copy [rOCPD], $1F
 		; white
-		ld a, $FF
-		ld [rOCPD], a
-		ld a, $FF
-		ld [rOCPD], a
+		copy [rOCPD], $FF
+		copy [rOCPD], $FF
 
 		; black
-		ld a, $00
-		ld [rOCPD], a
-		ld a, $00
-		ld [rOCPD], a
+		copy [rOCPD], $00
+		copy [rOCPD], $00
 		; red
-		ld a, $5C
-		ld [rOCPD], a
-		ld a, $01
-		ld [rOCPD], a
+		copy [rOCPD], $5C
+		copy [rOCPD], $01
 		; orange
-		ld a, $FE
-		ld [rOCPD], a
-		ld a, $09
-		ld [rOCPD], a
+		copy [rOCPD], $FE
+		copy [rOCPD], $09
 		; white
-		ld a, $FF
-		ld [rOCPD], a
-		ld a, $FF
-		ld [rOCPD], a
+		copy [rOCPD], $FF
+		copy [rOCPD], $FF
 
 	; clear unused palettes
 	ld c, 24
 	.obj_palette_clear
-		xor a
-		ld [rOCPD], a
-		ld a, $80
-		ld [rOCPD], a
+		copy [rOCPD], $00
+		copy [rOCPD], $80
 		dec c
 		jr nz, .obj_palette_clear
 
@@ -227,8 +200,7 @@ InitSample:
 	ei
 
 	; set LCD parameters
-	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
-	ld [rLCDC], a
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
 
 	ret
 
