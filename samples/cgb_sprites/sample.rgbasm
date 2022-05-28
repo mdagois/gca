@@ -127,6 +127,7 @@ InitSample:
 		jr nz, .tilemap_parameters_copy
 
 	; copy the coins
+	copy [rVBK], 1
 	ld de, _VRAM8000
 	ld hl, coins
 	.coins_copy
