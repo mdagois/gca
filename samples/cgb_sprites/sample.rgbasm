@@ -214,11 +214,11 @@ UpdateSample:
 	ld a, [WRAM_COIN_FRAME]
 	sla a
 	sla a
-	copy [COIN_0_SPRITE_LEFT + OAMA_TILEID], a
-	copy [COIN_1_SPRITE_RIGHT + OAMA_TILEID], a
+	ld [COIN_0_SPRITE_LEFT + OAMA_TILEID], a
+	ld [COIN_1_SPRITE_RIGHT + OAMA_TILEID], a
 	add a, 2
-	copy [COIN_0_SPRITE_RIGHT + OAMA_TILEID], a
-	copy [COIN_1_SPRITE_LEFT + OAMA_TILEID], a
+	ld [COIN_0_SPRITE_RIGHT + OAMA_TILEID], a
+	ld [COIN_1_SPRITE_LEFT + OAMA_TILEID], a
 
 	; update the coins animation frame
 	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
