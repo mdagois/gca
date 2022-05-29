@@ -1,0 +1,34 @@
+if !def(UTILS_RGBINC)
+UTILS_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "hardware.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; copy \2 into \1 through (a)
+; example: copy [$FF84], 10
+copy: macro
+	ld a, \2
+	ld \1, a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; clear the OAM
+InitOAM: macro
+	ld c, OAM_COUNT
+	ld hl, _OAMRAM + OAMA_Y
+	ld de, sizeof_OAM_ATTRS
+	.init_oam\@
+		ld [hl], 0
+		add hl, de
+		dec c
+		jr nz, .init_oam\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+
