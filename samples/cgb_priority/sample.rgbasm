@@ -22,6 +22,8 @@ COIN_FRAME_COUNT				equ (6)
 
 rsset _RAM
 
+WRAM_TOGGLE_PRIORITY			rb 1
+
 WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
 WRAM_COIN_FRAME					rb 1
 WRAM_COIN_X_UPDATE_COUNTER		rb 1
@@ -70,6 +72,7 @@ section "sample", rom0
 
 InitSample:
 	; set wram variables
+	copy [WRAM_TOGGLE_PRIORITY], 0
 	copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
 	copy [WRAM_COIN_X_UPDATE_COUNTER], COIN_X_UPDATE_PERIOD
 	copy [WRAM_COIN_FRAME], 0
@@ -217,6 +220,27 @@ UpdateSample:
 	add a, 8
 	ld [COIN_SPRITE_RIGHT + OAMA_X] , a
 
+	ld a, [WRAM_TOGGLE_PRIORITY]
+	dec a
+	jr nz, .toggle_background_parameters
+		copy [WRAM_TOGGLE_PRIORITY], 0
+
+		copy [rVBK], 1
+
+		ld hl, _SCRN0 + 8 * SCRN_VX_B + 5
+		ld a, [hl]
+		xor a, %10000000
+		ld [hl], a
+
+		ld de, 32
+		add hl, de
+		ld a, [hl]
+		xor a, %10000000
+		ld [hl], a
+	.toggle_background_parameters
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	; update the coin position
 	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
 	dec [hl]
@@ -247,11 +271,13 @@ UpdateSample:
 		cp a, COIN_SPRITE_MIN_X
 		jr nc, .below_min
 			copy [WRAM_COIN_MOVE], 1
+			copy [WRAM_TOGGLE_PRIORITY], 1
 		.below_min
 
 		cp a, COIN_SPRITE_MAX_X
 		jr c, .above_max
 			copy [WRAM_COIN_MOVE], -1
+			copy [WRAM_TOGGLE_PRIORITY], 1
 		.above_max
 	.update_x
 
