@@ -1,0 +1,137 @@
+if !def(UTILS_RGBINC)
+UTILS_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "hardware.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Macro-instructions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; copy \2 into \1 through (a)
+; example: copy [$FF84], 10
+copy: macro
+	ld a, \2
+	ld \1, a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; OAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; clear the OAM
+InitOAM: macro
+	ld c, OAM_COUNT
+	ld hl, _OAMRAM + OAMA_Y
+	ld de, sizeof_OAM_ATTRS
+	.init_oam\@
+		ld [hl], 0
+		add hl, de
+		dec c
+		jr nz, .init_oam\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Pad input
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; struct to hold the pad input (dpad + buttons)
+rsreset
+PAD_INPUT_CURRENT	rb 1
+PAD_INPUT_PREVIOUS	rb 1
+PAD_INPUT_PRESSED	rb 1
+PAD_INPUT_RELEASED	rb 1
+sizeof_PAD_INPUT	rb 0
+
+; init a pad input struct at address \1
+; expected to be used only once at initialization
+; example: InitPadInput _RAM + 16
+InitPadInput: macro
+	ld a, $FF
+	ld [\1 + PAD_INPUT_CURRENT], a
+	ld [\1 + PAD_INPUT_PREVIOUS], a
+	ld [\1 + PAD_INPUT_PRESSED], a
+	ld [\1 + PAD_INPUT_RELEASED], a
+endm
+
+; read the keypad input into a pad input struct at address \1
+; expected to be used only once in the main loop
+; example: UpdatePadInput _HRAM + 4
+UpdatePadInput: macro
+	; store the previous input into the struct and (c)
+	ld a, [\1 + PAD_INPUT_CURRENT]
+	ld [\1 + PAD_INPUT_PREVIOUS], a
+	ld c, a
+
+	; read the dpad
+	ld a, P1F_GET_DPAD
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; put the dpad input into (b)'s high nibble
+	swap a
+	and a, $F0
+	ld b, a
+
+	; read the buttons
+	ld a, P1F_GET_BTN
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; merge the buttons' input into (b)'s low nibble
+	and a, $0F
+	or a, b
+	ld b, a
+
+	; store the current input
+	ld [\1 + PAD_INPUT_CURRENT], a
+
+	; disable input polling
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
+
+	; compute and store pressed buttons
+	ld a, c
+	cpl
+	or a, b
+	ld [\1 + PAD_INPUT_PRESSED], a
+
+	; compute and store released buttons
+	ld a, b
+	cpl
+	or a, c
+	ld [\1 + PAD_INPUT_RELEASED], a
+endm
+
+; raise the zero flag if all keys in \2 are held in the pad input struct \1
+; example: CheckPadInputHeld _RAM + 4, PADF_LEFT | PADF_DOWN
+TestPadInput_HeldAll: macro
+	ld a, [\1 + PAD_INPUT_CURRENT]
+	and a, \2
+endm
+
+; raise the zero flag if input \2 is pressed in the pad input struct \1
+; example: CheckPadInputPressed _HRAM + 12, PADF_LEFT
+TestPadInput_Pressed: macro
+	ld a, [\1 + PAD_INPUT_PRESSED]
+	and a, \2
+endm
+
+; raise the zero flag if input \2 is released in the pad input struct \1
+; example: CheckPadInputReleased _RAM + 24, PADF_A
+TestPadInput_Released: macro
+	ld a, [\1 + PAD_INPUT_RELEASED]
+	and a, \2
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+
