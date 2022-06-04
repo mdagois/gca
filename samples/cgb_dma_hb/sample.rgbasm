@@ -22,6 +22,9 @@ COIN_FRAME_COUNT				equ (6)
 
 rsset _RAM
 
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+
+WRAM_TOGGLE_DISPLAY_BG			rb 1
 WRAM_TOGGLE_PRIORITY			rb 1
 
 WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
@@ -72,6 +75,7 @@ section "sample", rom0
 
 InitSample:
 	; set wram variables
+	InitPadInput WRAM_PAD_INPUT
 	copy [WRAM_TOGGLE_PRIORITY], 0
 	copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
 	copy [WRAM_COIN_X_UPDATE_COUNTER], COIN_X_UPDATE_PERIOD
@@ -91,16 +95,12 @@ InitSample:
 	; VRAM 0
 	copy [rVBK], 0
 		; tileset (background)
-		DmaCopyGp _VRAM8000, tileset, tileset_end
-		; tile indices
-		DmaCopyGp _SCRN0, tilemap_indices, tilemap_indices_end
+		DmaCopy_General _VRAM8000, tileset, tileset_end
 
 	; VRAM 1
 	copy [rVBK], 1
 		; tileset (coin)
-		DmaCopyGp _VRAM8000, coins, coins_end
-		; tile parameters
-		DmaCopyGp _SCRN0, tilemap_parameters, tilemap_parameters_end
+		DmaCopy_General _VRAM8000, coins, coins_end
 
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
@@ -194,7 +194,27 @@ UpdateSample:
 		ld [hl], a
 	.toggle_background_parameters
 
+	ld a, [WRAM_TOGGLE_DISPLAY_BG]
+	dec a
+	jr nz, .transfer_tiles_and_parameters
+		copy [WRAM_TOGGLE_DISPLAY_BG], 0
+
+		; tile indices
+		copy [rVBK], 0
+		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end
+
+		; tile parameters
+		copy [rVBK], 1
+		DmaCopy_Hblank _SCRN0, tilemap_parameters, tilemap_parameters_end
+	.transfer_tiles_and_parameters
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput WRAM_PAD_INPUT
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_A
+	jr nz, .display_background
+		copy [WRAM_TOGGLE_DISPLAY_BG], 1
+	.display_background
 
 	; update the coin position
 	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER

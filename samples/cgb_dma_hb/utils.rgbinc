@@ -41,7 +41,7 @@ endm
 ; \2 = source region start address
 ; \3 = source region end address
 ; \4 = mode (HDMA5F_MODE_GP or HDMA5F_MODE_HBL)
-macro DmaCopy
+DmaCopy: macro
 	assert \3 > \2, "The source region's end address must be superior to its start address"
 	assert (\3 - \2) % 16 == 0, "The source region size must be a multiple of 16"
 	copy [rHDMA1], high(\2)
@@ -55,7 +55,7 @@ endm
 ; \1 = destination address
 ; \2 = source region start address
 ; \3 = source region end address
-macro DmaCopyGp
+DmaCopy_General: macro
 	DmaCopy \1, \2, \3, HDMA5F_MODE_GP
 endm
 
@@ -63,7 +63,7 @@ endm
 ; \1 = destination address
 ; \2 = source region start address
 ; \3 = source region end address
-macro DmaCopyHb
+DmaCopy_Hblank: macro
 	DmaCopy \1, \2, \3, HDMA5F_MODE_HBL
 endm
 

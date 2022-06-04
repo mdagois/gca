@@ -91,16 +91,16 @@ InitSample:
 	; VRAM 0
 	copy [rVBK], 0
 		; tileset (background)
-		DmaCopyGp _VRAM8000, tileset, tileset_end
+		DmaCopy_General _VRAM8000, tileset, tileset_end
 		; tile indices
-		DmaCopyGp _SCRN0, tilemap_indices, tilemap_indices_end
+		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end
 
 	; VRAM 1
 	copy [rVBK], 1
 		; tileset (coin)
-		DmaCopyGp _VRAM8000, coins, coins_end
+		DmaCopy_General _VRAM8000, coins, coins_end
 		; tile parameters
-		DmaCopyGp _SCRN0, tilemap_parameters, tilemap_parameters_end
+		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end
 
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
