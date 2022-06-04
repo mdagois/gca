@@ -44,19 +44,6 @@ section "vblank_interrupt", rom0[$0040]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; \1 = destination address
-; \2 = source region start address
-; \3 = source region end address
-HdmaCopy: macro
-	assert \3 > \2, "The source region's end address must be superior to its start address"
-	assert (\3 - \2) % 16 == 0, "The source region size must be a multiple of 16"
-	copy [rHDMA1], high(\2)
-	copy [rHDMA2], low(\2)
-	copy [rHDMA3], high(\1)
-	copy [rHDMA4], low(\1)
-	copy [rHDMA5], HDMA5F_MODE_GP | (((\3 - \2) / 16) - 1)
-endm
-
 section "graphics", rom0
 
 palette_data:
@@ -101,21 +88,19 @@ InitSample:
 		dec c
 		jr nz, .palette_copy
 
-	; copy the tileset
+	; VRAM 0
 	copy [rVBK], 0
-	HdmaCopy _VRAM8000, tileset, tileset_end
+		; tileset (background)
+		DmaCopyGp _VRAM8000, tileset, tileset_end
+		; tile indices
+		DmaCopyGp _SCRN0, tilemap_indices, tilemap_indices_end
 
-	; copy the tile indices into VRAM bank 0
-	copy [rVBK], 0
-	HdmaCopy _SCRN0, tilemap_indices, tilemap_indices_end
-
-	; copy the tile parameters into VRAM bank 1
+	; VRAM 1
 	copy [rVBK], 1
-	HdmaCopy _SCRN0, tilemap_parameters, tilemap_parameters_end
-
-	; copy the coins
-	copy [rVBK], 1
-	HdmaCopy _VRAM8000, coins, coins_end
+		; tileset (coin)
+		DmaCopyGp _VRAM8000, coins, coins_end
+		; tile parameters
+		DmaCopyGp _SCRN0, tilemap_parameters, tilemap_parameters_end
 
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
