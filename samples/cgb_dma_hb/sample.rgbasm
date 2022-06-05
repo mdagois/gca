@@ -23,6 +23,7 @@ COIN_FRAME_COUNT				equ (6)
 rsset _RAM
 
 WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+WRAM_IS_VBLANK					rb 1
 
 WRAM_TOGGLE_DISPLAY_BG			rb 1
 WRAM_TOGGLE_PRIORITY			rb 1
@@ -43,6 +44,14 @@ assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
+	push af
+	ld a, 1
+	ld [WRAM_IS_VBLANK], a
+	pop af
+	reti
+
+section "lcd_interrupt", rom0[$0048]
+lcd_interrupt:
 	reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -76,6 +85,7 @@ section "sample", rom0
 InitSample:
 	; set wram variables
 	InitPadInput WRAM_PAD_INPUT
+	copy [WRAM_IS_VBLANK], 0
 	copy [WRAM_TOGGLE_PRIORITY], 0
 	copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
 	copy [WRAM_COIN_X_UPDATE_COUNTER], COIN_X_UPDATE_PERIOD
@@ -95,12 +105,12 @@ InitSample:
 	; VRAM 0
 	copy [rVBK], 0
 		; tileset (background)
-		DmaCopy_General _VRAM8000, tileset, tileset_end
+		DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
 
 	; VRAM 1
 	copy [rVBK], 1
 		; tileset (coin)
-		DmaCopy_General _VRAM8000, coins, coins_end
+		DmaCopy_General _VRAM8000, coins, coins_end - coins
 
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
@@ -149,7 +159,9 @@ InitSample:
 	copy [COIN_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
 
 	; enable interrupts
-	copy [rIE], IEF_VBLANK
+	copy [rLYC], 255
+	copy [rSTAT], STATF_MODE00
+	copy [rIE], IEF_VBLANK | IEF_LCDC
 	ei
 
 	; set LCD parameters
@@ -160,7 +172,13 @@ InitSample:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+	ld hl, WRAM_IS_VBLANK
+	xor a
+	.wait_vblank
+		halt
+		cp a, [hl]
+		jr z, .wait_vblank
+		ld [hl], a
 
 	; update the OAM parameters
 	ld a, [WRAM_COIN_FRAME]
@@ -201,11 +219,11 @@ UpdateSample:
 
 		; tile indices
 		copy [rVBK], 0
-		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end
+		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
 
 		; tile parameters
 		copy [rVBK], 1
-		DmaCopy_Hblank _SCRN0, tilemap_parameters, tilemap_parameters_end
+		DmaCopy_Hblank _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 	.transfer_tiles_and_parameters
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -38,31 +38,31 @@ endm
 
 ; start a DMA copy
 ; \1 = destination address
-; \2 = source region start address
-; \3 = source region end address
+; \2 = source address
+; \3 = size
 ; \4 = mode (HDMA5F_MODE_GP or HDMA5F_MODE_HBL)
 DmaCopy: macro
-	assert \3 > \2, "The source region's end address must be superior to its start address"
-	assert (\3 - \2) % 16 == 0, "The source region size must be a multiple of 16"
+	assert (\3) >= 16, "The DMA copy size must at least be 16 bytes"
+	assert (\3) % 16 == 0, "The DMA copy size must be a multiple of 16 bytes"
 	copy [rHDMA1], high(\2)
 	copy [rHDMA2], low(\2)
 	copy [rHDMA3], high(\1)
 	copy [rHDMA4], low(\1)
-	copy [rHDMA5], \4 | (((\3 - \2) / 16) - 1)
+	copy [rHDMA5], (\4) | (((\3) / 16) - 1)
 endm
 
 ; start a general-purpose DMA copy
 ; \1 = destination address
-; \2 = source region start address
-; \3 = source region end address
+; \2 = source address
+; \3 = size
 DmaCopy_General: macro
 	DmaCopy \1, \2, \3, HDMA5F_MODE_GP
 endm
 
 ; start a hblank DMA copy
 ; \1 = destination address
-; \2 = source region start address
-; \3 = source region end address
+; \2 = source address
+; \3 = size
 DmaCopy_Hblank: macro
 	DmaCopy \1, \2, \3, HDMA5F_MODE_HBL
 endm
