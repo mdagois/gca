@@ -51,7 +51,7 @@ section "vblank_interrupt", rom0[$0040]
 	reti
 
 section "lcd_interrupt", rom0[$0048]
-lcd_interrupt:
+breakpoint_2_lcd:
 	reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -109,6 +109,8 @@ InitSample:
 
 	; VRAM 1
 	copy [rVBK], 1
+		; tile parameters
+		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 		; tileset (coin)
 		DmaCopy_General _VRAM8000, coins, coins_end - coins
 
@@ -214,17 +216,13 @@ UpdateSample:
 
 	ld a, [WRAM_TOGGLE_DISPLAY_BG]
 	dec a
-	jr nz, .transfer_tiles_and_parameters
+	jr nz, .transfer_tiles
 		copy [WRAM_TOGGLE_DISPLAY_BG], 0
-
 		; tile indices
 		copy [rVBK], 0
-		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
-
-		; tile parameters
-		copy [rVBK], 1
-		DmaCopy_Hblank _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
-	.transfer_tiles_and_parameters
+	.breakpoint_1_transfer
+		DmaCopy_Hblank _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
+	.transfer_tiles
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
