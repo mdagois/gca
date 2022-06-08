@@ -1,0 +1,100 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+OAM_OFFSET_X					equ (8)
+OAM_OFFSET_Y					equ (16)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_INPUT						rb sizeof_PAD_INPUT
+WRAM_TOGGLE_SPEED				rb 1
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+tileset:
+incbin "alphabet.chr"
+tileset_end:
+
+tilemap_indices:
+incbin "cpu_speed_test.idx"
+tilemap_indices_end:
+
+tilemap_parameters:
+incbin "cpu_speed_test.prm"
+tilemap_parameters_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample:
+	; set wram variables
+	InitPadInput WRAM_INPUT
+	copy [WRAM_TOGGLE_SPEED], 0
+
+	; set background palettes
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+		; black
+		copy [rBCPD], $00
+		copy [rBCPD], $00
+		; white
+		copy [rBCPD], $FF
+		copy [rBCPD], $FF
+		; invalid
+		copy [rBCPD], $00
+		copy [rBCPD], $80
+		; invalid
+		copy [rBCPD], $00
+		copy [rBCPD], $80
+
+	; VRAM 0
+	copy [rVBK], 0
+		; tileset (background)
+		DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
+		; tile indices
+		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
+
+	; VRAM 1
+	copy [rVBK], 1
+		; tile parameters
+		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK
+	ei
+
+	; set LCD parameters
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+
+	UpdatePadInput WRAM_INPUT
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitSample, UpdateSample
+

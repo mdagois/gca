@@ -65,6 +65,8 @@ set CGB_TLM_DIR=%CGB_GENERATED_DIR%%TLM_EXTENSION%\
 if %errorlevel% neq 0 goto end
 %CGB_CONV% %CGB_ASSETS_DIR%coins.png %CGB_ASSETS_DIR%coins.png
 if %errorlevel% neq 0 goto end
+%CGB_CONV% -mt %CGB_ASSETS_DIR%alphabet.png %CGB_ASSETS_DIR%cpu_speed_test.png
+if %errorlevel% neq 0 goto end
 
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %CGB_CHR_DIR% 2> nul
