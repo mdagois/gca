@@ -117,18 +117,52 @@ InitSample:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; convert (a) from hexadecimal to a tile index
+HexToTileA: macro
+	ld h, 0
+	ld l, a
+	ld de, HexToTileTable
+	add hl, de
+	ld a, [hl]
+endm
+
+HexToTileTable:
+db $10, $11, $12, $13
+db $14, $15, $16, $17
+db $18, $19, $21, $22
+db $23, $24, $25, $26
+
+; \1 = line, \2 = offset x
+DisplayRegisterA: macro
+	push af
+	swap a
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2], a
+	pop af
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 UpdateSample:
 	xor a
-	ld d, a
-	ld e, a
+	ld b, a
+	ld c, a
 	.wait_vblank
-		inc de
+		inc bc
 		ld a, [WRAM_IS_VBLANK]
 		dec a
 		jr nz, .wait_vblank
 	ld [WRAM_IS_VBLANK], a
 
-	; TODO Display ITERATION_COUNT
+	copy [rVBK], 0
+	ld a, b
+	DisplayRegisterA 3, 10
+	ld a, c
+	DisplayRegisterA 3, 12
 
 	UpdatePadInput WRAM_INPUT
 	TestPadInput_Released WRAM_INPUT, PADF_A
