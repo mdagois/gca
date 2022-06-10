@@ -25,11 +25,40 @@ tilemap_parameters:
 incbin "ship.prm"
 tilemap_parameters_end:
 
+dmg_data:
+incbin "tileset.chr"
+incbin "background.tlm"
+dmg_data_end:
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0
 
-InitSample:
+InitSample_DMG:
+	ld a, %11100100
+	ld [rBGP], a
+
+	ld de, _VRAM8000
+	ld hl, dmg_data
+	.data_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(dmg_data_end)
+		jr nz, .data_copy
+		ld a, h
+		cp a, high(dmg_data_end)
+		jr nz, .data_copy
+
+	; set the graphics parameters and turn back LCD on
+	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
+
+	ret
+
+InitSample_GBA:
+InitSample_CGB:
 	; copy all the bg palettes
 	copy [rBCPS], 0 | BCPSF_AUTOINC
 	ld hl, palette_data
@@ -91,6 +120,15 @@ InitSample:
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 
 	ret
+
+InitSample:
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	jr z, InitSample_DMG
+	dec a
+	jr z, InitSample_CGB
+	dec a
+	jr z, InitSample_GBA
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
