@@ -123,8 +123,8 @@ InitSample_CGB:
 
 	jp InitSample_CGB_GBA
 
-; convert (a) to ((a) * 3 / 4 + 8)
-ConvertColorChannel: macro
+; change (a) to ((a) * 3 / 4 + 8)
+CorrectColorChannel: macro
 	; (a) * 3
 	ld b, a
 	add a, a
@@ -155,13 +155,13 @@ InitSample_GBA:
 			ld a, [hli]
 			ld d, a
 
-		; convert the red channel
+		; correct the red channel
 		ld a, e
 		and a, $1F
-		ConvertColorChannel
+		CorrectColorChannel
 		ld [_RAM + 0], a
 
-		; green channel
+		; correct the green channel
 		ld a, e
 		swap a
 		srl a
@@ -172,18 +172,18 @@ InitSample_GBA:
 		swap a
 		srl a
 		or a, b
-		ConvertColorChannel
+		CorrectColorChannel
 		ld [_RAM + 1], a
 
-		; blue channel
+		; correct the blue channel
 		ld a, d
 		srl a
 		srl a
 		and a, $1F
-		ConvertColorChannel
+		CorrectColorChannel
 		ld [_RAM + 2], a
 
-		; construct new low byte
+		; construct the new low byte
 		ld a, [_RAM + 1]
 		and a, $07
 		swap a
@@ -193,7 +193,7 @@ InitSample_GBA:
 		or a, b
 		ld [rBCPD], a
 
-		; construct new high byte
+		; construct the new high byte
 		ld a, [_RAM + 2]
 		sla a
 		sla a
