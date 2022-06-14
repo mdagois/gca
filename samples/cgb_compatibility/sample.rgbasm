@@ -134,11 +134,6 @@ CorrectColorChannel: macro
 	srl a
 	; (a) + 8
 	add a, 8
-	; restrict value to a maximum of 31
-	cp a, 31
-	jr c, .clamp\@
-		ld a, 31
-	.clamp\@
 endm
 
 InitSample_GBA:
