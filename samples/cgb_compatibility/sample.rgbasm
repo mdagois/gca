@@ -1,0 +1,227 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+palette_data:
+incbin "ship.pal"
+palette_data_end:
+
+tileset:
+incbin "ship.chr"
+tileset_end:
+
+tilemap_indices:
+incbin "ship.idx"
+tilemap_indices_end:
+
+tilemap_parameters:
+incbin "ship.prm"
+tilemap_parameters_end:
+
+dmg_data:
+incbin "tileset.chr"
+incbin "background.tlm"
+dmg_data_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample_DMG:
+	ld a, %11100100
+	ld [rBGP], a
+
+	ld de, _VRAM8000
+	ld hl, dmg_data
+	.data_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(dmg_data_end)
+		jr nz, .data_copy
+		ld a, h
+		cp a, high(dmg_data_end)
+		jr nz, .data_copy
+
+	; set the graphics parameters and turn back LCD on
+	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
+
+	ret
+
+InitSample_CGB_GBA:
+	; copy the tileset
+	ld de, _VRAM8000
+	ld hl, tileset
+	.tileset_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(tileset_end)
+		jr nz, .tileset_copy
+		ld a, h
+		cp a, high(tileset_end)
+		jr nz, .tileset_copy
+
+	; copy the tile indices into VRAM bank 0
+	copy [rVBK], 0
+	ld de, _SCRN0
+	ld hl, tilemap_indices
+	.tilemap_indices_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(tilemap_indices_end)
+		jr nz, .tilemap_indices_copy
+		ld a, h
+		cp a, high(tilemap_indices_end)
+		jr nz, .tilemap_indices_copy
+
+	; copy the tile parameters into VRAM bank 1
+	copy [rVBK], 1
+	ld de, _SCRN0
+	ld hl, tilemap_parameters
+	.tilemap_parameters_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(tilemap_parameters_end)
+		jr nz, .tilemap_parameters_copy
+		ld a, h
+		cp a, high(tilemap_parameters_end)
+		jr nz, .tilemap_parameters_copy
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK
+	ei
+
+	; set LCD parameters
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+InitSample_CGB:
+	; copy all the bg palettes
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+	ld hl, palette_data
+	ld c, palette_data_end - palette_data
+	.palette_copy
+		copy [rBCPD], [hli]
+		dec c
+		jr nz, .palette_copy
+
+	jp InitSample_CGB_GBA
+
+; change (a) to ((a) * 3 / 4 + 8)
+CorrectColorChannel: macro
+	; (a) * 3
+	ld b, a
+	add a, a
+	add a, b
+	; (a) / 4
+	srl a
+	srl a
+	; (a) + 8
+	add a, 8
+endm
+
+InitSample_GBA:
+	; copy all the bg palettes
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+	ld hl, palette_data
+	ld c, (palette_data_end - palette_data) / 2
+	.palette_copy
+		; read the 2 color bytes
+			; low byte
+			ld a, [hli]
+			ld e, a
+			; high byte
+			ld a, [hli]
+			ld d, a
+
+		; correct the red channel
+		ld a, e
+		and a, $1F
+		CorrectColorChannel
+		ld [_RAM + 0], a
+
+		; correct the green channel
+		ld a, e
+		swap a
+		srl a
+		and a, $07
+		ld b, a
+		ld a, d
+		and a, $03
+		swap a
+		srl a
+		or a, b
+		CorrectColorChannel
+		ld [_RAM + 1], a
+
+		; correct the blue channel
+		ld a, d
+		srl a
+		srl a
+		and a, $1F
+		CorrectColorChannel
+		ld [_RAM + 2], a
+
+		; construct the new low byte
+		ld a, [_RAM + 1]
+		and a, $07
+		swap a
+		sla a
+		ld b, a
+		ld a, [_RAM + 0]
+		or a, b
+		ld [rBCPD], a
+
+		; construct the new high byte
+		ld a, [_RAM + 2]
+		sla a
+		sla a
+		ld b, a
+		ld a, [_RAM + 1]
+		and a, $18
+		srl a
+		srl a
+		srl a
+		or a, b
+		ld [rBCPD], a
+
+		dec c
+		jr nz, .palette_copy
+
+	jp InitSample_CGB_GBA
+
+InitSample:
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	jp z, InitSample_DMG
+	dec a
+	jp z, InitSample_CGB
+	dec a
+	jp z, InitSample_GBA
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitSample, UpdateSample
+

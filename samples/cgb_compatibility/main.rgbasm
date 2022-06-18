@@ -1,0 +1,50 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "header", rom0[$0100]
+entrypoint:
+	di
+	jp main
+	ds ($0150 - @), 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+DetermineHardwareModel: macro
+	cp a, $11
+	jr nz, .cgb\@
+		bit 0, b
+		jr z, .gba\@
+			ld a, HARDWARE_MODEL_GBA
+			jr .done\@
+		.gba\@
+		ld a, HARDWARE_MODEL_CGB
+		jr .done\@
+	.cgb\@
+		ld a, HARDWARE_MODEL_DMG
+	.done\@
+	; save the hardware model
+	ld [HARDWARE_MODEL_REGISTER], a
+endm
+
+DisableLCD: macro
+	; wait for the vblank
+	.wait_vblank\@
+		ld a, [rLY]
+		cp a, SCRN_Y
+		jr nz, .wait_vblank\@
+
+	; turn the LCD off
+	xor a
+	ld [rLCDC], a
+endm
+
+section "main", rom0
+main:
+	DetermineHardwareModel
+	DisableLCD
+	call InitSample
+	.loop
+		call UpdateSample
+		jr .loop
+

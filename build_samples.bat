@@ -14,7 +14,7 @@ mkdir %ROMS_DIR% 2> nul
 for /d %%d in (%SOURCE_DIR%\*) do (
 	echo Building [%%~fd]...
 	call %%~fd\build.bat
-	if !errorlevel! equ 0 copy %%~fd\*.gb %ROMS_DIR% 1> nul && echo SUCCESS && set /a success += 1
+	if !errorlevel! equ 0 copy %%~fd\*.gb* %ROMS_DIR% 1> nul && echo SUCCESS && set /a success += 1
 	if !errorlevel! neq 0 echo ERROR && set /a error += 1
 	echo.
 )

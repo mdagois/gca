@@ -475,7 +475,7 @@ static bool exportTilemaps(const FileList& filenames, const TileSet& tileset, Co
 	return true;
 }
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
 	if(argc < 2)
 	{

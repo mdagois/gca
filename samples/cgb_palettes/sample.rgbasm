@@ -1,0 +1,64 @@
+include "utils.rgbinc"
+
+section "sample", rom0
+
+InitSample:
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+
+	ld hl, rBCPD
+
+	; Red
+	copy [hl], $1F
+	copy [hl], $00
+
+	; Orange
+	copy [hl], $FF
+	copy [hl], $01
+
+	; Yellow
+	copy [hl], $FF
+	copy [hl], $03
+
+	; Chartreuse green
+	copy [hl], $EF
+	copy [hl], $03
+
+	; Green
+	copy [hl], $E0
+	copy [hl], $03
+
+	; Spring green
+	copy [hl], $E0
+	copy [hl], $3F
+
+	; Cyan
+	copy [hl], $E0
+	copy [hl], $7F
+
+	; Azure
+	copy [hl], $E0
+	copy [hl], $7D
+
+	; Blue
+	copy [hl], $00
+	copy [hl], $7C
+
+	; Violet
+	copy [hl], $0F
+	copy [hl], $7C
+
+	; Magenta
+	copy [hl], $1F
+	copy [hl], $7C
+
+	; Rose
+	copy [hl], $1F
+	copy [hl], $3C
+	
+	ret
+
+UpdateSample:
+	ret
+
+export InitSample, UpdateSample
+
