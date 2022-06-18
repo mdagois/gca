@@ -110,10 +110,10 @@ InitSample:
 
 	; VRAM 1
 	copy [rVBK], 1
-		; tile parameters
-		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 		; tileset (coin)
 		DmaCopy_General _VRAM8000, coins, coins_end - coins
+		; tile parameters
+		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 
 	; set sprites palettes
 	copy [rOCPS], 0 | BCPSF_AUTOINC
@@ -162,8 +162,7 @@ InitSample:
 	copy [COIN_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
 
 	; enable interrupts
-	copy [rLYC], 255
-	copy [rSTAT], STATF_MODE00
+	copy [rSTAT], STATF_MODE10
 	copy [rIE], IEF_VBLANK | IEF_LCDC
 	ei
 
@@ -272,6 +271,12 @@ UpdateSample:
 			copy [WRAM_TOGGLE_PRIORITY], 1
 		.above_max
 	.update_x
+
+	; wait for the DMA transfer to end
+	.wait_dma
+		ld a, [rHDMA5]
+		and a, HDMA5F_BUSY
+		jr z, .wait_dma
 
 	ret
 
