@@ -74,7 +74,7 @@ They can be copied as is in VRAM.
 
 ### The cgbconv tool
 
-The ***cgbconv*** tool converts PNG files into tilesets, palettes and tilemaps compatible with the CGB VRAM.
+The ***cgbconv*** tool converts PNG files into tilesets, palettes, tilemap indices and tilemap parameters compatible with the CGB VRAM.
 
 #### Usage
 
