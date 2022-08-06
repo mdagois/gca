@@ -101,8 +101,7 @@ PushTransferFunc:
 	ld b, a
 
 	; read the tile index into (e)
-	ld a, [hl]
-	ld e, a
+	ld e, [hl]
 
 	; get a pointer to the transfer list next element in (hl)
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
