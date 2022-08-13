@@ -1,0 +1,68 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export PrinterInitialize, PrinterUpdate
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "printer_initialize", rom0
+
+LoadTileset:
+	ld hl, tileset_data
+	ld de, _VRAM
+	.copy
+		ld a, [hli]
+		ld [de], a
+		inc de
+
+		ld a, l
+		cp a, low(tileset_data_end)
+		jr nz, .copy
+
+		ld a, h
+		cp a, high(tileset_data_end)
+		jr nz, .copy
+	ret
+
+PrinterInitialize:
+	ClearMemory _RAM, WRAM_END
+	ClearMemory _HRAM, HRAM_END
+	InitPadInput vPadInput
+	copy [vMode], MODE_MAGIC_BYTE_0
+	reset [rSB]
+	copy [rSC], SCF_START
+
+	; init graphics
+	copy [rBGP], %11100100
+	call LoadTileset
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK | IEF_SERIAL
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "printer_update", rom0
+
+PrinterUpdate:
+	ld hl, vIsVblank
+	xor a
+	.wait_vblank
+		halt
+		cp a, [hl]
+		jr z, .wait_vblank
+		ld [hl], a
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput vPadInput
+
+	ret
+

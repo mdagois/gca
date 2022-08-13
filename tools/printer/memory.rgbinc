@@ -1,0 +1,107 @@
+if !def(MEMORY_RGBINC)
+MEMORY_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function parameters
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+FUNC_PARAM_COUNT				equ (2)
+
+macro SetFuncParam
+	assert \1 < FUNC_PARAM_COUNT, "Out-of-bound function parameter (\1 >= {d:FUNC_PARAM_COUNT})"
+	ld [vFuncParam + \1], a
+endm
+
+macro GetFuncParam
+	assert \1 < FUNC_PARAM_COUNT, "Out-of-bound function parameter (\1 >= {d:FUNC_PARAM_COUNT})"
+	ld a, [vFuncParam + \1]
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Scratchpad
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SCRATCHPAD_SIZE					equ (2)
+
+macro SetScratchpad
+	assert \1 < SCRATCHPAD_SIZE, "Out-of-bound scratchpad (\1 >= {d:SCRATCHPAD_SIZE})"
+	ld [vScratchpad + \1], a
+endm
+
+macro GetScratchpad
+	assert \1 < SCRATCHPAD_SIZE, "Out-of-bound scratchpad (\1 >= {d:SCRATCHPAD_SIZE})"
+	ld a, [vScratchpad + \1]
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; WRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_BYTE_SIZE					equ (2)
+IMAGE_DATA_MAX_SIZE				equ (SCRN_X_B * SCRN_Y_B * TILE_BYTE_SIZE)
+
+rsset _RAM
+
+vIsVblank						rb 1
+
+vImageDataSize					rb 2
+vImageData						rb (IMAGE_DATA_MAX_SIZE)
+
+WRAM_END						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; HRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+
+PACKET_TYPE_INIT			rb 1
+PACKET_TYPE_PRINT			rb 1
+PACKET_TYPE_DATA			rb 1
+PACKET_TYPE_BREAK			rb 1
+PACKET_TYPE_NUL				rb 1
+PACKET_TYPES_COUNT			rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+
+MODE_MAGIC_BYTE_0			rb 1
+MODE_MAGIC_BYTE_1			rb 1
+MODE_HEADER_PACKET_TYPE		rb 1
+MODE_HEADER_COMPRESSION		rb 1
+MODE_HEADER_DATA_SIZE_LSB	rb 1
+MODE_HEADER_DATA_SIZE_MSB	rb 1
+MODE_PACKET_DATA			rb 1
+MODE_PACKET_CHECKSUM_LSB	rb 1
+MODE_PACKET_CHECKSUM_MSB	rb 1
+MODE_PACKET_ACK				rb 1
+MODE_PACKET_STATUS			rb 1
+
+MODES_COUNT					rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _HRAM
+
+vPadInput						rb sizeof_PAD_INPUT
+vFuncParam						rb FUNC_PARAM_COUNT
+vScratchpad						rb SCRATCHPAD_SIZE
+
+vDataCompression				rb 1
+vPacketType						rb 1
+vPacketDataSize					rb 2
+vPacketChecksum					rb 2
+vMode							rb 1
+vStatus							rb 1
+
+HRAM_END						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

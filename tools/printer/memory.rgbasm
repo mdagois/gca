@@ -1,0 +1,14 @@
+include "memory.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Sanity checks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+WRAM_USAGE equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+HRAM_USAGE equ (HRAM_END - _HRAM)
+print "HRAM usage: {d:HRAM_USAGE} bytes\n"
+assert HRAM_USAGE <= 64, "Too many bytes used in HRAM"
+

@@ -1,0 +1,249 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+PRINTER_MAGIC_BYTE_0				equ ($88)
+PRINTER_MAGIC_BYTE_1				equ ($33)
+
+PRINTER_PACKET_TYPE_INIT			equ ($01)
+PRINTER_PACKET_TYPE_PRINT			equ ($02)
+PRINTER_PACKET_TYPE_DATA			equ ($04)
+PRINTER_PACKET_TYPE_BREAK			equ ($08)
+PRINTER_PACKET_TYPE_NUL				equ ($0F)
+
+PRINTER_COMPRESSION_FLAG_OFF		equ (%00000000)
+PRINTER_COMPRESSION_FLAG_ON			equ (%00000001)
+
+PRINTER_ACK_VALUE					equ ($81)
+
+PRINTER_STATUS_FLAG_LOW_BATTERY		equ (%10000000)
+PRINTER_STATUS_FLAG_OTHER_ERROR		equ (%01000000)
+PRINTER_STATUS_FLAG_PAPER_JAM		equ (%00100000)
+PRINTER_STATUS_FLAG_PACKET_ERROR	equ (%00010000)
+
+PRINTER_STATUS_FLAG_READY_TO_PRINT	equ (%00001000)
+PRINTER_STATUS_FLAG_DATA_FULL		equ (%00000100)
+PRINTER_STATUS_FLAG_PRINTING		equ (%00000010)
+PRINTER_STATUS_FLAG_CHECKSUM_ERROR	equ (%00000001)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	push af
+	ld a, 1
+	ld [vIsVblank], a
+	pop af
+	reti
+
+section "serial_interrupt", rom0[$0058]
+	PushAllRegisters
+	call SerialInterrupt
+	PopAllRegisters
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "serial_interrupt_function", rom0
+
+ModeFunctionTable:
+dw ProcessMagicByte0
+dw ProcessMagicByte1
+dw ProcessHeaderPacketType
+dw ProcessHeaderDataCompression
+dw ProcessHeaderDataSizeLSB
+dw ProcessHeaderDataSizeMSB
+dw ProcessPacketData
+dw ProcessPacketChecksumLSB
+dw ProcessPacketChecksumMSB
+dw ProcessPacketAck
+dw ProcessPacketStatus
+
+SerialInterrupt:
+	CallFunctionFromTable ModeFunctionTable, vMode
+	copy [rSC], SCF_START
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro ResetChecksum
+	xor a
+	ld [vPacketChecksum + 0], a
+	ld [vPacketChecksum + 1], a
+endm
+
+macro UpdateChecksum
+	push af
+	ld b, a
+	ld a, [vPacketChecksum + 0]
+	add a, b
+	ld [vPacketChecksum + 0], a
+	jr nc, .done
+
+	ld a, [vPacketChecksum + 1]
+	inc a
+	ld [vPacketChecksum + 1], a
+
+	.done
+	pop af
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessMagicByte0:
+	ld a, [rSB]
+	cp a, PRINTER_MAGIC_BYTE_0
+	ret nz
+	reset [rSB] 
+	copy [vMode], MODE_MAGIC_BYTE_1
+	ret
+
+ProcessMagicByte1:
+	ld a, [rSB]
+	cp a, PRINTER_MAGIC_BYTE_1
+	jr nz, .error
+
+	reset [rSB] 
+	copy [vMode], MODE_HEADER_PACKET_TYPE
+	ResetChecksum
+	ret
+
+	.error
+	reset [rSB] 
+	copy [vMode], MODE_MAGIC_BYTE_0
+	ret
+
+PacketTypeToModeTable:
+db PACKET_TYPES_COUNT
+db PACKET_TYPE_INIT
+db PACKET_TYPE_PRINT
+db PACKET_TYPES_COUNT
+db PACKET_TYPE_DATA
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPE_BREAK
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPES_COUNT
+db PACKET_TYPE_NUL
+
+ProcessHeaderPacketType:
+	ld a, [rSB]
+	UpdateChecksum
+
+	ld hl, PacketTypeToModeTable
+	ld d, 0
+	ld e, a
+	add hl, de
+	ld a, [hl]
+	cp a, PACKET_TYPES_COUNT
+	jr z, .error
+
+	copy [vPacketType], a
+	reset [rSB] 
+	copy [vMode], MODE_HEADER_COMPRESSION
+	ret
+
+	.error
+	reset [rSB] 
+	copy [vMode], MODE_MAGIC_BYTE_0
+	ret
+
+ProcessHeaderDataCompression:
+	ld a, [rSB]
+	ld [vDataCompression], a
+	UpdateChecksum
+	reset [rSB] 
+	copy [vMode], MODE_HEADER_DATA_SIZE_LSB
+	ret
+
+ProcessHeaderDataSizeLSB:
+	ld a, [rSB]
+	ld [vPacketDataSize + 0], a
+	UpdateChecksum
+	reset [rSB] 
+	copy [vMode], MODE_HEADER_DATA_SIZE_MSB
+	ret
+
+ProcessHeaderDataSizeMSB:
+	ld a, [rSB]
+	ld [vPacketDataSize + 1], a
+	UpdateChecksum
+	reset [rSB]
+
+	ld a, [vPacketDataSize + 0]
+	cp a, 0
+	jr nz, .has_data
+	ld a, [vPacketDataSize + 1]
+	cp a, 0
+	jr nz, .has_data
+
+	copy [vMode], MODE_PACKET_CHECKSUM_LSB
+	ret
+
+	.has_data
+	copy [vMode], MODE_PACKET_DATA
+	ret
+
+ProcessPacketData:
+	ld a, [rSB]
+	UpdateChecksum
+	ld hl, vImageData
+	load16 de, vImageDataSize
+	add hl, de
+	ld [hl], a
+	inc de
+	store16 vImageDataSize, de
+
+	reset [rSB]
+	load16 hl, vPacketDataSize
+	dec hl
+	jr z, .data_done
+
+	store16 vPacketDataSize, hl
+	ret
+
+	.data_done
+	copy [vMode], MODE_PACKET_CHECKSUM_LSB
+	ret
+
+ProcessPacketChecksumLSB:
+	ld a, [rSB]
+	ld b, a
+	ld a, [vPacketChecksum + 0]
+	cp a, b
+	jr z, .no_error
+		copy [vStatus], PRINTER_STATUS_FLAG_CHECKSUM_ERROR
+	.no_error
+	copy [vMode], MODE_PACKET_CHECKSUM_MSB
+	reset [rSB]
+	ret
+
+ProcessPacketChecksumMSB:
+	ld a, [rSB]
+	ld b, a
+	ld a, [vPacketChecksum + 1]
+	cp a, b
+	jr z, .no_error
+		copy [vStatus], PRINTER_STATUS_FLAG_CHECKSUM_ERROR
+	.no_error
+	copy [vMode], MODE_PACKET_ACK
+	copy [rSB], PRINTER_ACK_VALUE
+	ret
+
+ProcessPacketAck:
+	ld a, [rSB]
+	copy [rSB], [vStatus]
+	copy [vMode], MODE_PACKET_STATUS
+	ret
+
+ProcessPacketStatus:
+	ld a, [rSB]
+	reset [rSB]
+	copy [vMode], MODE_MAGIC_BYTE_0
+	ret
+
