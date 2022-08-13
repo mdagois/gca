@@ -64,5 +64,17 @@ PrinterUpdate:
 
 	UpdatePadInput vPadInput
 
+	ld hl, vStatus
+	bit PRINTER_STATUS_BIT_PRINTING, [hl]
+	ret z
+
+	ld a, [vCounter]
+	dec a
+	ld [vCounter], a
+	ret nz
+
+	res PRINTER_STATUS_BIT_PRINTING, [hl]
+	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
+
 	ret
 
