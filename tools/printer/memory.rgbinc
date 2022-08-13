@@ -43,6 +43,7 @@ endm
 
 TILE_BYTE_SIZE					equ (2)
 IMAGE_DATA_MAX_SIZE				equ (SCRN_X_B * SCRN_Y_B * TILE_BYTE_SIZE)
+PRINT_PARAMETERS_COUNT			equ (4)
 
 rsset _RAM
 
@@ -50,6 +51,8 @@ vIsVblank						rb 1
 
 vImageDataSize					rb 2
 vImageData						rb (IMAGE_DATA_MAX_SIZE)
+vPrintParametersCount			rb 1
+vPrintParameters				rb (PRINT_PARAMETERS_COUNT)
 
 WRAM_END						rb 0
 
@@ -77,6 +80,7 @@ MODE_HEADER_COMPRESSION		rb 1
 MODE_HEADER_DATA_SIZE_LSB	rb 1
 MODE_HEADER_DATA_SIZE_MSB	rb 1
 MODE_PACKET_DATA			rb 1
+MODE_PACKET_PRINT			rb 1
 MODE_PACKET_CHECKSUM_LSB	rb 1
 MODE_PACKET_CHECKSUM_MSB	rb 1
 MODE_PACKET_ACK				rb 1
@@ -98,6 +102,7 @@ vPacketDataSize					rb 2
 vPacketChecksum					rb 2
 vMode							rb 1
 vStatus							rb 1
+vStatusMerge					rb 1
 
 HRAM_END						rb 0
 

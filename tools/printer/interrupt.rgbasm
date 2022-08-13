@@ -17,15 +17,25 @@ PRINTER_COMPRESSION_FLAG_ON			equ (%00000001)
 
 PRINTER_ACK_VALUE					equ ($81)
 
+PRINTER_STATUS_BIT_LOW_BATTERY		equ (7)
+PRINTER_STATUS_BIT_OTHER_ERROR		equ (6)
+PRINTER_STATUS_BIT_PAPER_JAM		equ (5)
+PRINTER_STATUS_BIT_PACKET_ERROR		equ (4)
+PRINTER_STATUS_BIT_READY_TO_PRINT	equ (3)
+PRINTER_STATUS_BIT_DATA_FULL		equ (2)
+PRINTER_STATUS_BIT_PRINTING			equ (1)
+PRINTER_STATUS_BIT_CHECKSUM_ERROR	equ (0)
+
 PRINTER_STATUS_FLAG_LOW_BATTERY		equ (%10000000)
 PRINTER_STATUS_FLAG_OTHER_ERROR		equ (%01000000)
 PRINTER_STATUS_FLAG_PAPER_JAM		equ (%00100000)
 PRINTER_STATUS_FLAG_PACKET_ERROR	equ (%00010000)
-
 PRINTER_STATUS_FLAG_READY_TO_PRINT	equ (%00001000)
 PRINTER_STATUS_FLAG_DATA_FULL		equ (%00000100)
 PRINTER_STATUS_FLAG_PRINTING		equ (%00000010)
 PRINTER_STATUS_FLAG_CHECKSUM_ERROR	equ (%00000001)
+
+PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_LOW_BATTERY | PRINTER_STATUS_FLAG_READY_TO_PRINT | PRINTER_STATUS_FLAG_DATA_FULL | PRINTER_STATUS_FLAG_PRINTING)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -54,6 +64,7 @@ dw ProcessHeaderDataCompression
 dw ProcessHeaderDataSizeLSB
 dw ProcessHeaderDataSizeMSB
 dw ProcessPacketData
+dw ProcessPacketPrint
 dw ProcessPacketChecksumLSB
 dw ProcessPacketChecksumMSB
 dw ProcessPacketAck
@@ -94,7 +105,11 @@ ProcessMagicByte0:
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_0
 	ret nz
-	reset [rSB] 
+	ld a, [vStatus]
+	and a, PRINTER_STATUS_PERSISTENT_FLAGS
+	ld [vStatus], a
+	reset [rSB]
+	reset [vStatusMerge]
 	copy [vMode], MODE_MAGIC_BYTE_1
 	ret
 
@@ -103,13 +118,13 @@ ProcessMagicByte1:
 	cp a, PRINTER_MAGIC_BYTE_1
 	jr nz, .error
 
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_HEADER_PACKET_TYPE
 	ResetChecksum
 	ret
 
 	.error
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_MAGIC_BYTE_0
 	ret
 
@@ -144,12 +159,12 @@ ProcessHeaderPacketType:
 	jr z, .error
 
 	copy [vPacketType], a
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_HEADER_COMPRESSION
 	ret
 
 	.error
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_MAGIC_BYTE_0
 	ret
 
@@ -157,7 +172,7 @@ ProcessHeaderDataCompression:
 	ld a, [rSB]
 	ld [vDataCompression], a
 	UpdateChecksum
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_HEADER_DATA_SIZE_LSB
 	ret
 
@@ -165,7 +180,7 @@ ProcessHeaderDataSizeLSB:
 	ld a, [rSB]
 	ld [vPacketDataSize + 0], a
 	UpdateChecksum
-	reset [rSB] 
+	reset [rSB]
 	copy [vMode], MODE_HEADER_DATA_SIZE_MSB
 	ret
 
@@ -186,7 +201,17 @@ ProcessHeaderDataSizeMSB:
 	ret
 
 	.has_data
+
+	; assume a data packet
 	copy [vMode], MODE_PACKET_DATA
+
+	; check for print packet
+	ld a, [vPacketType]
+	cp a, PACKET_TYPE_PRINT
+	ret nz
+
+	reset [vPrintParametersCount]
+	copy [vMode], MODE_PACKET_PRINT
 	ret
 
 ProcessPacketData:
@@ -209,6 +234,43 @@ ProcessPacketData:
 
 	.data_done
 	copy [vMode], MODE_PACKET_CHECKSUM_LSB
+
+	ld hl, vStatusMerge
+	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
+
+	ld a, [vImageDataSize + 0]
+	cp a, low(IMAGE_DATA_MAX_SIZE)
+	ret nz
+	ld a, [vImageDataSize + 1]
+	cp a, high(IMAGE_DATA_MAX_SIZE)
+	ret nz
+
+	ld hl, vStatusMerge
+	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
+	ret
+
+ProcessPacketPrint:
+	ld a, [rSB]
+	UpdateChecksum
+	ld d, 0
+	ld hl, vPrintParametersCount
+	ld e, [hl]
+	ld hl, vPrintParameters
+	add hl, de
+	ld [hl], a
+	inc e
+	ld hl, vPrintParametersCount
+	ld [hl], e
+
+	reset [rSB]
+	ld a, [vPrintParametersCount]
+	cp a, PRINT_PARAMETERS_COUNT
+	ret nz
+
+	copy [vMode], MODE_PACKET_CHECKSUM_LSB
+
+	ld hl, vStatusMerge
+	set PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret
 
 ProcessPacketChecksumLSB:
@@ -217,7 +279,8 @@ ProcessPacketChecksumLSB:
 	ld a, [vPacketChecksum + 0]
 	cp a, b
 	jr z, .no_error
-		copy [vStatus], PRINTER_STATUS_FLAG_CHECKSUM_ERROR
+		ld hl, vStatus
+		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
 	copy [vMode], MODE_PACKET_CHECKSUM_MSB
 	reset [rSB]
@@ -229,20 +292,24 @@ ProcessPacketChecksumMSB:
 	ld a, [vPacketChecksum + 1]
 	cp a, b
 	jr z, .no_error
-		copy [vStatus], PRINTER_STATUS_FLAG_CHECKSUM_ERROR
+		ld hl, vStatus
+		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
 	copy [vMode], MODE_PACKET_ACK
 	copy [rSB], PRINTER_ACK_VALUE
 	ret
 
 ProcessPacketAck:
-	ld a, [rSB]
-	copy [rSB], [vStatus]
+	ld a, [vStatus]
+	ld [rSB], a
+	ld b, a
+	ld a, [vStatusMerge]
+	or a, b
+	ld [vStatus], a
 	copy [vMode], MODE_PACKET_STATUS
 	ret
 
 ProcessPacketStatus:
-	ld a, [rSB]
 	reset [rSB]
 	copy [vMode], MODE_MAGIC_BYTE_0
 	ret
