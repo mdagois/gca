@@ -71,7 +71,7 @@ UpdatePadInput: macro
 endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
-; example: CheckPadInputHeld _RAM + 4, PADF_LEFT | PADF_DOWN
+; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
 TestPadInput_HeldAll: macro
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2

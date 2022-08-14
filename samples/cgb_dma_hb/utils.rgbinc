@@ -146,21 +146,21 @@ UpdatePadInput: macro
 endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
-; example: CheckPadInputHeld _RAM + 4, PADF_LEFT | PADF_DOWN
+; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
 TestPadInput_HeldAll: macro
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2
 endm
 
 ; raise the zero flag if input \2 is pressed in the pad input struct \1
-; example: CheckPadInputPressed _HRAM + 12, PADF_LEFT
+; example: TestPadInput_Pressed _HRAM + 12, PADF_LEFT
 TestPadInput_Pressed: macro
 	ld a, [\1 + PAD_INPUT_PRESSED]
 	and a, \2
 endm
 
 ; raise the zero flag if input \2 is released in the pad input struct \1
-; example: CheckPadInputReleased _RAM + 24, PADF_A
+; example: TestPadInput_Released _RAM + 24, PADF_A
 TestPadInput_Released: macro
 	ld a, [\1 + PAD_INPUT_RELEASED]
 	and a, \2

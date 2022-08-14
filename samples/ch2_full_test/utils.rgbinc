@@ -123,14 +123,14 @@ UpdatePadInput: macro
 endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
-; example: CheckPadInputHeld _RAM + 4, PADF_LEFT | PADF_DOWN
+; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
 TestPadInput_HeldAll: macro
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2
 endm
 
 ; raise the zero flag if none of the keys in \2 are held in the pad input struct \1
-; example: CheckPadInputHeld _RAM + 8, PADF_A | PADF_B
+; example: TestPadInput_HeldAll _RAM + 8, PADF_A | PADF_B
 TestPadInput_HeldAny: macro
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	cpl
@@ -138,14 +138,14 @@ TestPadInput_HeldAny: macro
 endm
 
 ; raise the zero flag if all input \2 is pressed in the pad input struct \1
-; example: CheckPadInput_PressedAll _HRAM + 12, PADF_LEFT
+; example: TestPadInput_PressedAll _HRAM + 12, PADF_LEFT
 TestPadInput_PressedAll: macro
 	ld a, [\1 + PAD_INPUT_PRESSED]
 	and a, \2
 endm
 
 ; raise the zero flag if none of input \2 is pressed in the pad input struct \1
-; example: CheckPadInput_PressedAny _HRAM + 12, PADF_LEFT
+; example: TestPadInput_PressedAny _HRAM + 12, PADF_LEFT
 TestPadInput_PressedAny: macro
 	ld a, [\1 + PAD_INPUT_PRESSED]
 	cpl
@@ -153,14 +153,14 @@ TestPadInput_PressedAny: macro
 endm
 
 ; raise the zero flag if all input \2 is released in the pad input struct \1
-; example: CheckPadInput_Released _RAM + 24, PADF_A
+; example: TestPadInput_Released _RAM + 24, PADF_A
 TestPadInput_Released: macro
 	ld a, [\1 + PAD_INPUT_RELEASED]
 	and a, \2
 endm
 
 ; raise the zero flag if none of input \2 is released in the pad input struct \1
-; example: CheckPadInput_ReleasedAny _RAM + 24, PADF_A
+; example: TestPadInput_ReleasedAny _RAM + 24, PADF_A
 TestPadInput_ReleasedAny: macro
 	ld a, [\1 + PAD_INPUT_RELEASED]
 	cpl
