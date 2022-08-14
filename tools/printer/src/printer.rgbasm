@@ -30,9 +30,7 @@ PrinterInitialize:
 	ClearMemory _RAM, WRAM_END
 	ClearMemory _HRAM, HRAM_END
 	InitPadInput vPadInput
-	copy [vMode], MODE_MAGIC_BYTE_0
-	reset [rSB]
-	copy [rSC], SCF_START
+	call ProtocolInitialize
 
 	; init graphics
 	copy [rBGP], %11100100
@@ -60,21 +58,12 @@ PrinterUpdate:
 		jr z, .wait_vblank
 		ld [hl], a
 
+	call ProtocolUpdateVblank
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	UpdatePadInput vPadInput
-
-	ld hl, vStatus
-	bit PRINTER_STATUS_BIT_PRINTING, [hl]
-	ret z
-
-	ld a, [vCounter]
-	dec a
-	ld [vCounter], a
-	ret nz
-
-	res PRINTER_STATUS_BIT_PRINTING, [hl]
-	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
+	call ProtocolUpdate
 
 	ret
 

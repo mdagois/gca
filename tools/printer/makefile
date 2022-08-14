@@ -19,7 +19,8 @@ ROM_FILES=\
 	interrupt \
 	main \
 	memory \
-	printer
+	printer \
+	protocol
 
 # Inferences
 

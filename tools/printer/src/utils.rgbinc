@@ -71,7 +71,8 @@ endm
 ; \2 = source
 ; \3 = size
 macro CopyMemory
-	assert \3 < 256, "Only copy of less than 256 bytes are supported (\3 < 256)"
+	assert (\1 < \2) || (\1 >= \2 + \3), "Invalid memory range overlap"
+	assert \3 < 256, "Only copies of less than 256 bytes are supported (\3 < 256)"
 	ld hl, \1
 	ld de, \2
 	ld c, \3
