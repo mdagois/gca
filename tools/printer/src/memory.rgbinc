@@ -60,6 +60,7 @@ vPrintParameters				rb (PRINT_PARAMETERS_COUNT)
 ; hold the image data
 vImageDataSize					rb 2
 vImageData						rb (IMAGE_DATA_MAX_SIZE)
+vImageDataSizeTransferred		rb 2
 
 WRAM_END						rb 0
 

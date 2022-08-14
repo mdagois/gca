@@ -3,10 +3,6 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Protocol
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,15 +76,19 @@ BYTES_COUNT					rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Exports
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "protocol", rom0
 
-ProtocolInitialize:
+ProtocolInitialize::
 	copy [vNextByte], BYTE_MAGIC_0
 	reset [rSB]
 	copy [rSC], SCF_START
 	ret
 
-ProtocolUpdate:
+ProtocolUpdate::
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret z
@@ -103,7 +103,7 @@ ProtocolUpdate:
 
 	ret
 
-ProtocolUpdateVblank:
+ProtocolUpdateVblank::
 	ret
 
 ModeFunctionTable:
@@ -120,19 +120,24 @@ dw ProcessPacketChecksumMSB
 dw ProcessPacketAck
 dw ProcessPacketStatus
 
-ProtocolHandlePacketByte:
+ProtocolHandlePacketByte::
 	CallFunctionFromTable ModeFunctionTable, vNextByte
 	copy [rSC], SCF_START
 	ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Checksum helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; set the current packet checksum to zero
 macro ResetChecksum
 	xor a
 	ld [vPacketChecksum + 0], a
 	ld [vPacketChecksum + 1], a
 endm
 
+; add (a) to the current packet checksum
+; (a) keeps its value
 macro UpdateChecksum
 	push af
 	ld b, a
@@ -150,6 +155,10 @@ macro UpdateChecksum
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Magic
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessMagicByte0:
 	ld a, [rSB]
@@ -177,6 +186,10 @@ ProcessMagicByte1:
 	reset [rSB]
 	copy [vNextByte], BYTE_MAGIC_0
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Packet type (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PacketTypeToModeTable:
 db PACKET_TYPES_COUNT
@@ -218,6 +231,10 @@ ProcessHeaderPacketType:
 	copy [vNextByte], BYTE_MAGIC_0
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data compression (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ProcessHeaderDataCompression:
 	ld a, [rSB]
 	ld [vDataCompression], a
@@ -225,6 +242,10 @@ ProcessHeaderDataCompression:
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_DATA_SIZE_LSB
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data size (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataSizeLSB:
 	ld a, [rSB]
@@ -263,6 +284,10 @@ ProcessHeaderDataSizeMSB:
 	reset [vPrintParametersCount]
 	copy [vNextByte], BYTE_PACKET_PRINT
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketData:
 	ld a, [rSB]
@@ -324,6 +349,10 @@ ProcessPacketPrint:
 	copy [vCounter], $FF
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Checksum
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ProcessPacketChecksumLSB:
 	ld a, [rSB]
 	ld b, a
@@ -349,6 +378,10 @@ ProcessPacketChecksumMSB:
 	copy [vNextByte], BYTE_PACKET_ACK
 	copy [rSB], PRINTER_ACK_VALUE
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Response
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketAck:
 	ld a, [vStatus]
