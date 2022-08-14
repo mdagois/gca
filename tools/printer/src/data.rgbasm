@@ -1,6 +1,6 @@
 section "data", rom0
 
 tileset_data::
-incbin "printer.chr"
+incbin "assets/printer.chr"
 tileset_data_end::
 
