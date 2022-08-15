@@ -10,6 +10,16 @@ section "vblank_interrupt", rom0[$0040]
 	pop af
 	reti
 
+section "lcd_interrupt", rom0[$0048]
+	push af
+	; switch to tile addressing mode 8800 on line 12 * 8
+	; this displayed tiles 240 to 359
+	ld a, [rLCDC]
+	res LCDCB_BG8000, a
+	ld [rLCDC], a
+	pop af
+	reti
+
 section "serial_interrupt", rom0[$0058]
 	PushAllRegisters
 	call ProtocolHandlePacketByte

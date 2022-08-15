@@ -36,12 +36,28 @@ PrinterInitialize:
 	copy [rBGP], %11100100
 	call LoadTileset
 
+	; set a tilemap to display the image data
+	xor a
+	ld hl, _SCRN0
+	ld de, SCRN_VX_B - SCRN_X_B
+	ld c, SCRN_Y_B
+	.set_line
+rept SCRN_X_B
+		ld [hli], a
+		inc a
+endr
+		add hl, de
+		dec c
+		jr nz, .set_line
+
 	; enable interrupts
-	copy [rIE], IEF_VBLANK | IEF_SERIAL
+	copy [rIE], IEF_VBLANK | IEF_STAT | IEF_SERIAL
+	copy [rSTAT], STATF_LYC
+	copy [rLYC], 12 * 8
 	ei
 
 	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG9800 | LCDCF_BGON
 
 	ret
 
@@ -57,6 +73,12 @@ PrinterUpdate:
 		cp a, [hl]
 		jr z, .wait_vblank
 		ld [hl], a
+
+	; switch to tile addressing mode 8000 from line 0
+	; this displayed tiles 0 to 239
+	ld a, [rLCDC]
+	set LCDCB_BG8000, a
+	ld [rLCDC], a
 
 	call ProtocolUpdateVblank
 
