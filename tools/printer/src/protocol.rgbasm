@@ -6,6 +6,7 @@ include "utils.rgbinc"
 ; nul packet
 ; timeout
 ; low battery
+; palette support
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

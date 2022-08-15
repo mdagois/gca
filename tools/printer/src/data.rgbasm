@@ -1,6 +1,0 @@
-section "data", rom0
-
-tileset_data::
-incbin "assets/printer.chr"
-tileset_data_end::
-

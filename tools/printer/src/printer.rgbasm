@@ -9,32 +9,15 @@ export PrinterInitialize, PrinterUpdate
 
 section "printer_initialize", rom0
 
-LoadTileset:
-	ld hl, tileset_data
-	ld de, _VRAM
-	.copy
-		ld a, [hli]
-		ld [de], a
-		inc de
-
-		ld a, l
-		cp a, low(tileset_data_end)
-		jr nz, .copy
-
-		ld a, h
-		cp a, high(tileset_data_end)
-		jr nz, .copy
-	ret
-
 PrinterInitialize:
 	ClearMemory _RAM, WRAM_END
 	ClearMemory _HRAM, HRAM_END
+	ClearMemory _VRAM, _VRAM + (8 * 1024)
 	InitPadInput vPadInput
 	call ProtocolInitialize
 
 	; init graphics
 	copy [rBGP], %11100100
-	call LoadTileset
 
 	; set a tilemap to display the image data
 	xor a

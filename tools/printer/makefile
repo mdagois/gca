@@ -15,7 +15,6 @@ ROM_LINK_OPTIONS=--dmg --tiny
 ROM_FIX_OPTIONS=
 ROM_LAUNCH_OPTIONS=--listen 8765
 ROM_FILES=\
-	data \
 	interrupt \
 	main \
 	memory \

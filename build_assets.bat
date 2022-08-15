@@ -41,10 +41,6 @@ if %errorlevel% neq 0 goto end
 %DMG_CONV% %DMG_TILESET_DIR%sound_test.png %DMG_TILEMAP_DIR%ch1_test.png %DMG_TILEMAP_DIR%ch2_test.png %DMG_TILEMAP_DIR%ch3_test.png %DMG_TILEMAP_DIR%ch4_test.png
 if %errorlevel% neq 0 goto end
 
-:: printer application
-%DMG_CONV% %DMG_TILESET_DIR%printer.png
-if %errorlevel% neq 0 goto end
-
 del /f /s /q %DMG_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %DMG_CHR_DIR% 2> nul
 mkdir %DMG_CHR_DIR% 2> nul
