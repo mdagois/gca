@@ -96,21 +96,18 @@ ProtocolInitialize::
 	ret
 
 ProtocolUpdate::
+	ret
+
+ProtocolUpdateVblank::
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret z
 
-	ld a, [vCounter]
-	dec a
-	ld [vCounter], a
-	ret nz
-
+	.printing_done
+	ld hl, vStatus
 	res PRINTER_STATUS_BIT_PRINTING, [hl]
 	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
-	ret
-
-ProtocolUpdateVblank::
 	ret
 
 ModeFunctionTable:
@@ -335,8 +332,6 @@ ProcessPacketData:
 	.data_done
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 
-	; the "ready" flag must be raised after the packet is handled
-	; so use the delayed status here
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
@@ -348,8 +343,6 @@ ProcessPacketData:
 	cp a, high(IMAGE_DATA_MAX_SIZE)
 	ret nz
 
-	; the "full" flag must be raised after the packet is handled
-	; so use the delayed status here
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
 	ret
@@ -378,12 +371,8 @@ ProcessPacketPrint:
 
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 
-	; the "printing" flag must be raised after the packet is handled
-	; so use the delayed status here
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_PRINTING, [hl]
-
-	copy [vCounter], $FF
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

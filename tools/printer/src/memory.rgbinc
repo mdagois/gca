@@ -6,38 +6,6 @@ MEMORY_RGBINC equ 1
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Function parameters
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-FUNC_PARAM_COUNT				equ (2)
-
-macro SetFuncParam
-	assert \1 < FUNC_PARAM_COUNT, "Out-of-bound function parameter (\1 >= {d:FUNC_PARAM_COUNT})"
-	ld [vFuncParam + \1], a
-endm
-
-macro GetFuncParam
-	assert \1 < FUNC_PARAM_COUNT, "Out-of-bound function parameter (\1 >= {d:FUNC_PARAM_COUNT})"
-	ld a, [vFuncParam + \1]
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Scratchpad
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-SCRATCHPAD_SIZE					equ (2)
-
-macro SetScratchpad
-	assert \1 < SCRATCHPAD_SIZE, "Out-of-bound scratchpad (\1 >= {d:SCRATCHPAD_SIZE})"
-	ld [vScratchpad + \1], a
-endm
-
-macro GetScratchpad
-	assert \1 < SCRATCHPAD_SIZE, "Out-of-bound scratchpad (\1 >= {d:SCRATCHPAD_SIZE})"
-	ld a, [vScratchpad + \1]
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -72,21 +40,18 @@ rsset _HRAM
 
 vPadInput						rb sizeof_PAD_INPUT
 
-vFuncParam						rb FUNC_PARAM_COUNT
-vScratchpad						rb SCRATCHPAD_SIZE
-
 ; hold data during packet transfer
 vPacketType						rb 1
 vDataCompression				rb 1
 vPacketDataSize					rb 2
 vPacketChecksum					rb 2
 vStatus							rb 1
+
+; hold flags that are raised only after the packet is processed
 vStatusDelayed					rb 1
 
 ; next expected byte
 vNextByte						rb 1
-
-vCounter						rb 1
 
 HRAM_END						rb 0
 
