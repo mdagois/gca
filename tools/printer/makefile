@@ -1,17 +1,13 @@
-.PHONY: default
-default: rom
-
 ################################################################################
-# ROM
-################################################################################
-
 # Parameters
+################################################################################
 
 ROM_GAME_NAME=printer
 ROM_SRC_DIR=src/
 ROM_DIR=rom/
 ROM_EXTENSION=gbc
-ROM_COMPILE_OPTIONS=-Werror -Weverything -DIS_DEBUG
+ROM_COMPILE_OPTIONS=-Werror -Weverything
+ROM_COMPILE_DEFINES=
 ROM_LINK_OPTIONS=--tiny
 ROM_FIX_OPTIONS=--title $(ROM_GAME_NAME) --color-only --pad-value 0 --validate
 ROM_LAUNCH_OPTIONS=--listen 8765
@@ -22,7 +18,9 @@ ROM_FILES=\
 	printer \
 	protocol
 
+################################################################################
 # Inferences
+################################################################################
 
 ROM_OBJECTS=$(addprefix $(ROM_SRC_DIR),$(patsubst %,%.o,$(ROM_FILES)))
 
@@ -31,10 +29,14 @@ ROM_FILE=$(ROM_PATH).$(ROM_EXTENSION)
 ROM_MAP_FILE=$(ROM_PATH).map
 ROM_SYM_FILE=$(ROM_PATH).sym
 
+################################################################################
 # Rules
+################################################################################
 
 .INTERMEDIATE: $(ROM_OBJECTS)
-.PHONY: fix launch link rom
+.PHONY: default fix launch link rom romd romr
+
+default: romr
 
 launch:
 	@bgb --watch $(ROM_FILE) $(ROM_LAUNCH_OPTIONS) &
@@ -47,6 +49,12 @@ fix: link
 
 rom: fix
 
+romr: ROM_COMPILE_DEFINES += -DBUILD_RELEASE
+romr: rom
+
+romd: ROM_COMPILE_DEFINES += -DBUILD_DEBUG
+romd: rom
+
 %.o: %.rgbasm
-	@rgbasm $(ROM_COMPILE_OPTIONS) -i $(ROM_SRC_DIR) -o $@ $<
+	@rgbasm $(ROM_COMPILE_OPTIONS) $(ROM_COMPILE_DEFINES) -i $(ROM_SRC_DIR) -o $@ $<
 

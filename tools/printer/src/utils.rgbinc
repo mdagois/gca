@@ -89,7 +89,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro debug
-if def(IS_DEBUG)
+if def(BUILD_DEBUG)
 	ld d, d
 	jr .message\@
 	db $64, $64, $00, $00, \1
@@ -98,7 +98,7 @@ endc
 endm
 
 macro breakpoint
-if def(IS_DEBUG)
+if def(BUILD_DEBUG)
 	ld b, b
 endc
 endm
