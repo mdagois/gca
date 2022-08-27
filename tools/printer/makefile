@@ -10,10 +10,10 @@ default: rom
 ROM_GAME_NAME=printer
 ROM_SRC_DIR=src/
 ROM_DIR=rom/
-ROM_EXTENSION=gb
+ROM_EXTENSION=gbc
 ROM_COMPILE_OPTIONS=-Werror -Weverything -DIS_DEBUG
-ROM_LINK_OPTIONS=--dmg --tiny
-ROM_FIX_OPTIONS=--title $(ROM_GAME_NAME) --pad-value 0 --validate
+ROM_LINK_OPTIONS=--tiny
+ROM_FIX_OPTIONS=--title $(ROM_GAME_NAME) --color-only --pad-value 0 --validate
 ROM_LAUNCH_OPTIONS=--listen 8765
 ROM_FILES=\
 	interrupt \
