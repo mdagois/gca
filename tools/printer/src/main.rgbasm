@@ -21,6 +21,7 @@ endm
 
 section "main", rom0
 main:
+	debug "START"
 	DisableLCD
 	call PrinterInitialize
 	.loop
