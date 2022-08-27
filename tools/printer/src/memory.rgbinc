@@ -9,7 +9,7 @@ include "utils.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_BYTE_SIZE					equ (2)
+TILE_BYTE_SIZE					equ (16)
 IMAGE_DATA_MAX_SIZE				equ (SCRN_X_B * SCRN_Y_B * TILE_BYTE_SIZE)
 PRINT_PARAMETERS_COUNT			equ (4)
 
