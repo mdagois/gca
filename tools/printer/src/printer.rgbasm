@@ -10,6 +10,9 @@ export PrinterInitialize, PrinterUpdate
 section "printer_initialize", rom0
 
 PrinterInitialize:
+	; always use double speed to avoid any missed bytes transferred over serial
+	ToggleCpuSpeed
+
 	ClearMemory _RAM, WRAM_END
 	ClearMemory _HRAM, HRAM_END
 	ClearMemory _VRAM, _VRAM + (8 * 1024)

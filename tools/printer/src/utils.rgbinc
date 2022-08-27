@@ -272,6 +272,33 @@ macro CallFunctionFromTable
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CGB
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro ToggleCpuSpeed
+	; request a CPU speed change
+	ld hl, rKEY1
+	set 0, [hl]
+
+	; disable input polling
+	copy [rP1], P1F_GET_NONE
+
+	; save the interrupt flags into (b)
+	copy b, [rIE]
+
+	; disable all interrupts and clear pending interrupts
+	xor a
+	ld [rIE], a
+	ld [rIF], a
+
+	; trigger the speed change
+	stop
+
+	; restore the interrupt flags
+	copy [rIE], b
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 endc
 
