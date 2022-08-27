@@ -90,7 +90,48 @@ ProtocolUpdateVblank::
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret z
 
+BYTES_PER_VRAM_TRANSFER			equ (16)
+
+	load16 bc, vVramTransferredSize
+
+	; get the source data address into (de)
+	ld hl, vImageData
+	add hl, bc
+	ldr16 de, hl
+
+	; get the destination data address into (hl)
+	ld hl, _VRAM
+	add hl, bc
+
+	; transfer an amount of bytes from the image to VRAM
+	ld c, BYTES_PER_VRAM_TRANSFER
+	.vram_transfer
+		ld a, [de]
+		ld [hli], a
+		inc de
+		dec c
+	jr nz, .vram_transfer
+
+	; update the size of the image data transferred to VRAM
+	load16 hl, vVramTransferredSize
+	ld de, BYTES_PER_VRAM_TRANSFER
+	add hl, de
+	store16 vVramTransferredSize, hl
+
+	; check whether the printing is over
+	ld a, [vVramTransferredSize + 0]
+	ld b, a
+	ld a, [vImageDataSize + 0]
+	cp a, b
+	ret nz
+	ld a, [vVramTransferredSize + 1]
+	ld b, a
+	ld a, [vImageDataSize + 1]
+	cp a, b
+	ret nz
+
 	.printing_done
+	; update the status to indicate that printing is over
 	ld hl, vStatus
 	res PRINTER_STATUS_BIT_PRINTING, [hl]
 	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
@@ -373,8 +414,13 @@ ProcessPacketPrint:
 
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 
+	; prepare for printing
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_PRINTING, [hl]
+	xor a
+	ld [vVramTransferredSize + 0], a
+	ld [vVramTransferredSize + 1], a
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
