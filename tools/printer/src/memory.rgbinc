@@ -22,13 +22,10 @@ rsset _RAM
 vIsVblank						rb 1
 
 ; hold the print parameters
-vPrintParametersCount			rb 1
 vPrintParameters				rb (PRINT_PARAMETERS_COUNT)
 
 ; hold the image data
-vImageDataSize					rb 2
 vImageData						rb (IMAGE_DATA_MAX_SIZE)
-vImageDataSizeTransferred		rb 2
 
 WRAM_END						rb 0
 
@@ -52,6 +49,13 @@ vStatusDelayed					rb 1
 
 ; next expected byte
 vNextByte						rb 1
+
+; size of the image data currently held in memory
+; used to track whether memory is full or not
+vImageDataSize					rb 2
+
+; amount of packet data received (for data and print packets)
+vReceivedDataSize				rb 2
 
 HRAM_END						rb 0
 

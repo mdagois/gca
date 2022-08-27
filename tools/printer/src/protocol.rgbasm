@@ -148,11 +148,12 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessMagicByte0:
-	debug "Magic LSB"
+	debug "[PKT] ===================="
+	debug "  magic LSB"
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_0
 	jr z, .ok
-		debug "ERROR: magic LSB mismatch"
+		debug "  [ERROR] magic LSB mismatch"
 	.ok
 
 	; clean error flags (but keep the other ones)
@@ -166,11 +167,11 @@ ProcessMagicByte0:
 	ret
 
 ProcessMagicByte1:
-	debug "Magic MSB"
+	debug "  magic MSB"
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_1
 	jr z, .ok
-		debug "ERROR: magic MSB mismatch"
+		debug "  [ERROR] magic MSB mismatch"
 	.ok
 
 	reset [rSB]
@@ -189,38 +190,35 @@ ProcessHeaderPacketType:
 
 	cp a, PRINTER_PACKET_TYPE_INIT
 	jr nz, .type_init
-		debug "Packet header (type=init)"
+		debug "  header (type=init)"
 		xor a
 		ld [vStatus], a
-		ld [vPrintParametersCount], a
 		ld [vImageDataSize + 0], a
 		ld [vImageDataSize + 1], a
-		ld [vImageDataSizeTransferred + 0], a
-		ld [vImageDataSizeTransferred + 1], a
 		jp .packet_type_done
 	.type_init
 	cp a, PRINTER_PACKET_TYPE_PRINT
 	jr nz, .type_print
-		debug "Packet header (type=print)"
+		debug "  header (type=print)"
 		jp .packet_type_done
 	.type_print
 	cp a, PRINTER_PACKET_TYPE_DATA
 	jr nz, .type_data
-		debug "Packet header (type=data)"
+		debug "  header (type=data)"
 		jr .packet_type_done
 	.type_data
 	cp a, PRINTER_PACKET_TYPE_BREAK
 	jr nz, .type_break
-		debug "Packet header (type=break)"
+		debug "  header (type=break)"
 		jr .packet_type_done
 	.type_break
 	cp a, PRINTER_PACKET_TYPE_NUL
 	jr nz, .type_nul
-		debug "Packet header (type=nul)"
+		debug "  header (type=nul)"
 		jr .packet_type_done
 	.type_nul
 
-	debug "ERROR: unknown packet type"
+	debug "  [ERROR] unknown packet type"
 	.packet_type_done
 
 	reset [rSB]
@@ -232,7 +230,7 @@ ProcessHeaderPacketType:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataCompression:
-	debug "Packet header (compression)"
+	debug "  header (compression)"
 	ld a, [rSB]
 	ld [vDataCompression], a
 	UpdateChecksum
@@ -245,7 +243,7 @@ ProcessHeaderDataCompression:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataSizeLSB:
-	debug "Packet header (size LSB)"
+	debug "  header (size LSB)"
 	ld a, [rSB]
 	ld [vPacketDataSize + 0], a
 	UpdateChecksum
@@ -254,7 +252,7 @@ ProcessHeaderDataSizeLSB:
 	ret
 
 ProcessHeaderDataSizeMSB:
-	debug "Packet header (size MSB)"
+	debug "  header (size MSB)"
 	ld a, [rSB]
 	ld [vPacketDataSize + 1], a
 	UpdateChecksum
@@ -273,19 +271,27 @@ ProcessHeaderDataSizeMSB:
 
 	.has_data
 
+	; reset the number of data bytes transferred
 	xor a
-	ld [vImageDataSizeTransferred + 0], a
-	ld [vImageDataSizeTransferred + 1], a
+	ld [vReceivedDataSize + 0], a
+	ld [vReceivedDataSize + 1], a
 
 	; two types of packets have a data section: "data" and "print"
-	; assume a data packet and check for a print packet
-	copy [vNextByte], BYTE_PACKET_DATA
 	ld a, [vPacketType]
+	cp a, PRINTER_PACKET_TYPE_DATA
+	jr nz, .packet_data
+		copy [vNextByte], BYTE_PACKET_DATA
+		ret
+	.packet_data
 	cp a, PRINTER_PACKET_TYPE_PRINT
-	ret nz
+	jr nz, .packet_print
+		copy [vNextByte], BYTE_PACKET_PRINT
+		ret
+	.packet_print
 
-	reset [vPrintParametersCount]
-	copy [vNextByte], BYTE_PACKET_PRINT
+	debug "  [ERROR] unknown data packet"
+	copy [vNextByte], BYTE_PACKET_DATA
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -307,23 +313,23 @@ ProcessPacketData:
 
 	reset [rSB]
 
-	load16 hl, vImageDataSizeTransferred
+	load16 hl, vReceivedDataSize
 	inc hl
-	store16 vImageDataSizeTransferred, hl
+	store16 vReceivedDataSize, hl
 
 	ld a, [vPacketDataSize + 0]
 	ld b, a
-	ld a, [vImageDataSizeTransferred + 0]
+	ld a, [vReceivedDataSize + 0]
 	cp a, b
 	ret nz
 	ld a, [vPacketDataSize + 1]
 	ld b, a
-	ld a, [vImageDataSizeTransferred + 1]
+	ld a, [vReceivedDataSize + 1]
 	cp a, b
 	ret nz
 
 	.data_done
-	debug "Data done"
+	debug "  data transferred"
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 
 	ld hl, vStatusDelayed
@@ -337,31 +343,31 @@ ProcessPacketData:
 	cp a, high(IMAGE_DATA_MAX_SIZE)
 	ret nz
 
-	debug "Data full"
+	debug "  data full"
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
 	ret
 
 ProcessPacketPrint:
-	debug "Packet print"
+	debug "  print"
 	ld a, [rSB]
 	UpdateChecksum
 
 	; find the next parameter data byte and put the received byte in it
 	ld d, 0
-	ld hl, vPrintParametersCount
+	ld hl, vReceivedDataSize
 	ld e, [hl]
 	ld hl, vPrintParameters
 	add hl, de
 	ld [hl], a
 	inc e
-	ld hl, vPrintParametersCount
+	ld hl, vReceivedDataSize
 	ld [hl], e
 
 	reset [rSB]
 
 	; check whether all parameters have arrived
-	ld a, [vPrintParametersCount]
+	ld a, [vReceivedDataSize]
 	cp a, PRINT_PARAMETERS_COUNT
 	ret nz
 
@@ -376,13 +382,13 @@ ProcessPacketPrint:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketChecksumLSB:
-	debug "Packet checksum LSB"
+	debug "  checksum LSB"
 	ld a, [rSB]
 	ld b, a
 	ld a, [vPacketChecksum + 0]
 	cp a, b
 	jr z, .no_error
-		debug "ERROR: checksum LSB failure"
+		debug "  [ERROR] checksum LSB failure"
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
@@ -391,13 +397,13 @@ ProcessPacketChecksumLSB:
 	ret
 
 ProcessPacketChecksumMSB:
-	debug "Packet checksum MSB"
+	debug "  checksum MSB"
 	ld a, [rSB]
 	ld b, a
 	ld a, [vPacketChecksum + 1]
 	cp a, b
 	jr z, .no_error
-		debug "ERROR: checksum MSB failure"
+		debug "  [ERROR] checksum MSB failure"
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
@@ -410,7 +416,7 @@ ProcessPacketChecksumMSB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketAck:
-	debug "Packet ack"
+	debug "  ack"
 	; prepare to send the status next
 	ld a, [vStatus]
 	ld [rSB], a
@@ -425,7 +431,7 @@ ProcessPacketAck:
 	ret
 
 ProcessPacketStatus:
-	debug "Packet status"
+	debug "  status"
 	reset [rSB]
 	copy [vNextByte], BYTE_MAGIC_0
 	ret
