@@ -430,7 +430,7 @@ ProcessPacketPrint:
 
 	; check whether all parameters have been received
 	ld a, [vReceivedDataSize]
-	cp a, PRINT_PARAMETERS_COUNT
+	cp a, sizeof_PRINT_PARAMETERS
 	ret nz
 
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
