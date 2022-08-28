@@ -19,11 +19,6 @@ PRINT_PARAMETERS_COUNT			equ (4)
 
 rsset _RAM
 
-vIsVblank						rb 1
-
-; hold the print parameters
-vPrintParameters				rb (PRINT_PARAMETERS_COUNT)
-
 ; hold the image data
 vImageData						rb (IMAGE_DATA_MAX_SIZE)
 
@@ -34,6 +29,9 @@ WRAM_END						rb 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _HRAM
+
+; indicates whether the vblank ocurred or not
+vIsVblank						rb 1
 
 vPadInput						rb sizeof_PAD_INPUT
 
@@ -53,6 +51,9 @@ vNextByte						rb 1
 ; size of the image data currently held in memory
 ; used to track whether memory is full or not
 vImageDataSize					rb 2
+
+; hold the print parameters
+vPrintParameters				rb PRINT_PARAMETERS_COUNT
 
 ; amount of packet data received (for data and print packets)
 vReceivedDataSize				rb 2

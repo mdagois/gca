@@ -10,9 +10,11 @@ export PrinterInitialize, PrinterUpdate
 section "printer_initialize", rom0
 
 PrinterInitialize:
-	; always use double speed to avoid any missed bytes transferred over serial
+	; games expect the printer to process bytes sent over serial pretty fast
+	; so, the CPU double speed mode is enabled throughout the program
 	ToggleCpuSpeed
 
+	; clear and initialize memory
 	ClearMemory _RAM, WRAM_END
 	ClearMemory _HRAM, HRAM_END
 	ClearMemory _VRAM, _VRAM + (8 * 1024)
@@ -74,6 +76,11 @@ endr
 section "printer_update", rom0
 
 PrinterUpdate:
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; vblank
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	; make sure halt returned from vblank (as several interrupts are used)
 	ld hl, vIsVblank
 	xor a
 	.wait_vblank
@@ -83,13 +90,15 @@ PrinterUpdate:
 		ld [hl], a
 
 	; switch to tile addressing mode 8000 from line 0
-	; this displayed tiles 0 to 239
+	; tiles 0 to 239 are displayed
 	ld a, [rLCDC]
 	set LCDCB_BG8000, a
 	ld [rLCDC], a
 
 	call ProtocolUpdateVblank
 
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; frame logic
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	UpdatePadInput vPadInput

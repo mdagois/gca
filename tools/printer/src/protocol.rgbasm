@@ -7,6 +7,8 @@ include "utils.rgbinc"
 ; timeout
 ; low battery
 ; palette support
+; compression
+; handle data full
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -14,20 +16,25 @@ include "utils.rgbinc"
 ; Protocol
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; magic bytes sent at the start of every packet
 PRINTER_MAGIC_BYTE_0				equ ($88)
 PRINTER_MAGIC_BYTE_1				equ ($33)
 
+; packet types
 PRINTER_PACKET_TYPE_INIT			equ ($01)
 PRINTER_PACKET_TYPE_PRINT			equ ($02)
 PRINTER_PACKET_TYPE_DATA			equ ($04)
 PRINTER_PACKET_TYPE_BREAK			equ ($08)
 PRINTER_PACKET_TYPE_NUL				equ ($0F)
 
+; compression flag
 PRINTER_COMPRESSION_FLAG_OFF		equ (%00000000)
 PRINTER_COMPRESSION_FLAG_ON			equ (%00000001)
 
+; ack value
 PRINTER_ACK_VALUE					equ ($81)
 
+; status bits
 PRINTER_STATUS_BIT_LOW_BATTERY		equ (7)
 PRINTER_STATUS_BIT_OTHER_ERROR		equ (6)
 PRINTER_STATUS_BIT_PAPER_JAM		equ (5)
@@ -37,6 +44,7 @@ PRINTER_STATUS_BIT_DATA_FULL		equ (2)
 PRINTER_STATUS_BIT_PRINTING			equ (1)
 PRINTER_STATUS_BIT_CHECKSUM_ERROR	equ (0)
 
+; status flags
 PRINTER_STATUS_FLAG_LOW_BATTERY		equ (1 << PRINTER_STATUS_BIT_LOW_BATTERY)
 PRINTER_STATUS_FLAG_OTHER_ERROR		equ (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
 PRINTER_STATUS_FLAG_PAPER_JAM		equ (1 << PRINTER_STATUS_BIT_PAPER_JAM)
@@ -46,6 +54,7 @@ PRINTER_STATUS_FLAG_DATA_FULL		equ (1 << PRINTER_STATUS_BIT_DATA_FULL)
 PRINTER_STATUS_FLAG_PRINTING		equ (1 << PRINTER_STATUS_BIT_PRINTING)
 PRINTER_STATUS_FLAG_CHECKSUM_ERROR	equ (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR)
 
+; flags that persist between packets (except init)
 PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_LOW_BATTERY | PRINTER_STATUS_FLAG_READY_TO_PRINT | PRINTER_STATUS_FLAG_DATA_FULL | PRINTER_STATUS_FLAG_PRINTING)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,6 +77,12 @@ BYTE_PACKET_ACK				rb 1
 BYTE_PACKET_STATUS			rb 1
 BYTES_COUNT					rb 0
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Miscellaneous
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+IMAGE_BYTES_PER_VRAM_TRANSFER		equ (16)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,6 +93,8 @@ section "protocol", rom0
 
 ProtocolInitialize::
 	copy [vNextByte], BYTE_MAGIC_0
+
+	; get ready to receive the first byte
 	reset [rSB]
 	copy [rSC], SCF_START
 	ret
@@ -86,25 +103,23 @@ ProtocolUpdate::
 	ret
 
 ProtocolUpdateVblank::
+	; check whether printing has started
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret z
 
-BYTES_PER_VRAM_TRANSFER			equ (16)
-
+	; compute the source and destination addresses
 	load16 bc, vVramTransferredSize
+		; get the source data address into (de)
+		ld hl, vImageData
+		add hl, bc
+		ldr16 de, hl
+		; get the destination data address into (hl)
+		ld hl, _VRAM
+		add hl, bc
 
-	; get the source data address into (de)
-	ld hl, vImageData
-	add hl, bc
-	ldr16 de, hl
-
-	; get the destination data address into (hl)
-	ld hl, _VRAM
-	add hl, bc
-
-	; transfer an amount of bytes from the image to VRAM
-	ld c, BYTES_PER_VRAM_TRANSFER
+	; transfer a fixed amount of bytes from the image data to VRAM
+	ld c, IMAGE_BYTES_PER_VRAM_TRANSFER
 	.vram_transfer
 		ld a, [de]
 		ld [hli], a
@@ -114,7 +129,7 @@ BYTES_PER_VRAM_TRANSFER			equ (16)
 
 	; update the size of the image data transferred to VRAM
 	load16 hl, vVramTransferredSize
-	ld de, BYTES_PER_VRAM_TRANSFER
+	ld de, IMAGE_BYTES_PER_VRAM_TRANSFER
 	add hl, de
 	store16 vVramTransferredSize, hl
 
@@ -130,7 +145,6 @@ BYTES_PER_VRAM_TRANSFER			equ (16)
 	cp a, b
 	ret nz
 
-	.printing_done
 	; update the status to indicate that printing is over
 	ld hl, vStatus
 	res PRINTER_STATUS_BIT_PRINTING, [hl]
@@ -138,7 +152,8 @@ BYTES_PER_VRAM_TRANSFER			equ (16)
 
 	ret
 
-ModeFunctionTable:
+; table of all the byte processing functions
+ProcessFunctionTable:
 dw ProcessMagicByte0
 dw ProcessMagicByte1
 dw ProcessHeaderPacketType
@@ -153,7 +168,8 @@ dw ProcessPacketAck
 dw ProcessPacketStatus
 
 ProtocolHandlePacketByte::
-	CallFunctionFromTable ModeFunctionTable, vNextByte
+	CallFunctionFromTable ProcessFunctionTable, vNextByte
+	; get ready to receive the next byte
 	copy [rSC], SCF_START
 	ret
 
@@ -169,7 +185,7 @@ macro ResetChecksum
 endm
 
 ; add (a) to the current packet checksum
-; (a) keeps its value
+; preserve value in (a)
 macro UpdateChecksum
 	push af
 
@@ -229,6 +245,7 @@ ProcessHeaderPacketType:
 	UpdateChecksum
 	copy [vPacketType], a
 
+	; perform packet-specific operations
 	cp a, PRINTER_PACKET_TYPE_INIT
 	jr nz, .type_init
 		debug "  header (type=init)"
@@ -299,7 +316,7 @@ ProcessHeaderDataSizeMSB:
 	UpdateChecksum
 	reset [rSB]
 
-	; check whether there is data inside the packet
+	; check whether there is data inside the packet (size > 0)
 	ld a, [vPacketDataSize + 0]
 	cp a, 0
 	jr nz, .has_data
@@ -317,7 +334,7 @@ ProcessHeaderDataSizeMSB:
 	ld [vReceivedDataSize + 0], a
 	ld [vReceivedDataSize + 1], a
 
-	; two types of packets have a data section: "data" and "print"
+	; check the packet type to determine which type of bytes is coming next
 	ld a, [vPacketType]
 	cp a, PRINTER_PACKET_TYPE_DATA
 	jr nz, .packet_data
@@ -330,6 +347,9 @@ ProcessHeaderDataSizeMSB:
 		ret
 	.packet_print
 
+	; only two types of packet have a data section: "data" and "print"
+	; assume a data byte when the packet type is unexpected
+	; it probably won't work, but logs should help debug
 	debug "  [ERROR] unknown data packet"
 	copy [vNextByte], BYTE_PACKET_DATA
 
@@ -344,7 +364,7 @@ ProcessPacketData:
 	UpdateChecksum
 	ld b, a
 
-	; find the next image data byte and put the received byte in it
+	; find the next image data byte address and put the received byte into it
 	ld hl, vImageData
 	load16 de, vImageDataSize
 	add hl, de
@@ -354,10 +374,12 @@ ProcessPacketData:
 
 	reset [rSB]
 
+	; update the amount of received bytes
 	load16 hl, vReceivedDataSize
 	inc hl
 	store16 vReceivedDataSize, hl
 
+	; check whether all bytes have been received
 	ld a, [vPacketDataSize + 0]
 	ld b, a
 	ld a, [vReceivedDataSize + 0]
@@ -369,21 +391,20 @@ ProcessPacketData:
 	cp a, b
 	ret nz
 
-	.data_done
+	; all the data has been reeived
+	; the printer is ready to print
 	debug "  data transferred"
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
-
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
-	; check whether the image data is full
+	; check whether the image data is full and raise flag accordingly
 	ld a, [vImageDataSize + 0]
 	cp a, low(IMAGE_DATA_MAX_SIZE)
 	ret nz
 	ld a, [vImageDataSize + 1]
 	cp a, high(IMAGE_DATA_MAX_SIZE)
 	ret nz
-
 	debug "  data full"
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
@@ -394,7 +415,7 @@ ProcessPacketPrint:
 	ld a, [rSB]
 	UpdateChecksum
 
-	; find the next parameter data byte and put the received byte in it
+	; find the next parameter data byte address and put the received byte into it
 	ld d, 0
 	ld hl, vReceivedDataSize
 	ld e, [hl]
@@ -407,7 +428,7 @@ ProcessPacketPrint:
 
 	reset [rSB]
 
-	; check whether all parameters have arrived
+	; check whether all parameters have been received
 	ld a, [vReceivedDataSize]
 	cp a, PRINT_PARAMETERS_COUNT
 	ret nz
@@ -430,6 +451,8 @@ ProcessPacketPrint:
 ProcessPacketChecksumLSB:
 	debug "  checksum LSB"
 	ld a, [rSB]
+
+	; validate the checksum LSB
 	ld b, a
 	ld a, [vPacketChecksum + 0]
 	cp a, b
@@ -438,6 +461,7 @@ ProcessPacketChecksumLSB:
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
+
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_MSB
 	reset [rSB]
 	ret
@@ -445,6 +469,8 @@ ProcessPacketChecksumLSB:
 ProcessPacketChecksumMSB:
 	debug "  checksum MSB"
 	ld a, [rSB]
+
+	; validate the checksum MSB
 	ld b, a
 	ld a, [vPacketChecksum + 1]
 	cp a, b
@@ -453,7 +479,9 @@ ProcessPacketChecksumMSB:
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
+
 	copy [vNextByte], BYTE_PACKET_ACK
+	; prepare to send back the ack value
 	copy [rSB], PRINTER_ACK_VALUE
 	ret
 
@@ -463,11 +491,11 @@ ProcessPacketChecksumMSB:
 
 ProcessPacketAck:
 	debug "  ack"
-	; prepare to send the status next
+	; prepare to send the status
 	ld a, [vStatus]
 	ld [rSB], a
 
-	; merge the delayed status
+	; merge the delayed status (reflected in the next packet response)
 	ld b, a
 	ld a, [vStatusDelayed]
 	or a, b
@@ -478,6 +506,8 @@ ProcessPacketAck:
 
 ProcessPacketStatus:
 	debug "  status"
+	; the packet is done
+	; prepare for the next packet
 	reset [rSB]
 	copy [vNextByte], BYTE_MAGIC_0
 	ret

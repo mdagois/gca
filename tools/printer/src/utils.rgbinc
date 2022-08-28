@@ -24,12 +24,14 @@ macro reset
 endm
 
 ; copy 16-bit register \2 into 16-bit register \1
+; example: ldr hl, de
 macro ldr16
 	ld low(\1), low(\2)
 	ld high(\1), high(\2)
 endm
 
 ; load 2 bytes at address \2 into 16-bit register \1
+; example: load16 de, $FF82
 macro load16
 	ld a, [\2 + 0]
 	ld low(\1), a
@@ -38,6 +40,7 @@ macro load16
 endm
 
 ; load the content of 16-bit register \2 into two bytes at address \1
+; example: store16 $FF82, hl
 macro store16
 	ld a, low(\2)
 	ld [\1 + 0], a
