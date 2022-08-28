@@ -2,13 +2,13 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; break packet
-; nul packet
-; timeout
-; low battery
 ; palette support
+; low battery
+; handle data full (just debug message)
+; timeout
 ; compression
-; handle data full
+; break packet (warning message)
+; nul packet
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
