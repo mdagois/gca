@@ -67,6 +67,9 @@ vReceivedDataSize				rb 2
 ; tracks amount of image data transferred to VRAM during print
 vVramTransferredSize			rb 2
 
+; flag raised when the palette needs a refresh
+vRefreshPalette					rb 1
+
 HRAM_END						rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

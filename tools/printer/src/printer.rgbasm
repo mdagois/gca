@@ -21,31 +21,6 @@ PrinterInitialize:
 	InitPadInput vPadInput
 	call ProtocolInitialize
 
-	; init the palette
-	ld a, 0 | BCPSF_AUTOINC
-	ld [rBCPS], a
-	ld hl, rBCPD
-		; Color 0
-		ld a, $FC
-		ld [hl], a
-		ld a, $6B
-		ld [hl], a
-		; Color 1
-		ld a, $11
-		ld [hl], a
-		ld a, $3B
-		ld [hl], a
-		; Color 2
-		ld a, $A6
-		ld [hl], a
-		ld a, $29
-		ld [hl], a
-		; Color 3
-		ld a, $61
-		ld [hl], a
-		ld a, $10
-		ld [hl], a
-
 	; set a tilemap to display the image data
 	xor a
 	ld hl, _SCRN0

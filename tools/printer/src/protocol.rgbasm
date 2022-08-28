@@ -2,7 +2,6 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; palette support
 ; low battery
 ; handle data full (just debug message)
 ; timeout
@@ -99,7 +98,89 @@ ProtocolInitialize::
 	copy [rSC], SCF_START
 	ret
 
+; game boy colors
+PaletteColors:
+	; white
+	db $FC
+	db $6B
+	; light gray
+	db $11
+	db $3B
+	; dark gray
+	db $A6
+	db $29
+	; black
+	db $61
+	db $10
+
 ProtocolUpdate::
+	; check whether the palette needs a refresh
+	ld hl, vRefreshPalette
+	bit 0, [hl]
+	ret z
+
+	debug "[APP] refreshing the palette"
+
+	; reset the palette refresh flag
+	res 0, [hl]
+
+	; retrieve the palette data received from serial
+	ld a, [vPrintParameters + PRINT_PARAMETER_PALETTE]
+	ld b, a
+
+	; get ready to set the colors of the first palette
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+
+	; set the color 0
+	ld hl, PaletteColors
+	ld a, b
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 1
+	ld hl, PaletteColors
+	ld a, b
+	srl a
+	srl a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 2
+	ld hl, PaletteColors
+	ld a, b
+	swap a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 2
+	ld hl, PaletteColors
+	ld a, b
+	swap a
+	srl a
+	srl a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
 	ret
 
 ProtocolUpdateVblank::
@@ -441,6 +522,9 @@ ProcessPacketPrint:
 	xor a
 	ld [vVramTransferredSize + 0], a
 	ld [vVramTransferredSize + 1], a
+
+	ld hl, vRefreshPalette
+	set 0, [hl]
 
 	ret
 
