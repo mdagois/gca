@@ -2,7 +2,11 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; low battery
+; error
+;   low battery
+;   paper jam
+;   other error
+;   packet error
 ; timeout
 ; compression
 
