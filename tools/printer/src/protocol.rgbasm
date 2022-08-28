@@ -2,12 +2,10 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; low battery
 ; handle data full (just debug message)
+; low battery
 ; timeout
 ; compression
-; break packet (warning message)
-; nul packet
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -344,11 +342,12 @@ ProcessHeaderPacketType:
 	cp a, PRINTER_PACKET_TYPE_DATA
 	jr nz, .type_data
 		debug "  header (type=data)"
-		jr .packet_type_done
+		jp .packet_type_done
 	.type_data
 	cp a, PRINTER_PACKET_TYPE_BREAK
 	jr nz, .type_break
 		debug "  header (type=break)"
+		debug "  [WARN] break is not supported"
 		jr .packet_type_done
 	.type_break
 	cp a, PRINTER_PACKET_TYPE_NUL
