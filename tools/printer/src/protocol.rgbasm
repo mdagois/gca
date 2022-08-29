@@ -12,6 +12,12 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Protocol
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -85,13 +91,13 @@ IMAGE_BYTES_PER_VRAM_TRANSFER		equ (16)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Exports
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 section "protocol", rom0
 
-ProtocolInitialize::
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProtocolInitialize:
 	copy [vNextByte], BYTE_MAGIC_0
 
 	; get ready to receive the first byte
@@ -99,8 +105,12 @@ ProtocolInitialize::
 	copy [rSC], SCF_START
 	ret
 
-; game boy colors
-PaletteColors:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Update
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; DMG colors used to set the palette
+DmgColors:
 	; white
 	db $FC
 	db $6B
@@ -114,15 +124,11 @@ PaletteColors:
 	db $61
 	db $10
 
-ProtocolUpdate::
-	; check whether the palette needs a refresh
-	ld hl, vRefreshPalette
-	bit 0, [hl]
-	ret z
-
+RefreshPalette:
 	debug "[APP] refreshing the palette"
 
 	; reset the palette refresh flag
+	ld hl, vRefreshPalette
 	res 0, [hl]
 
 	; retrieve the palette data received from serial
@@ -133,7 +139,7 @@ ProtocolUpdate::
 	copy [rBCPS], 0 | BCPSF_AUTOINC
 
 	; set the color 0
-	ld hl, PaletteColors
+	ld hl, DmgColors
 	ld a, b
 	and a, $03
 	sla a
@@ -144,7 +150,7 @@ ProtocolUpdate::
 	copy [rBCPD], [hl]
 
 	; set the color 1
-	ld hl, PaletteColors
+	ld hl, DmgColors
 	ld a, b
 	srl a
 	srl a
@@ -157,7 +163,7 @@ ProtocolUpdate::
 	copy [rBCPD], [hl]
 
 	; set the color 2
-	ld hl, PaletteColors
+	ld hl, DmgColors
 	ld a, b
 	swap a
 	and a, $03
@@ -169,7 +175,7 @@ ProtocolUpdate::
 	copy [rBCPD], [hl]
 
 	; set the color 2
-	ld hl, PaletteColors
+	ld hl, DmgColors
 	ld a, b
 	swap a
 	srl a
@@ -184,7 +190,19 @@ ProtocolUpdate::
 
 	ret
 
-ProtocolUpdateVblank::
+ProtocolUpdate:
+	; check whether the palette needs a refresh
+	ld hl, vRefreshPalette
+	bit 0, [hl]
+	call nz, RefreshPalette
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Vblank
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TransferTileData:
 	; check whether printing has started
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
@@ -234,6 +252,14 @@ ProtocolUpdateVblank::
 
 	ret
 
+ProtocolUpdateVblank:
+	call TransferTileData
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Serial communication
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; table of all the byte processing functions
 ProcessFunctionTable:
 dw ProcessMagicByte0
@@ -249,7 +275,7 @@ dw ProcessPacketChecksumMSB
 dw ProcessPacketAck
 dw ProcessPacketStatus
 
-ProtocolHandlePacketByte::
+ProtocolHandlePacketByte:
 	CallFunctionFromTable ProcessFunctionTable, vNextByte
 	; get ready to receive the next byte
 	copy [rSC], SCF_START
@@ -279,8 +305,6 @@ macro UpdateChecksum
 
 	pop af
 endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Magic
