@@ -2,11 +2,6 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; error
-;   low battery
-;   paper jam
-;   other error
-;   packet error
 ; timeout
 ; compression
 
@@ -61,7 +56,7 @@ PRINTER_STATUS_FLAG_PRINTING		equ (1 << PRINTER_STATUS_BIT_PRINTING)
 PRINTER_STATUS_FLAG_CHECKSUM_ERROR	equ (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR)
 
 ; flags that persist between packets (except init)
-PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_LOW_BATTERY | PRINTER_STATUS_FLAG_READY_TO_PRINT | PRINTER_STATUS_FLAG_DATA_FULL | PRINTER_STATUS_FLAG_PRINTING)
+PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_READY_TO_PRINT | PRINTER_STATUS_FLAG_DATA_FULL | PRINTER_STATUS_FLAG_PRINTING)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Byte types
@@ -190,12 +185,43 @@ RefreshPalette:
 
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+GenerateUserTriggeredErrors:
+	; clear errors
+	ld hl, vStatusUserTriggeredErrors
+	xor a
+	ld [hl], a
+
+	; check input keys and raise error flags accordingly
+	TestPadInput_HeldAll vPadInput, PADF_UP
+	jr nz, .low_battery
+		set PRINTER_STATUS_BIT_LOW_BATTERY, [hl] 
+	.low_battery
+	TestPadInput_HeldAll vPadInput, PADF_DOWN
+	jr nz, .other_error
+		set PRINTER_STATUS_BIT_OTHER_ERROR, [hl] 
+	.other_error
+	TestPadInput_HeldAll vPadInput, PADF_LEFT
+	jr nz, .paper_jam
+		set PRINTER_STATUS_BIT_PAPER_JAM, [hl] 
+	.paper_jam
+	TestPadInput_HeldAll vPadInput, PADF_RIGHT
+	jr nz, .packet_error
+		set PRINTER_STATUS_BIT_PACKET_ERROR, [hl] 
+	.packet_error
+	
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ProtocolUpdate:
 	; check whether the palette needs a refresh
 	ld hl, vRefreshPalette
 	bit 0, [hl]
 	call nz, RefreshPalette
 
+	call GenerateUserTriggeredErrors
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -610,6 +636,10 @@ ProcessPacketAck:
 	debug "  ack"
 	; prepare to send the status
 	ld a, [vStatus]
+	; merge the user-triggered errors
+	ld b, a
+	ld a, [vStatusUserTriggeredErrors]
+	or a, b
 	ld [rSB], a
 
 	; merge the delayed status (reflected in the next packet response)

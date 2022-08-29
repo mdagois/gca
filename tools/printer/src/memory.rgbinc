@@ -51,6 +51,9 @@ vStatus							rb 1
 ; hold flags that are raised only after the packet is processed
 vStatusDelayed					rb 1
 
+; hold error flags that are raised via user input
+vStatusUserTriggeredErrors		rb 1
+
 ; next expected byte
 vNextByte						rb 1
 
