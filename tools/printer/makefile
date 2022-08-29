@@ -2,13 +2,12 @@
 # README
 #
 # A simple makefile to build DMG and CGB ROMs.
+# All that is required is to set the variables in the 'Parameters' section.
 #
-# Steps
-# 1. Edit the variables in the 'Parameters' section
-# 2. In a console prompt, type any of the following
-#    a. 'make romd' to build a debug version
-#    b. 'make romr' to build a release version
-# 3. Type 'make launch' to run the ROM
+# Targets
+# - 'make rom' => build a release version of the ROM
+# - 'make romd' => build a debug version of the ROM
+# - 'make launch' => launch the ROM
 #
 # Requirements
 # - The 'rgbasm', 'rgblink' and 'rgbfix' executables are expected to be in your
@@ -81,9 +80,9 @@ ROM_SYM_FILE=$(ROM_PATH).sym
 ################################################################################
 
 .INTERMEDIATE: $(ROM_OBJECTS)
-.PHONY: default fix launch link rom romd romr
+.PHONY: default fix launch link rom rombase romd
 
-default: romr
+default: rom
 
 launch:
 	@bgb --watch $(ROM_FILE) $(ROM_LAUNCH_OPTIONS) &
@@ -94,13 +93,13 @@ link: $(ROM_OBJECTS)
 fix: link
 	@rgbfix $(ROM_FIX_OPTIONS) --title $(ROM_GAME_NAME) $(ROM_FILE)
 
-rom: fix
+rombase: fix
 
-romr: ROM_COMPILE_OPTIONS += -DBUILD_RELEASE
-romr: rom
+rom: ROM_COMPILE_OPTIONS += -DBUILD_RELEASE
+rom: rombase
 
 romd: ROM_COMPILE_OPTIONS += -DBUILD_DEBUG
-romd: rom
+romd: rombase
 
 %.o: %.$(ROM_SRC_EXTENSION)
 	@rgbasm $(ROM_COMPILE_OPTIONS) -i $(ROM_SRC_DIR) -o $@ $<
