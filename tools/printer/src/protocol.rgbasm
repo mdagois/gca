@@ -2,12 +2,11 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ; TODO
-; timeout
 ; compression
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte
+export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Constants
@@ -98,6 +97,14 @@ ProtocolInitialize:
 	; get ready to receive the first byte
 	reset [rSB]
 	copy [rSC], SCF_START
+
+	; start the timeout timer
+	xor a
+	ld [rTMA], a
+	ld [rTIMA], a
+	ld [rDIV], a
+	copy [rTAC], TACF_START | TACF_16KHZ
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -120,7 +127,7 @@ DmgColors:
 	db $10
 
 RefreshPalette:
-	debug "[APP] refreshing the palette"
+	debug "[INFO] refreshing the palette"
 
 	; reset the palette refresh flag
 	ld hl, vRefreshPalette
@@ -283,6 +290,57 @@ ProtocolUpdateVblank:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Timeout
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Reset:
+	copy [vNextByte], BYTE_MAGIC_0
+
+	; get ready to receive the first byte
+	reset [rSB]
+	copy [rSC], SCF_START
+
+	; reset the state
+	xor a
+	ld [vStatus], a
+	ld [vStatusDelayed], a
+	ld [vImageDataSize + 0], a
+	ld [vImageDataSize + 1], a
+	ld [vReceivedDataSize + 0], a
+	ld [vReceivedDataSize + 1], a
+	ld [vVramTransferredSize + 0], a
+	ld [vVramTransferredSize + 1], a
+	ld [vRefreshPalette + 1], a
+
+	ret
+
+; number of interrupts before the timeout is triggered
+; the formula depends on the timer parameters (rTAC and rTMA)
+; 0.100 = 100 ms (the timeout value)
+; 16384 * 2 = frequency of the timer (multiplied by 2 as the program runs in double speed mode)
+; 256 = number of timer updates before an interrupt is triggered (256 - rTMA)
+; + 1 = round up to next integer
+TIMEOUT_TRIGGER				equ ((0.100 * (16384 * 2) / 256.0) + 1)
+
+ProtocolCheckTimeout:
+	; check that roughly 100 ms have elapsed
+	ld a, [vTimeoutCounter]
+	inc a
+	ld [vTimeoutCounter], a
+	cp a, TIMEOUT_TRIGGER
+	ret nz
+
+	; reset the state of the printer
+	ld a, [vNextByte]
+	cp a, BYTE_MAGIC_0
+	jr z, .reset
+		debug "[ERROR] timeout"
+		call Reset
+	.reset
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Serial communication
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -302,7 +360,13 @@ dw ProcessPacketAck
 dw ProcessPacketStatus
 
 ProtocolHandlePacketByte:
+	; reset the timeout
+	xor a
+	ld [vTimeoutCounter], a
+
+	; call the proper function to handle the received byte
 	CallFunctionFromTable ProcessFunctionTable, vNextByte
+
 	; get ready to receive the next byte
 	copy [rSC], SCF_START
 	ret
@@ -337,12 +401,12 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessMagicByte0:
-	debug "[PKT] ===================="
-	debug "  magic LSB"
+	debug "[INFO] ===================="
+	debug "[INFO] magic LSB"
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_0
 	jr z, .ok
-		debug "  [ERROR] magic LSB mismatch"
+		debug "[ERROR] magic LSB mismatch"
 	.ok
 
 	; clean error flags (but keep the other ones)
@@ -356,11 +420,11 @@ ProcessMagicByte0:
 	ret
 
 ProcessMagicByte1:
-	debug "  magic MSB"
+	debug "[INFO] magic MSB"
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_1
 	jr z, .ok
-		debug "  [ERROR] magic MSB mismatch"
+		debug "[ERROR] magic MSB mismatch"
 	.ok
 
 	reset [rSB]
@@ -380,7 +444,7 @@ ProcessHeaderPacketType:
 	; perform packet-specific operations
 	cp a, PRINTER_PACKET_TYPE_INIT
 	jr nz, .type_init
-		debug "  header (type=init)"
+		debug "[INFO] header (type=init)"
 		xor a
 		ld [vStatus], a
 		ld [vImageDataSize + 0], a
@@ -389,27 +453,27 @@ ProcessHeaderPacketType:
 	.type_init
 	cp a, PRINTER_PACKET_TYPE_PRINT
 	jr nz, .type_print
-		debug "  header (type=print)"
+		debug "[INFO] header (type=print)"
 		jp .packet_type_done
 	.type_print
 	cp a, PRINTER_PACKET_TYPE_DATA
 	jr nz, .type_data
-		debug "  header (type=data)"
+		debug "[INFO] header (type=data)"
 		jp .packet_type_done
 	.type_data
 	cp a, PRINTER_PACKET_TYPE_BREAK
 	jr nz, .type_break
-		debug "  header (type=break)"
-		debug "  [WARN] break is not supported"
+		debug "[INFO] header (type=break)"
+		debug "[WARN] break is not supported"
 		jr .packet_type_done
 	.type_break
 	cp a, PRINTER_PACKET_TYPE_NUL
 	jr nz, .type_nul
-		debug "  header (type=nul)"
+		debug "[INFO] header (type=nul)"
 		jr .packet_type_done
 	.type_nul
 
-	debug "  [ERROR] unknown packet type"
+	debug "[ERROR] unknown packet type"
 	.packet_type_done
 
 	reset [rSB]
@@ -421,7 +485,7 @@ ProcessHeaderPacketType:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataCompression:
-	debug "  header (compression)"
+	debug "[INFO] header (compression)"
 	ld a, [rSB]
 	ld [vDataCompression], a
 	UpdateChecksum
@@ -434,7 +498,7 @@ ProcessHeaderDataCompression:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataSizeLSB:
-	debug "  header (size LSB)"
+	debug "[INFO] header (size LSB)"
 	ld a, [rSB]
 	ld [vPacketDataSize + 0], a
 	UpdateChecksum
@@ -443,7 +507,7 @@ ProcessHeaderDataSizeLSB:
 	ret
 
 ProcessHeaderDataSizeMSB:
-	debug "  header (size MSB)"
+	debug "[INFO] header (size MSB)"
 	ld a, [rSB]
 	ld [vPacketDataSize + 1], a
 	UpdateChecksum
@@ -483,7 +547,7 @@ ProcessHeaderDataSizeMSB:
 	; only two types of packet have a data section: "data" and "print"
 	; assume a data byte when the packet type is unexpected
 	; it probably won't work, but logs should help debug
-	debug "  [ERROR] unknown data packet"
+	debug "[ERROR] unknown data packet"
 	copy [vNextByte], BYTE_PACKET_DATA
 
 	ret
@@ -501,7 +565,7 @@ ProcessPacketData:
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_DATA_FULL, [hl]
 	jr z, .data_full
-		debug "  [ERROR] data is already full"
+		debug "[ERROR] data is already full"
 	.data_full
 
 	; find the next image data byte address and put the received byte into it
@@ -533,7 +597,7 @@ ProcessPacketData:
 
 	; all the data has been reeived
 	; the printer is ready to print
-	debug "  data transferred"
+	debug "[INFO] data transferred"
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
@@ -545,13 +609,13 @@ ProcessPacketData:
 	ld a, [vImageDataSize + 1]
 	cp a, high(IMAGE_DATA_MAX_SIZE)
 	ret nz
-	debug "  data full"
+	debug "[INFO] data full"
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
 	ret
 
 ProcessPacketPrint:
-	debug "  print"
+	debug "[INFO] print"
 	ld a, [rSB]
 	UpdateChecksum
 
@@ -592,7 +656,7 @@ ProcessPacketPrint:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketChecksumLSB:
-	debug "  checksum LSB"
+	debug "[INFO] checksum LSB"
 	ld a, [rSB]
 
 	; validate the checksum LSB
@@ -600,7 +664,7 @@ ProcessPacketChecksumLSB:
 	ld a, [vPacketChecksum + 0]
 	cp a, b
 	jr z, .no_error
-		debug "  [ERROR] checksum LSB failure"
+		debug "[ERROR] checksum LSB failure"
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
@@ -610,7 +674,7 @@ ProcessPacketChecksumLSB:
 	ret
 
 ProcessPacketChecksumMSB:
-	debug "  checksum MSB"
+	debug "[INFO] checksum MSB"
 	ld a, [rSB]
 
 	; validate the checksum MSB
@@ -618,7 +682,7 @@ ProcessPacketChecksumMSB:
 	ld a, [vPacketChecksum + 1]
 	cp a, b
 	jr z, .no_error
-		debug "  [ERROR] checksum MSB failure"
+		debug "[ERROR] checksum MSB failure"
 		ld hl, vStatus
 		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
 	.no_error
@@ -633,7 +697,7 @@ ProcessPacketChecksumMSB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessPacketAck:
-	debug "  ack"
+	debug "[INFO] ack"
 	; prepare to send the status
 	ld a, [vStatus]
 	; merge the user-triggered errors
@@ -652,7 +716,7 @@ ProcessPacketAck:
 	ret
 
 ProcessPacketStatus:
-	debug "  status"
+	debug "[INFO] status"
 	; the packet is done
 	; prepare for the next packet
 	reset [rSB]

@@ -11,6 +11,19 @@ section "vblank_interrupt", rom0[$0040]
 	reti
 
 section "lcd_interrupt", rom0[$0048]
+	jp LcdInterrupt
+
+section "timer_interrupt", rom0[$0050]
+	jp TimerInterrupt
+
+section "serial_interrupt", rom0[$0058]
+	jp SerialInterrupt
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "interrupt_handlers", rom0
+
+LcdInterrupt:
 	push af
 	; switch to tile addressing mode 8800 on line 12 * 8 to display tiles 240 to 359
 	; switching is necessary to display all the 360 tiles that compose a 160x144 image
@@ -21,7 +34,13 @@ section "lcd_interrupt", rom0[$0048]
 	pop af
 	reti
 
-section "serial_interrupt", rom0[$0058]
+TimerInterrupt:
+	PushAllRegisters
+	call ProtocolCheckTimeout
+	PopAllRegisters
+	reti
+
+SerialInterrupt:
 	PushAllRegisters
 	call ProtocolHandlePacketByte
 	PopAllRegisters

@@ -54,7 +54,7 @@ vStatusDelayed					rb 1
 ; hold error flags that are raised via user input
 vStatusUserTriggeredErrors		rb 1
 
-; next expected byte
+; type of the next expected byte
 vNextByte						rb 1
 
 ; size of the image data currently held in memory
@@ -72,6 +72,9 @@ vVramTransferredSize			rb 2
 
 ; flag raised when the palette needs a refresh
 vRefreshPalette					rb 1
+
+; timeout counter
+vTimeoutCounter					rb 1
 
 HRAM_END						rb 0
 

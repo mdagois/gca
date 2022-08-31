@@ -36,7 +36,7 @@ endr
 		jr nz, .set_line
 
 	; enable interrupts
-	copy [rIE], IEF_VBLANK | IEF_STAT | IEF_SERIAL
+	copy [rIE], IEF_VBLANK | IEF_STAT | IEF_TIMER | IEF_SERIAL
 	copy [rSTAT], STATF_LYC
 	copy [rLYC], 12 * 8
 	ei
