@@ -283,6 +283,8 @@ TransferTileData:
 	res PRINTER_STATUS_BIT_PRINTING, [hl]
 	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
+	debug "[INFO] printing done"
+
 	ret
 
 ProtocolUpdateVblank:
@@ -485,9 +487,9 @@ ProcessHeaderPacketType:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataCompression:
-	debug "[INFO] header (compression)"
 	ld a, [rSB]
 	ld [vDataCompression], a
+	debug "%a=$01%[INFO] header (compressed);[INFO] header (uncompressed);"
 	UpdateChecksum
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_DATA_SIZE_LSB
@@ -597,7 +599,7 @@ ProcessPacketData:
 
 	; all the data has been reeived
 	; the printer is ready to print
-	debug "[INFO] data transferred"
+	debug "[INFO] data received"
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
