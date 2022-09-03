@@ -1,9 +1,6 @@
 include "memory.rgbinc"
 include "utils.rgbinc"
 
-; TODO
-; compression
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
@@ -606,10 +603,10 @@ ProcessPacketData:
 
 	; check whether the image data is full and raise flag accordingly
 	ld a, [vImageDataSize + 0]
-	cp a, low(IMAGE_DATA_MAX_SIZE)
+	cp a, low(CHUNK_DATA_MAX_SIZE)
 	ret nz
 	ld a, [vImageDataSize + 1]
-	cp a, high(IMAGE_DATA_MAX_SIZE)
+	cp a, high(CHUNK_DATA_MAX_SIZE)
 	ret nz
 	debug "[INFO] data full"
 	ld hl, vStatusDelayed

@@ -9,8 +9,20 @@ include "utils.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; a chunk is a group of 20x2 tiles
+; the memory holds up to 9 chunks for a total of 20x18 tiles, a screen worth of tiles
 TILE_BYTE_SIZE					equ (16)
-IMAGE_DATA_MAX_SIZE				equ (SCRN_X_B * SCRN_Y_B * TILE_BYTE_SIZE)
+TILE_ROWS_PER_CHUNK				equ (2)
+TILES_PER_CHUNK					equ (TILE_BYTE_SIZE * SCRN_X_B * TILE_ROWS_PER_CHUNK)
+CHUNKS_MAX_COUNT				equ (9)
+CHUNK_DATA_MAX_SIZE				equ (TILES_PER_CHUNK * CHUNKS_MAX_COUNT)
+
+rsreset
+CHUNK_PROPERTY_FLAGS			rb 1
+CHUNK_PROPERTY_SIZE				rb 2
+sizeof_CHUNK_PROPERTY			rb 0
+
+CHUNK_PROPERTIES_MAX_SIZE		equ (sizeof_CHUNK_PROPERTY * CHUNKS_MAX_COUNT)
 
 rsreset
 PRINT_PARAMETER_SHEET_COUNT		rb 1
@@ -25,8 +37,8 @@ sizeof_PRINT_PARAMETERS			rb 0
 
 rsset _RAM
 
-; hold the image data
-vImageData						rb (IMAGE_DATA_MAX_SIZE)
+; hold the image data (up to 9 chunks)
+vImageData						rb (CHUNK_DATA_MAX_SIZE)
 
 WRAM_END						rb 0
 
@@ -75,6 +87,9 @@ vRefreshPalette					rb 1
 
 ; timeout counter
 vTimeoutCounter					rb 1
+
+; hold up to 9 chunk properties
+vChunkProperties				rb (CHUNK_PROPERTIES_MAX_SIZE)
 
 HRAM_END						rb 0
 
