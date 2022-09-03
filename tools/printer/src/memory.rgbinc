@@ -18,8 +18,8 @@ CHUNKS_MAX_COUNT				equ (9)
 CHUNK_DATA_MAX_SIZE				equ (TILES_PER_CHUNK * CHUNKS_MAX_COUNT)
 
 rsreset
-CHUNK_PROPERTY_FLAGS			rb 1
-CHUNK_PROPERTY_SIZE				rb 2
+CHUNK_PROPERTY_COMPRESSION		rb 1
+CHUNK_PROPERTY_DATA_SIZE		rb 2
 sizeof_CHUNK_PROPERTY			rb 0
 
 CHUNK_PROPERTIES_MAX_SIZE		equ (sizeof_CHUNK_PROPERTY * CHUNKS_MAX_COUNT)
@@ -55,8 +55,6 @@ vPadInput						rb sizeof_PAD_INPUT
 
 ; hold data during packet transfer
 vPacketType						rb 1
-vDataCompression				rb 1
-vPacketDataSize					rb 2
 vPacketChecksum					rb 2
 vStatus							rb 1
 

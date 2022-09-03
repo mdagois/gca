@@ -384,7 +384,7 @@ endm
 
 ; add (a) to the current packet checksum
 ; preserve value in (a)
-macro UpdateChecksum
+macro UpdateChecksumWithA
 	push af
 
 	ld d, 0
@@ -394,6 +394,44 @@ macro UpdateChecksum
 	store16 vPacketChecksum, hl
 
 	pop af
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; table of all the chunks property addresses
+ChunkPropertyAddresses:
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 0)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 1)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 2)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 3)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 4)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 5)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 6)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 7)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 8)
+
+; get the address of the current chunk property \1 into (hl)
+macro GetChunkPropertyIntoHL
+	; get current chunk number times 2
+	ld a, [vChunkCount]
+	sla a
+
+	; retrieve the location of the address in the table
+	ld hl, ChunkPropertyAddresses
+	ld d, 0
+	ld e, a
+	add hl, de
+
+	; extract the actual address of the property
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+
+	; add the property index
+	ld e, \1
+	add hl, de
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -438,7 +476,7 @@ endc
 
 ProcessHeaderPacketType:
 	ld a, [rSB]
-	UpdateChecksum
+	UpdateChecksumWithA
 	copy [vPacketType], a
 
 	; perform packet-specific operations
@@ -486,10 +524,12 @@ ProcessHeaderPacketType:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataCompression:
+	GetChunkPropertyIntoHL CHUNK_PROPERTY_COMPRESSION
 	ld a, [rSB]
-	ld [vDataCompression], a
+	ld [hl], a
+
 	debug "%a=$01%[INFO] header (compressed);[INFO] header (uncompressed);"
-	UpdateChecksum
+	UpdateChecksumWithA
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_DATA_SIZE_LSB
 	ret
@@ -500,25 +540,28 @@ ProcessHeaderDataCompression:
 
 ProcessHeaderDataSizeLSB:
 	debug "[INFO] header (size LSB)"
+	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
 	ld a, [rSB]
-	ld [vPacketDataSize + 0], a
-	UpdateChecksum
+	ld [hl], a
+	UpdateChecksumWithA
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_DATA_SIZE_MSB
 	ret
 
 ProcessHeaderDataSizeMSB:
 	debug "[INFO] header (size MSB)"
+	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE + 1
 	ld a, [rSB]
-	ld [vPacketDataSize + 1], a
-	UpdateChecksum
+	ld [hl], a
+	UpdateChecksumWithA
 	reset [rSB]
 
 	; check whether there is data inside the packet (size > 0)
-	ld a, [vPacketDataSize + 0]
+	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
+	ld a, [hli]
 	cp a, 0
 	jr nz, .has_data
-	ld a, [vPacketDataSize + 1]
+	ld a, [hl]
 	cp a, 0
 	jr nz, .has_data
 
@@ -559,7 +602,7 @@ ProcessHeaderDataSizeMSB:
 
 ProcessPacketData:
 	ld a, [rSB]
-	UpdateChecksum
+	UpdateChecksumWithA
 	ld b, a
 
 if def(BUILD_DEBUG)
@@ -585,15 +628,13 @@ endc
 	store16 vReceivedDataSize, hl
 
 	; check whether all bytes have been received
-	ld a, [vPacketDataSize + 0]
-	ld b, a
+	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
 	ld a, [vReceivedDataSize + 0]
-	cp a, b
+	cp a, [hl]
 	ret nz
-	ld a, [vPacketDataSize + 1]
-	ld b, a
+	inc hl
 	ld a, [vReceivedDataSize + 1]
-	cp a, b
+	cp a, [hl]
 	ret nz
 
 	; increment the chunks count
@@ -619,7 +660,7 @@ endc
 ProcessPacketPrint:
 	debug "[INFO] print"
 	ld a, [rSB]
-	UpdateChecksum
+	UpdateChecksumWithA
 
 	; find the next parameter data byte address and put the received byte into it
 	ld d, 0
