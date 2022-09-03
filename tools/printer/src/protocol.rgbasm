@@ -310,6 +310,7 @@ Reset:
 	ld [vVramTransferredSize + 0], a
 	ld [vVramTransferredSize + 1], a
 	ld [vRefreshPalette + 1], a
+	ld [vChunkCount], a
 
 	ret
 
@@ -402,11 +403,11 @@ endm
 ProcessMagicByte0:
 	debug "[INFO] ===================="
 	debug "[INFO] magic LSB"
+if def(BUILD_DEBUG)
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_0
-	jr z, .ok
-		debug "[ERROR] magic LSB mismatch"
-	.ok
+	verify z, "[ERROR] magic LSB mismatch"
+endc
 
 	; clean error flags (but keep the other ones)
 	ld a, [vStatus]
@@ -420,11 +421,11 @@ ProcessMagicByte0:
 
 ProcessMagicByte1:
 	debug "[INFO] magic MSB"
+if def(BUILD_DEBUG)
 	ld a, [rSB]
 	cp a, PRINTER_MAGIC_BYTE_1
-	jr z, .ok
-		debug "[ERROR] magic MSB mismatch"
-	.ok
+	verify z, "[ERROR] magic MSB mismatch"
+endc
 
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_PACKET_TYPE
@@ -448,6 +449,7 @@ ProcessHeaderPacketType:
 		ld [vStatus], a
 		ld [vImageDataSize + 0], a
 		ld [vImageDataSize + 1], a
+		ld [vChunkCount], a
 		jp .packet_type_done
 	.type_init
 	cp a, PRINTER_PACKET_TYPE_PRINT
@@ -560,12 +562,12 @@ ProcessPacketData:
 	UpdateChecksum
 	ld b, a
 
+if def(BUILD_DEBUG)
 	; check if the data is full already (sanity check)
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_DATA_FULL, [hl]
-	jr z, .data_full
-		debug "[ERROR] data is already full"
-	.data_full
+	verify z, "[ERROR] data is already full"
+endc
 
 	; find the next image data byte address and put the received byte into it
 	ld hl, vImageData
@@ -594,6 +596,10 @@ ProcessPacketData:
 	cp a, b
 	ret nz
 
+	; increment the chunks count
+	ld hl, vChunkCount
+	inc [hl]
+
 	; all the data has been reeived
 	; the printer is ready to print
 	debug "[INFO] data received"
@@ -601,12 +607,9 @@ ProcessPacketData:
 	ld hl, vStatusDelayed
 	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
-	; check whether the image data is full and raise flag accordingly
-	ld a, [vImageDataSize + 0]
-	cp a, low(CHUNK_DATA_MAX_SIZE)
-	ret nz
-	ld a, [vImageDataSize + 1]
-	cp a, high(CHUNK_DATA_MAX_SIZE)
+	; check whether the image data is full and raise the corresponding flag
+	ld a, [vChunkCount]
+	cp a, CHUNKS_MAX_COUNT
 	ret nz
 	debug "[INFO] data full"
 	ld hl, vStatusDelayed

@@ -90,6 +90,7 @@ vTimeoutCounter					rb 1
 
 ; hold up to 9 chunk properties
 vChunkProperties				rb (CHUNK_PROPERTIES_MAX_SIZE)
+vChunkCount						rb 1
 
 HRAM_END						rb 0
 

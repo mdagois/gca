@@ -100,6 +100,24 @@ if def(BUILD_DEBUG)
 endc
 endm
 
+macro verify
+if def(BUILD_DEBUG)
+	jr \1, .passed\@
+		debug \2
+	.passed\@
+endc
+endm
+
+macro verify_lock
+if def(BUILD_DEBUG)
+	jr \1, .passed\@
+		debug \2
+		.wait\@
+			jr .wait\@
+	.passed\@
+endc
+endm
+
 macro breakpoint
 if def(BUILD_DEBUG)
 	ld b, b
