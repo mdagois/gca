@@ -91,6 +91,13 @@ endm
 ; Debug
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; add a code breakpoint
+macro breakpoint
+if def(BUILD_DEBUG)
+	ld b, b
+endc
+endm
+
 ; output debug message \1
 macro debug
 if def(BUILD_DEBUG)
@@ -101,32 +108,218 @@ if def(BUILD_DEBUG)
 endc
 endm
 
-; output debug message \2 when flag \1 is not raised
-macro verify
+; output debug message \3 when flag \2 in byte \1 is raised
+macro check_z
 if def(BUILD_DEBUG)
-	jr \1, .passed\@
-		debug \2
-	.passed\@
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop hl
+	pop af
 endc
 endm
 
-; output debug message \2 and lock the execution into
-; an infinite loop when flag \1 is not raised
-macro verify_lock
+; output debug message \3 when flag \2 in byte \1 is raised
+macro check_nz
 if def(BUILD_DEBUG)
-	jr \1, .passed\@
-		debug \2
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr nz, .test\@
+		debug \3
+	.test\@
+
+	pop hl
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 >= \2
+macro check_lt
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 > \2
+macro check_le
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 != \2
+macro check_eq
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 <= \2
+macro check_gt
+	check_lt \2, \1
+endm
+
+; output debug message \3 when \1 < \2
+macro check_ge
+	check_le \2, \1
+endm
+
+; output debug message \3 and block when flag \2 in byte \1 is raised
+macro force_z
+if def(BUILD_DEBUG)
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr z, .test\@
+		debug \3
 		.wait\@
 			jr .wait\@
-	.passed\@
+	.test\@
+
+	pop hl
+	pop af
 endc
 endm
 
-; add a code breakpoint
-macro breakpoint
+; output debug message \3 and block when flag \2 in byte \1 is raised
+macro force_nz
 if def(BUILD_DEBUG)
-	ld b, b
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr nz, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop hl
+	pop af
 endc
+endm
+
+; output debug message \3 and block when \1 >= \2
+macro force_lt
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 > \2
+macro force_le
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+	jr z, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 != \2
+macro force_eq
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr z, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 <= \2
+macro force_gt
+	force_lt \2, \1
+endm
+
+; output debug message \3 and block when \1 < \2
+macro force_ge
+	force_le \2, \1
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

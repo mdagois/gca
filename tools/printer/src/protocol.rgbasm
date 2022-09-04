@@ -446,14 +446,7 @@ dw vChunkPropertyDummy
 
 ; get the address of the current chunk property \1 into (hl)
 macro GetChunkPropertyAddressIntoHL
-if def(BUILD_DEBUG)
-	; sanity check
-	push af
-	ld a, [vChunkCount]
-	cp a, CHUNKS_MAX_COUNT + 1
-	verify_lock c, "The chunk count is expected to be <= 9"
-	pop af
-endc
+	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be <= 9"
 	ExtractAddressFromTableIntoHL ChunkPropertyAddresses, [vChunkCount]
 
 	; add the property index
@@ -476,14 +469,7 @@ dw vImageData + (CHUNK_BYTE_SIZE * 8)
 
 ; get the address of the current chunk into (hl)
 macro GetChunkAddressIntoHL
-if def(BUILD_DEBUG)
-	; sanity check
-	push af
-	ld a, [vChunkCount]
-	cp a, CHUNKS_MAX_COUNT
-	verify_lock c, "The chunk count is expected to be < 9"
-	pop af
-endc
+	force_lt [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be < 9"
 	ExtractAddressFromTableIntoHL ChunkAddresses, [vChunkCount]
 endm
 
@@ -494,11 +480,7 @@ endm
 ProcessMagicByte0:
 	debug "[INFO] ===================="
 	debug "[INFO] magic LSB"
-if def(BUILD_DEBUG)
-	ld a, [rSB]
-	cp a, PRINTER_MAGIC_BYTE_0
-	verify z, "[ERROR] magic LSB mismatch"
-endc
+	check_eq [rSB], PRINTER_MAGIC_BYTE_0, "[ERROR] magic LSB mismatch"
 
 	; clean error flags (but keep the other ones)
 	ld a, [vStatus]
@@ -512,11 +494,7 @@ endc
 
 ProcessMagicByte1:
 	debug "[INFO] magic MSB"
-if def(BUILD_DEBUG)
-	ld a, [rSB]
-	cp a, PRINTER_MAGIC_BYTE_1
-	verify z, "[ERROR] magic MSB mismatch"
-endc
+	check_eq [rSB], PRINTER_MAGIC_BYTE_1, "[ERROR] magic MSB mismatch"
 
 	reset [rSB]
 	copy [vNextByte], BYTE_HEADER_PACKET_TYPE
@@ -656,12 +634,7 @@ ProcessPacketData:
 	ld b, a
 	UpdateChecksumWithA
 
-if def(BUILD_DEBUG)
-	; check if the data is full already (sanity check)
-	ld hl, vStatus
-	bit PRINTER_STATUS_BIT_DATA_FULL, [hl]
-	verify z, "[ERROR] data is already full"
-endc
+	check_z vStatus, PRINTER_STATUS_BIT_DATA_FULL, "[ERROR] data is already full"
 
 	; find the next image data byte address
 	; put the received byte into it
@@ -688,12 +661,7 @@ endc
 	; increment the chunks count
 	ld hl, vChunkCount
 	inc [hl]
-if def(BUILD_DEBUG)
-	; sanity check
-	ld a, CHUNKS_MAX_COUNT
-	cp a, [hl]
-	verify_lock nc, "Chunk count overflow"
-endc
+	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] chunk count overflow"
 
 	; all the data has been received
 	; the printer is ready to print
