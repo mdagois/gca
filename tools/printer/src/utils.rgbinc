@@ -91,6 +91,7 @@ endm
 ; Debug
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; output debug message \1
 macro debug
 if def(BUILD_DEBUG)
 	ld d, d
@@ -100,6 +101,7 @@ if def(BUILD_DEBUG)
 endc
 endm
 
+; output debug message \2 when flag \1 is not raised
 macro verify
 if def(BUILD_DEBUG)
 	jr \1, .passed\@
@@ -108,6 +110,8 @@ if def(BUILD_DEBUG)
 endc
 endm
 
+; output debug message \2 and lock the execution into
+; an infinite loop when flag \1 is not raised
 macro verify_lock
 if def(BUILD_DEBUG)
 	jr \1, .passed\@
@@ -118,6 +122,7 @@ if def(BUILD_DEBUG)
 endc
 endm
 
+; add a code breakpoint
 macro breakpoint
 if def(BUILD_DEBUG)
 	ld b, b
@@ -273,12 +278,12 @@ macro CallHL
 	.call_return_address\@
 endm
 
-; call a function from a function table
+; extract an address from a table
 ; \1 = table, \2 = index memory location
-macro CallFunctionFromTable
+macro ExtractAddressFromTableIntoHL
 	; compute a pointer to the address of the function
 	; pointer = table address + (index * 2)
-	ld a, [\2]
+	ld a, \2
 	sla a
 	ld h, 0
 	ld l, a
@@ -289,6 +294,12 @@ macro CallFunctionFromTable
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+endm
+
+; call a function from a function table
+; \1 = table, \2 = index memory location
+macro CallFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
 	CallHL
 endm
 

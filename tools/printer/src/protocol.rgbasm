@@ -127,8 +127,8 @@ RefreshPalette:
 	debug "[INFO] refreshing the palette"
 
 	; reset the palette refresh flag
-	ld hl, vRefreshPalette
-	res 0, [hl]
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
 
 	; retrieve the palette data received from serial
 	ld a, [vPrintParameters + PRINT_PARAMETER_PALETTE]
@@ -191,6 +191,29 @@ RefreshPalette:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+ProcessChunks:
+	; TODO
+	; decompress chunks
+
+	; compute the image size
+	ld hl, 0
+	ld de, CHUNK_BYTE_SIZE
+	ld a, [vChunkCount]
+	ld c, a
+	.compute_data_size
+		add hl, de
+		dec c
+		jr nz, .compute_data_size
+	store16 vImageDataSize, hl
+
+	; update the flags to indicate chunks have been processed
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 GenerateUserTriggeredErrors:
 	; clear errors
 	ld hl, vStatusUserTriggeredErrors
@@ -221,9 +244,14 @@ GenerateUserTriggeredErrors:
 
 ProtocolUpdate:
 	; check whether the palette needs a refresh
-	ld hl, vRefreshPalette
-	bit 0, [hl]
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
 	call nz, RefreshPalette
+
+	; check whether chunks need to be processed
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	call nz, ProcessChunks
 
 	call GenerateUserTriggeredErrors
 	ret
@@ -237,6 +265,11 @@ TransferTileData:
 	ld hl, vStatus
 	bit PRINTER_STATUS_BIT_PRINTING, [hl]
 	ret z
+
+	; chunks cannot be printed until they have been processed
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	ret nz
 
 	; compute the source and destination addresses
 	load16 bc, vVramTransferredSize
@@ -303,13 +336,11 @@ Reset:
 	xor a
 	ld [vStatus], a
 	ld [vStatusDelayed], a
-	ld [vImageDataSize + 0], a
-	ld [vImageDataSize + 1], a
 	ld [vReceivedDataSize + 0], a
 	ld [vReceivedDataSize + 1], a
 	ld [vVramTransferredSize + 0], a
 	ld [vVramTransferredSize + 1], a
-	ld [vRefreshPalette + 1], a
+	ld [vControlFlags], a
 	ld [vChunkCount], a
 
 	ret
@@ -365,7 +396,7 @@ ProtocolHandlePacketByte:
 	ld [vTimeoutCounter], a
 
 	; call the proper function to handle the received byte
-	CallFunctionFromTable ProcessFunctionTable, vNextByte
+	CallFunctionFromTable ProcessFunctionTable, [vNextByte]
 
 	; get ready to receive the next byte
 	copy [rSC], SCF_START
@@ -411,27 +442,49 @@ dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 5)
 dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 6)
 dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 7)
 dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 8)
+dw vChunkPropertyDummy
 
 ; get the address of the current chunk property \1 into (hl)
-macro GetChunkPropertyIntoHL
-	; get current chunk number times 2
+macro GetChunkPropertyAddressIntoHL
+if def(BUILD_DEBUG)
+	; sanity check
+	push af
 	ld a, [vChunkCount]
-	sla a
-
-	; retrieve the location of the address in the table
-	ld hl, ChunkPropertyAddresses
-	ld d, 0
-	ld e, a
-	add hl, de
-
-	; extract the actual address of the property
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
+	cp a, CHUNKS_MAX_COUNT + 1
+	verify_lock c, "The chunk count is expected to be <= 9"
+	pop af
+endc
+	ExtractAddressFromTableIntoHL ChunkPropertyAddresses, [vChunkCount]
 
 	; add the property index
+	ld d, 0
 	ld e, \1
 	add hl, de
+endm
+
+; table of all the chunks addresses
+ChunkAddresses:
+dw vImageData + (CHUNK_BYTE_SIZE * 0)
+dw vImageData + (CHUNK_BYTE_SIZE * 1)
+dw vImageData + (CHUNK_BYTE_SIZE * 2)
+dw vImageData + (CHUNK_BYTE_SIZE * 3)
+dw vImageData + (CHUNK_BYTE_SIZE * 4)
+dw vImageData + (CHUNK_BYTE_SIZE * 5)
+dw vImageData + (CHUNK_BYTE_SIZE * 6)
+dw vImageData + (CHUNK_BYTE_SIZE * 7)
+dw vImageData + (CHUNK_BYTE_SIZE * 8)
+
+; get the address of the current chunk into (hl)
+macro GetChunkAddressIntoHL
+if def(BUILD_DEBUG)
+	; sanity check
+	push af
+	ld a, [vChunkCount]
+	cp a, CHUNKS_MAX_COUNT
+	verify_lock c, "The chunk count is expected to be < 9"
+	pop af
+endc
+	ExtractAddressFromTableIntoHL ChunkAddresses, [vChunkCount]
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -477,7 +530,7 @@ endc
 ProcessHeaderPacketType:
 	ld a, [rSB]
 	UpdateChecksumWithA
-	copy [vPacketType], a
+	ld [vPacketType], a
 
 	; perform packet-specific operations
 	cp a, PRINTER_PACKET_TYPE_INIT
@@ -485,8 +538,6 @@ ProcessHeaderPacketType:
 		debug "[INFO] header (type=init)"
 		xor a
 		ld [vStatus], a
-		ld [vImageDataSize + 0], a
-		ld [vImageDataSize + 1], a
 		ld [vChunkCount], a
 		jp .packet_type_done
 	.type_init
@@ -524,7 +575,7 @@ ProcessHeaderPacketType:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessHeaderDataCompression:
-	GetChunkPropertyIntoHL CHUNK_PROPERTY_COMPRESSION
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_COMPRESSION
 	ld a, [rSB]
 	ld [hl], a
 
@@ -540,7 +591,7 @@ ProcessHeaderDataCompression:
 
 ProcessHeaderDataSizeLSB:
 	debug "[INFO] header (size LSB)"
-	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
 	ld a, [rSB]
 	ld [hl], a
 	UpdateChecksumWithA
@@ -550,14 +601,14 @@ ProcessHeaderDataSizeLSB:
 
 ProcessHeaderDataSizeMSB:
 	debug "[INFO] header (size MSB)"
-	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE + 1
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE + 1
 	ld a, [rSB]
 	ld [hl], a
 	UpdateChecksumWithA
 	reset [rSB]
 
 	; check whether there is data inside the packet (size > 0)
-	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
 	ld a, [hli]
 	cp a, 0
 	jr nz, .has_data
@@ -602,8 +653,8 @@ ProcessHeaderDataSizeMSB:
 
 ProcessPacketData:
 	ld a, [rSB]
-	UpdateChecksumWithA
 	ld b, a
+	UpdateChecksumWithA
 
 if def(BUILD_DEBUG)
 	; check if the data is full already (sanity check)
@@ -612,23 +663,20 @@ if def(BUILD_DEBUG)
 	verify z, "[ERROR] data is already full"
 endc
 
-	; find the next image data byte address and put the received byte into it
-	ld hl, vImageData
-	load16 de, vImageDataSize
+	; find the next image data byte address
+	; put the received byte into it
+	; update the amount of received bytes
+	GetChunkAddressIntoHL
+	load16 de, vReceivedDataSize
 	add hl, de
 	ld [hl], b
 	inc de
-	store16 vImageDataSize, de
+	store16 vReceivedDataSize, de
 
 	reset [rSB]
 
-	; update the amount of received bytes
-	load16 hl, vReceivedDataSize
-	inc hl
-	store16 vReceivedDataSize, hl
-
 	; check whether all bytes have been received
-	GetChunkPropertyIntoHL CHUNK_PROPERTY_DATA_SIZE
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
 	ld a, [vReceivedDataSize + 0]
 	cp a, [hl]
 	ret nz
@@ -640,8 +688,14 @@ endc
 	; increment the chunks count
 	ld hl, vChunkCount
 	inc [hl]
+if def(BUILD_DEBUG)
+	; sanity check
+	ld a, CHUNKS_MAX_COUNT
+	cp a, [hl]
+	verify_lock nc, "Chunk count overflow"
+endc
 
-	; all the data has been reeived
+	; all the data has been received
 	; the printer is ready to print
 	debug "[INFO] data received"
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
@@ -683,14 +737,14 @@ ProcessPacketPrint:
 	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
 
 	; prepare for printing
-	ld hl, vStatusDelayed
-	set PRINTER_STATUS_BIT_PRINTING, [hl]
 	xor a
 	ld [vVramTransferredSize + 0], a
 	ld [vVramTransferredSize + 1], a
-
-	ld hl, vRefreshPalette
-	set 0, [hl]
+	ld hl, vControlFlags
+	set PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
+	set PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	ld hl, vStatusDelayed
+	set PRINTER_STATUS_BIT_PRINTING, [hl]
 
 	ret
 
