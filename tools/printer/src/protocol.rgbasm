@@ -193,7 +193,7 @@ RefreshPalette:
 
 ProcessChunks:
 CHUNK_LOOP_COUNT = 0
-rept 8
+rept 9
 	xor a
 	ld [vDecompressedSize + 0], a
 	ld [vDecompressedSize + 1], a
