@@ -49,8 +49,9 @@ rsset _RAM
 ; hold the image data (up to 9 chunks)
 vImageData						rb CHUNK_DATA_MAX_SIZE
 
-; hold temporary data during decompression
-vTemporaryChunk					rb CHUNK_BYTE_SIZE
+; hold temporary data during chunk decompression
+vDecompressedChunk				rb CHUNK_BYTE_SIZE
+vDecompressedSize				rb 2
 
 WRAM_END						rb 0
 

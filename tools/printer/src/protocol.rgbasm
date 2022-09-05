@@ -192,8 +192,113 @@ RefreshPalette:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessChunks:
-	; TODO
-	; decompress chunks
+CHUNK_LOOP_COUNT = 0
+rept 8
+	xor a
+	ld [vDecompressedSize + 0], a
+	ld [vDecompressedSize + 1], a
+
+	; check that the chunk is valid
+	ld a, [vChunkCount]
+	cp a, CHUNK_LOOP_COUNT + 1
+	jr c, .skip_chunk_decompression\@
+
+	; check whether the chunk needs decompression
+	ld a, [vChunkProperties + (sizeof_CHUNK_PROPERTY * CHUNK_LOOP_COUNT) + CHUNK_PROPERTY_COMPRESSION]
+	bit 0, a
+	jr z, .skip_chunk_decompression\@
+
+	ld hl, vImageData + (CHUNK_BYTE_SIZE * CHUNK_LOOP_COUNT)
+	ld de, vDecompressedChunk
+
+	.decompress_chunk\@
+		ld a, [hli]
+		bit 7, a
+		jr z, .raw_bytes\@
+
+		.repeat_byte\@
+			; compute the number of time to repeat the byte
+			and a, $7F
+			add a, 2
+			ld b, a
+
+			push hl
+			push de
+				load16 hl, vDecompressedSize
+				ld d, 0
+				ld e, b
+				add hl, de
+				store16 vDecompressedSize, hl
+			pop de
+			pop hl
+
+			; get the byte to repeat
+			ld a, [hli]
+
+			; copy the byte over
+			.copy_single_byte\@
+				ld [de], a
+				inc de
+				dec b
+				jr nz, .copy_single_byte\@
+
+			jr .byte_decompression_done\@
+
+		.raw_bytes\@
+			; compute the number of raw bytes to copy
+			inc a
+			ld b, a
+
+			push hl
+			push de
+				load16 hl, vDecompressedSize
+				ld d, 0
+				ld e, b
+				add hl, de
+				store16 vDecompressedSize, hl
+			pop de
+			pop hl
+
+			.copy_raw_bytes\@
+				; copy the next byte
+				ld a, [hli]
+				ld [de], a
+				inc de
+
+				dec b
+				jr nz, .copy_raw_bytes\@
+
+		.byte_decompression_done\@
+		
+		ld a, [vDecompressedSize + 0]
+		cp a, $80
+		jr nz, .decompress_chunk\@
+		ld a, [vDecompressedSize + 1]
+		cp a, $02
+		jr nz, .decompress_chunk\@
+
+	.chunk_decompression_done\@
+
+	; copy the compressed chunk back into the image chunk
+	ld hl, vImageData + (CHUNK_BYTE_SIZE * CHUNK_LOOP_COUNT)
+	ld de, vDecompressedChunk
+	; copy 5 blocks of 128 bytes
+	ld c, 5
+	.copy_all_blocks\@
+		ld b, 128
+		.copy_single_block\@
+			ld a, [de]
+			inc de
+			ld [hli], a
+			dec b
+			jr nz, .copy_single_block\@
+		dec c
+		jr nz, .copy_all_blocks\@
+
+	.skip_chunk_decompression\@
+
+CHUNK_LOOP_COUNT = CHUNK_LOOP_COUNT + 1
+endr
 
 	; compute the image size
 	ld hl, 0
