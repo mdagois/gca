@@ -147,10 +147,10 @@ UpdateSample:
 	; compute a pointer to the address of the function
 	; pointer = table address + (index * 2)
 	ld a, [WRAM_FUNC_INDEX]
-	sla a
-	ld h, 0
-	ld l, a
-	ld de, UpdateFuncTable
+	ld d, 0
+	ld e, a
+	ld hl, UpdateFuncTable
+	add hl, de
 	add hl, de
 
 	; unpack the function address and call it
