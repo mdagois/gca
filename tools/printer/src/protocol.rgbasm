@@ -6,6 +6,16 @@ include "utils.rgbinc"
 export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; enable extra sanity checks that make the byte processing too slow
+; (i.e. bytes are missed)
+; CGB games are especially sensible to this
+; better left disabled
+;def PERFORM_HEAVY_CHECKS=1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -500,12 +510,11 @@ ProtocolHandlePacketByte:
 	xor a
 	ld [vTimeoutCounter], a
 
-	; call the proper function to handle the received byte
-	CallFunctionFromTable ProcessFunctionTable, [vNextByte]
-
 	; get ready to receive the next byte
 	copy [rSC], SCF_START
-	ret
+
+	; call the proper function to handle the received byte
+	JumpToFunctionFromTable ProcessFunctionTable, [vNextByte]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Checksum helpers
@@ -551,7 +560,9 @@ dw vChunkPropertyDummy
 
 ; get the address of the current chunk property \1 into (hl)
 macro GetChunkPropertyAddressIntoHL
+if def(PERFORM_HEAVY_CHECKS)
 	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be <= 9"
+endc
 	ExtractAddressFromTableIntoHL ChunkPropertyAddresses, [vChunkCount]
 
 	; add the property index
@@ -574,7 +585,9 @@ dw vImageData + (CHUNK_BYTE_SIZE * 8)
 
 ; get the address of the current chunk into (hl)
 macro GetChunkAddressIntoHL
+if def(PERFORM_HEAVY_CHECKS)
 	force_lt [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be < 9"
+endc
 	ExtractAddressFromTableIntoHL ChunkAddresses, [vChunkCount]
 endm
 
@@ -739,7 +752,9 @@ ProcessPacketData:
 	ld b, a
 	UpdateChecksumWithA
 
+if def(PERFORM_HEAVY_CHECKS)
 	check_z vStatus, PRINTER_STATUS_BIT_DATA_FULL, "[ERROR] data is already full"
+endc
 
 	; find the next image data byte address
 	; put the received byte into it
@@ -766,7 +781,9 @@ ProcessPacketData:
 	; increment the chunks count
 	ld hl, vChunkCount
 	inc [hl]
+if def(PERFORM_HEAVY_CHECKS)
 	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] chunk count overflow"
+endc
 
 	; all the data has been received
 	; the printer is ready to print

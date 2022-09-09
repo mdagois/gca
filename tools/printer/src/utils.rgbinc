@@ -477,10 +477,10 @@ macro ExtractAddressFromTableIntoHL
 	; compute a pointer to the address of the function
 	; pointer = table address + (index * 2)
 	ld a, \2
-	sla a
-	ld h, 0
-	ld l, a
-	ld de, \1
+	ld d, 0
+	ld e, a
+	ld hl, \1
+	add hl, de
 	add hl, de
 
 	; unpack the function address and call it
@@ -494,6 +494,13 @@ endm
 macro CallFunctionFromTable
 	ExtractAddressFromTableIntoHL \1, \2
 	CallHL
+endm
+
+; jump to a function from a function table
+; \1 = table, \2 = index memory location
+macro JumpToFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
+	jp hl
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
