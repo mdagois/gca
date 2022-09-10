@@ -215,9 +215,11 @@ rept 9
 	jr c, .skip_chunk_decompression\@
 
 	; check whether the chunk needs decompression
-	ld a, [vChunkProperties + (sizeof_CHUNK_PROPERTY * CHUNK_LOOP_COUNT) + CHUNK_PROPERTY_COMPRESSION]
-	bit 0, a
+	ld hl, vChunkProperties + (sizeof_CHUNK_PROPERTY * CHUNK_LOOP_COUNT) + CHUNK_PROPERTY_COMPRESSION
+	bit 0, [hl]
 	jr z, .skip_chunk_decompression\@
+	; flag the chunk as decompressed
+	res 0, [hl]
 
 	ld hl, vImageData + (CHUNK_BYTE_SIZE * CHUNK_LOOP_COUNT)
 	ld de, vDecompressedChunk
@@ -305,6 +307,10 @@ rept 9
 			jr nz, .copy_single_block\@
 		dec c
 		jr nz, .copy_all_blocks\@
+
+	; return after one chunk has been decompressed
+	; to limit the amount of work per frame
+	ret
 
 	.skip_chunk_decompression\@
 
