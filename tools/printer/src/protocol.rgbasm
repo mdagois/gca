@@ -202,6 +202,7 @@ RefreshPalette:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ProcessChunks:
+; decompress all chunks
 CHUNK_LOOP_COUNT = 0
 rept 9
 	xor a
@@ -320,6 +321,15 @@ endr
 		dec c
 		jr nz, .compute_data_size
 	store16 vImageDataSize, hl
+
+	; consider printing done if there are no chunks
+	ld a, [vChunkCount]
+	or a
+	jr nz, .has_chunk
+		ld hl, vStatus
+		res PRINTER_STATUS_BIT_PRINTING, [hl]
+		debug "[INFO] printing skipped"
+	.has_chunk
 
 	; update the flags to indicate chunks have been processed
 	ld hl, vControlFlags
