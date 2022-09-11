@@ -340,6 +340,7 @@ endr
 	; update the flags to indicate chunks have been processed
 	ld hl, vControlFlags
 	res PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	set PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
 
 	ret
 
@@ -391,17 +392,7 @@ ProtocolUpdate:
 ; Vblank
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TransferTileData:
-	; check whether printing has started
-	ld hl, vStatus
-	bit PRINTER_STATUS_BIT_PRINTING, [hl]
-	ret z
-
-	; chunks cannot be printed until they have been processed
-	ld hl, vControlFlags
-	bit PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
-	ret nz
-
+TransferTiles:
 	; compute the source and destination addresses
 	load16 bc, vVramTransferredSize
 		; get the source data address into (de)
@@ -413,6 +404,7 @@ TransferTileData:
 		add hl, bc
 
 	; transfer a fixed amount of bytes from the image data to VRAM
+	; the aim is to not go beyond the vblank (i.e. when VRAM access is prohibited)
 	ld c, IMAGE_BYTES_PER_VRAM_TRANSFER
 	.vram_transfer
 		ld a, [de]
@@ -439,17 +431,81 @@ TransferTileData:
 	cp a, b
 	ret nz
 
+	; done transferring tiles
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
+	set PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+
+	ret
+
+ClearUnusedTiles:
+	; check whether clearing is necessary
+	ld a, [vVramTransferredSize + 0]
+	ld b, a
+	ld a, $00
+	cp a, b
+	jr nz, .clear_tiles
+	ld a, [vVramTransferredSize + 1]
+	ld b, a
+	ld a, $18
+	cp a, b
+	jr z, .clearing_over
+
+	.clear_tiles
+
+	; compute the destination address for clearing
+	load16 bc, vVramTransferredSize
+	ld hl, _VRAM
+	add hl, bc
+
+	; clear a fixed amount of tile bytes
+	ld c, IMAGE_BYTES_PER_VRAM_TRANSFER
+	xor a
+	.vram_clear
+		ld [hli], a
+		dec c
+	jr nz, .vram_clear
+
+	; update the size of the image data transferred to VRAM
+	load16 hl, vVramTransferredSize
+	ld de, IMAGE_BYTES_PER_VRAM_TRANSFER
+	add hl, de
+	store16 vVramTransferredSize, hl
+
+	; return here
+	; the next frame will check whether clearing is over
+	ret
+
+	.clearing_over
+
+	; done clearing unused tiles
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+
 	; update the status to indicate that printing is over
 	ld hl, vStatus
 	res PRINTER_STATUS_BIT_PRINTING, [hl]
 	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
 
 	debug "[INFO] printing done"
-
 	ret
 
 ProtocolUpdateVblank:
-	call TransferTileData
+	; check whether printing has started
+	ld hl, vStatus
+	bit PRINTER_STATUS_BIT_PRINTING, [hl]
+	ret z
+
+	; tiles transfer
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
+	call nz, TransferTiles
+	
+	; clear unused tiles
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+	call nz, ClearUnusedTiles
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
