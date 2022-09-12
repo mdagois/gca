@@ -23,15 +23,15 @@ Check the makefile for additional information.
 
 ## Typical usage
 
-. Launch the simulator ROM in BGB in _listen_ mode (`--listen <port>`)
-. Launch a ROM with printer support in BGB and connect it (`--connect <address:port>`) to the BGB instance running the simulator ROM
-. Launch a print job from the ROM
-. Check the printed data in the simulator
-. Alternatively, hold d-pad keys during data transfer to generate errors
-.. UP for low battery (error #01)
-.. RIGHT for a packet error (error #02)
-.. LEFT for paper jam (error #03)
-.. DOWN for any other error (error #04)
+1. Launch the simulator ROM in BGB in _listen_ mode (`--listen <port>`)
+2. Launch a ROM with printer support in BGB and connect it (`--connect <address:port>`) to the BGB instance running the simulator ROM
+3. Launch a print job from the ROM
+4. Check the printed data in the simulator
+5. Alternatively, hold d-pad keys during data transfer to generate errors
+	* UP for low battery (error #01)
+	* RIGHT for a packet error (error #02)
+	* LEFT for paper jam (error #03)
+	* DOWN for any other error (error #04)
 
 ## Unsupported features
 
