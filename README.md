@@ -134,6 +134,13 @@ For other operating systems, it is necessary to rebuild the conversion tools and
 The Game Boy printer simulator referenced in the book is available in the [tools/printer](https://github.com/mdagois/gca/tree/main/tools/printer) directory.
 Check the [README](https://github.com/mdagois/gca/tree/main/tools/printer/README.md) file there to know more about the simulator.
 
+## Makefile for custom project
+
+A makefile is available in the [tools/build](https://github.com/mdagois/gca/tree/main/tools/build) directory.
+It is meant to make it easy to build ROMs.
+It is used to build the Printer Simulator.
+Please follow the instructions in the makefile file itself to know how to use it.
+
 ## Support
 
 Please report any repository issues [here](https://github.com/mdagois/gca/issues).
