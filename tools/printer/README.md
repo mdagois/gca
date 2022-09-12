@@ -11,6 +11,7 @@ The main goal of the simulator is to help developers test the printer support in
 * The debug version has BGB-style logs to help debugging
 * Supports data compression
 * Tested with _Game Boy Camera_, _1942_ and _Pokémon Card GB_ (should work with other games too)
+* Simulates errors
 
 ## Build instructions
 
@@ -26,6 +27,11 @@ Check the makefile for additional information.
 . Launch a ROM with printer support in BGB and connect it (`--connect <address:port>`) to the BGB instance running the simulator ROM
 . Launch a print job from the ROM
 . Check the printed data in the simulator
+. Alternatively, hold d-pad keys during data transfer to generate errors
+.. UP for low battery (error #01)
+.. RIGHT for a packet error (error #02)
+.. LEFT for paper jam (error #03)
+.. DOWN for any other error (error #04)
 
 ## Unsupported features
 
