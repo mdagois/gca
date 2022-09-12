@@ -129,6 +129,11 @@ The batch uses ***gfxconv*** and ***cgbconv*** from the **bin** folder, so there
 
 For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
 
+## Printer simulator
+
+The Game Boy printer simulator referenced in the book is available in the [tools/printer](https://github.com/mdagois/gca/tree/main/tools/printer) directory.
+Check the [README](https://github.com/mdagois/gca/tree/main/tools/printer/README.md) file there to know more about the simulator.
+
 ## Support
 
 Please report any repository issues [here](https://github.com/mdagois/gca/issues).
