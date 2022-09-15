@@ -40,7 +40,7 @@ ROM_SRC_EXTENSION=rgbasm
 ROM_SRC_DIR=src/
 
 # output directory for ROM, map and symbol files
-ROM_DIR=rom/
+ROM_DIR=build/
 
 # ROM extension
 # should be 'gb' for DMG and 'gbc' for CGB
