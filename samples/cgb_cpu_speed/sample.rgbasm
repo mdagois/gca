@@ -116,7 +116,7 @@ InitSample:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -131,7 +131,7 @@ db $18, $19, $21, $22
 db $23, $24, $25, $26
 
 ; \1 = line, \2 = offset x
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F

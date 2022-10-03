@@ -17,7 +17,7 @@ TILE_INDEX_SAMPLE_BASE			equ (-128 + 75)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -26,7 +26,7 @@ HexToTileA: macro
 endm
 
 ; \1 = line, \2 = column
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F
@@ -63,7 +63,7 @@ sizeof_PUSH_TRANSFER_PARAM		rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-ResetTransferList: macro
+macro ResetTransferList
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
 	ld [hl], 0
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
@@ -76,7 +76,7 @@ endm
 
 ; helper macro for PushTransferFunc
 ; \1 = tilemap address, \2 = tile index
-PushTransfer: macro
+macro PushTransfer
 	ld d, high(\1)
 	ld e, low(\1)
 	add sp, -sizeof_PUSH_TRANSFER_PARAM
@@ -93,7 +93,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; perform all the requested transfers
-ProcessTransferList: macro
+macro ProcessTransferList
 	ld a, [WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN]
 	or a, a
 	jr z, .end\@

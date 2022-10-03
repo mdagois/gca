@@ -9,7 +9,7 @@ include "hardware.rgbinc"
 
 ; copy \2 into \1 through (a)
 ; example: copy [$FF84], 10
-copy: macro
+macro copy
 	ld a, \2
 	ld \1, a
 endm

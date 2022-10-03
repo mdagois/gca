@@ -17,7 +17,7 @@ GRAPHICS_DATA_ADDRESS_END		equ ($8000)
 GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
-LoadGraphicsDataIntoVRAM: macro
+macro LoadGraphicsDataIntoVRAM
 	ld de, GRAPHICS_DATA_ADDRESS_START
 	ld hl, _VRAM8000
 	.load_tile\@
@@ -65,7 +65,7 @@ section "serial_interrupt", rom0[$0058]
 section "sample", rom0
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -80,7 +80,7 @@ db $58, $59, $61, $62
 db $63, $64, $65, $66
 
 ; \1 = line, \2 = offset x
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F

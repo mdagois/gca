@@ -48,7 +48,7 @@ section "ch4_update", rom0
 ; macro to handle the menu navigation
 ; \1 = previous line, \2 = current line, \3 = next line
 ; \4 = previous index, \5 = next index
-ProcessSelection: macro
+macro ProcessSelection
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
 	jr nz, .down\@
 		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK

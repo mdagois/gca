@@ -10,7 +10,7 @@ entrypoint:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-DetermineHardwareModel: macro
+macro DetermineHardwareModel
 	cp a, $11
 	jr nz, .cgb\@
 		bit 0, b
@@ -27,7 +27,7 @@ DetermineHardwareModel: macro
 	ld [HARDWARE_MODEL_REGISTER], a
 endm
 
-DisableLCD: macro
+macro DisableLCD
 	; wait for the vblank
 	.wait_vblank\@
 		ld a, [rLY]
