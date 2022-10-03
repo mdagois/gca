@@ -6,7 +6,7 @@ ROM_NAME=$(basename $BASE_DIR)
 
 pushd $BASE_DIR
 
-rgbasm -Werror -Weverything -o main.o main.rgbasm
+rgbasm -Werror -Weverything -Hl -o main.o main.rgbasm
 [ $? -eq 0 ] || exit 1
 rgblink --dmg --tiny -o $ROM_NAME.gb main.o
 [ $? -eq 0 ] || exit 1

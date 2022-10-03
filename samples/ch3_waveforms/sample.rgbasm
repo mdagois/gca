@@ -22,7 +22,7 @@ GRAPHICS_DATA_ADDRESS_END		equ ($8000)
 GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
-LoadGraphicsDataIntoVRAM: macro
+macro LoadGraphicsDataIntoVRAM
 	ld de, GRAPHICS_DATA_ADDRESS_START
 	ld hl, _VRAM8000
 	.load_tile\@
@@ -81,7 +81,7 @@ copy_waveform_func:
 	jr nz, .ch3_data_copy
 	ret
 
-copy_waveform: macro
+macro copy_waveform
 	ld de, \1
 	call copy_waveform_func
 endm

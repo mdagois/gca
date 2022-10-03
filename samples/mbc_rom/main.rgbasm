@@ -10,7 +10,7 @@ entrypoint:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-DisableLCD: macro
+macro DisableLCD
 	; wait for the vblank
 	.wait_vblank\@
 		ld a, [rLY]

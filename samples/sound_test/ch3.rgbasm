@@ -41,7 +41,7 @@ copy_waveform_func:
 	ret
 
 ; \1 = destination, \2 = source
-copy_waveform: macro
+macro copy_waveform
 	ld bc, \1
 	ld de, \2
 	call copy_waveform_func
@@ -292,7 +292,7 @@ section "ch3_update", rom0
 
 ; \1 = previous line, \2 = current line, \3 = next line
 ; \4 = previous index, \5 = next index
-ProcessSelection: macro
+macro ProcessSelection
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
 	jr nz, .down\@
 		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
@@ -590,7 +590,7 @@ UpdateVolume:
 
 WAVEFORM_SELECTOR_BASE_TILE_ADDRESS			equ (_SCRN0 + (7 * SCRN_VX_B) + 2)
 
-ShowSelectorTile: macro
+macro ShowSelectorTile
 	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
 	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
 	ld b, a
@@ -608,7 +608,7 @@ ShowSelectorTile: macro
 	PushTransfer hl, a
 endm
 
-HideSelectorTile: macro
+macro HideSelectorTile
 	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
 	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
 	srl a

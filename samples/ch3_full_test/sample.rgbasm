@@ -24,7 +24,7 @@ GRAPHICS_DATA_ADDRESS_END		equ ($8000)
 GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
-LoadGraphicsDataIntoVRAM: macro
+macro LoadGraphicsDataIntoVRAM
 	ld de, GRAPHICS_DATA_ADDRESS_START
 	ld hl, _VRAM8000
 	.load_tile\@
@@ -67,7 +67,7 @@ sizeof_TRANSFER_LIST			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-ResetTransferList: macro
+macro ResetTransferList
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
 	ld [hl], 0
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
@@ -129,7 +129,7 @@ PushTransferFunc:
 
 ; helper macro for PushTransferFunc
 ; \1 = tilemap address, \2 = tile index
-PushTransfer: macro
+macro PushTransfer
 	ld d, high(\1)
 	ld e, low(\1)
 	add sp, -sizeof_PUSH_TRANSFER_PARAM
@@ -146,7 +146,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; perform all the requested transfers
-ProcessTransferList: macro
+macro ProcessTransferList
 	ld a, [WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN]
 	or a, a
 	jr z, .end\@
@@ -215,7 +215,7 @@ copy_waveform_func:
 	ret
 
 ; \1 = destination, \2 = source
-copy_waveform: macro
+macro copy_waveform
 	ld bc, \1
 	ld de, \2
 	call copy_waveform_func
@@ -494,7 +494,7 @@ section "update", rom0
 
 ; \1 = previous line, \2 = current line, \3 = next line
 ; \4 = previous index, \5 = next index
-ProcessSelection: macro
+macro ProcessSelection
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
 	jr nz, .down\@
 		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
@@ -766,7 +766,7 @@ UpdateVolume:
 
 WAVEFORM_SELECTOR_BASE_TILE_ADDRESS			equ (_SCRN0 + (7 * SCRN_VX_B) + 2)
 
-ShowSelectorTile: macro
+macro ShowSelectorTile
 	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
 	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
 	ld b, a
@@ -784,7 +784,7 @@ ShowSelectorTile: macro
 	PushTransfer hl, a
 endm
 
-HideSelectorTile: macro
+macro HideSelectorTile
 	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
 	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
 	srl a
@@ -924,7 +924,7 @@ UpdateWaveform:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -939,7 +939,7 @@ db $98, $99, $A1, $A2
 db $A3, $A4, $A5, $A6
 
 ; \1 = line, \2 = offset x
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F
