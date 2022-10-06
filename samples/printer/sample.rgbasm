@@ -12,11 +12,30 @@ section "vblank_interrupt", rom0[$0040]
 section "timer_interrupt", rom0[$0050]
 	jp TimerInterrupt
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "timer", rom0
+
+StartTimer:
+	ld a, 256 - 5
+	ld [rTMA], a
+	ld [rTIMA], a
+	ld [rDIV], a
+	copy [rTAC], TACF_START | TACF_16KHZ
+	ret
+
+StopTimer:
+	copy [rTAC], TACF_STOP
+	ret
+
 TimerInterrupt:
 	push af
 	push bc
 	push de
 	push hl
+
+	call StopTimer
+	;xxx
 
 	pop hl
 	pop de
@@ -26,26 +45,12 @@ TimerInterrupt:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-rsset _RAM
-
-WRAM_IS_VBLANK					rb 1
-
-WRAM_END						rb 0
-
-; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
-assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 section "protocol", rom0
 
 rsreset
 COMMAND_TYPE_INIT			rb 1
 COMMAND_TYPE_PRINT			rb 1
-COMMAND_TYPE_DATA_PACKET	rb 1
-COMMAND_TYPE_DATA_PAYLOAD	rb 1
+COMMAND_TYPE_DATA			rb 1
 COMMAND_TYPE_BREAK			rb 1
 COMMAND_TYPE_STATUS			rb 1
 COMMAND_TYPES_COUNT			rb 0
@@ -64,6 +69,7 @@ PACKET_COMPRESSION_ON		equ ($01)
 
 rsreset
 PRINT_STATE_COMMAND_TYPE	rb 1
+PRINT_STATE_PHASE			rb 1
 PRINT_STATE_BYTE_NUMBER		rb 1
 PRINT_STATE_FLAGS			rb 1
 sizeof_PRINT_STATE			rb 0
@@ -123,6 +129,22 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+rsset _RAM
+
+WRAM_IS_VBLANK					rb 1
+WRAM_PRINT_STARTED				rb 1
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
+
+WRAM_END						rb 0
+
+; sanity checks
+WRAM_USAGE						equ (WRAM_END - _RAM)
+print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "sample", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,6 +153,8 @@ InitSample:
 	; init the WRAM state
 	xor a
 	ld [WRAM_IS_VBLANK], a
+	ld [WRAM_PRINT_STARTED], a
+	InitPadInput WRAM_PAD_INPUT
 
 	; enable interrupts
 	copy [rIE], IEF_VBLANK | IEF_TIMER
@@ -142,14 +166,7 @@ InitSample:
 	; set the graphics parameters and turn back LCD on
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	; set and start the timer
-	xor a
-	ld [rTMA], a
-	ld [rTIMA], a
-	ld [rDIV], a
-	ld a, TACF_START | TACF_4KHZ
-	ld [rTAC], a
-
+	call StopTimer
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -162,6 +179,19 @@ UpdateSample:
 		cp a, [hl]
 		jr z, .wait_vblank
 		ld [hl], a
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	ld a, [WRAM_PRINT_STARTED]
+	bit 0, a
+	jr nz, .processing_print
+		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
+		jr z, .start_printing
+			ld hl, WRAM_PRINT_STARTED
+			set 0, [hl]
+			call StartTimer
+		.start_printing
+	.processing_print
 
 	ret
 
