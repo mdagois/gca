@@ -1,7 +1,7 @@
 echo off
 pushd "%~dp0"
 
-PORT=8765
+set PORT=8765
 
 for %%i in (.) do set rom_name=%%~ni
 

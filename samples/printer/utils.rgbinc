@@ -226,6 +226,45 @@ macro JumpToFunctionFromTable
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Utility
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; clear a memory region between two addresses
+; \1 = start address
+; \2 = end address
+macro ClearMemory
+	assert \1 < \2, "Clear memory's end address must be strictly inferior to the start address"
+	ld hl, \1
+	.clear\@
+		xor a
+		ld [hli], a
+		ld a, low(\2)
+		cp a, l
+		jr nz, .clear\@
+		ld a, high(\2)
+		cp a, h
+		jr nz, .clear\@
+endm
+
+; copy memory from one address to another
+; \1 = destination
+; \2 = source
+; \3 = size
+macro CopyMemory
+	assert (\1 < \2) || (\1 >= \2 + \3), "Invalid memory range overlap"
+	assert \3 < 256, "Only copies of less than 256 bytes are supported (\3 < 256)"
+	ld hl, \1
+	ld de, \2
+	ld c, \3
+	.copy\@
+		ld a, [de]
+		ld [hli], a
+		inc de
+		dec c
+		jr nz, .copy\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 endc
 
