@@ -68,7 +68,7 @@ PACKET_COMPRESSION_ON		equ ($01)
 
 rsreset
 PRINT_STATE_COMMAND_TYPE	rb 1
-PRINT_STATE_PHASE			rb 1
+PRINT_STATE_COMMAND_PHASE	rb 1
 PRINT_STATE_BYTE_NUMBER		rb 1
 PRINT_STATE_FLAGS			rb 1
 sizeof_PRINT_STATE			rb 0
@@ -86,11 +86,11 @@ section "protocol", rom0
 PACKET_PRINT_PAYLOAD_SIZE			equ ($0004)
 PACKET_PRINT_SHEET_COUNT			equ ($01)
 PACKET_PRINT_FEEDS					equ ($14)
-PACKET_PRINT_PALETTE				equ (%11100100)
+PACKET_PRINT_PALETTE				equ ($E4)
 PACKET_PRINT_DENSITY				equ ($40)
-PACKET_PRINT_CHECKSUM				equ (PACKET_PRINT_PAYLOAD_SIZE + PACKET_PRINT_SHEET_COUNT + PACKET_PRINT_FEEDS + PACKET_PRINT_PALETTE + PACKET_PRINT_DENSITY)
+PACKET_PRINT_CHECKSUM				equ (PACKET_TYPE_PRINT + PACKET_PRINT_PAYLOAD_SIZE + PACKET_PRINT_SHEET_COUNT + PACKET_PRINT_FEEDS + PACKET_PRINT_PALETTE + PACKET_PRINT_DENSITY)
 
-PacketPrint:
+packet_print:
 db PACKET_MAGIC_0, PACKET_MAGIC_1
 db PACKET_TYPE_PRINT, PACKET_COMPRESSION_OFF
 dw PACKET_PRINT_PAYLOAD_SIZE
@@ -100,44 +100,43 @@ db PACKET_PRINT_PALETTE
 db PACKET_PRINT_DENSITY
 dw PACKET_PRINT_CHECKSUM
 db $00, $00
-PacketPrint_End:
+packet_print_end:
 
-PacketInit:
+packet_init:
 	FixedPacket PACKET_TYPE_INIT
-PacketInit_End:
+packet_init_end:
 
-PacketDataEnd:
+packet_data_end:
 	FixedPacket PACKET_TYPE_DATA
-PacketDataEnd_End:
+packet_data_end_end:
 
-PacketBreak:
+packet_break:
 	FixedPacket PACKET_TYPE_BREAK
-PacketBreak_End:
+packet_break_end:
 
-PacketStatus:
+packet_status:
 	FixedPacket PACKET_TYPE_STATUS
-PacketStatus_End:
+packet_status_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 SendPacketByte_Init:
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld b, a ; keep in for later
 	ld d, 0
 	ld e, a
-	ld hl, PacketInit
+	ld hl, packet_init
 	add hl, de
 
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
-	ld a, b
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
 	inc a
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, PacketInit_End - PacketInit
+	cp a, packet_init_end - packet_init
 	jr nz, .packet_done
 		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_END
-		copy [WRAM_PRINT_STATE + PRINT_STATE_PHASE], 0
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
@@ -147,22 +146,21 @@ SendPacketByte_Init:
 
 SendPacketByte_Print:
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld b, a ; keep in for later
 	ld d, 0
 	ld e, a
-	ld hl, PacketInit
+	ld hl, packet_print
 	add hl, de
 
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
-	ld a, b
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
 	inc a
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, PacketInit_End - PacketInit
+	cp a, packet_print_end - packet_print
 	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_END
-		copy [WRAM_PRINT_STATE + PRINT_STATE_PHASE], 0
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_STATUS
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
@@ -175,22 +173,21 @@ SendPacketByte_Data:
 
 SendPacketByte_DataEnd:
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld b, a ; keep in for later
 	ld d, 0
 	ld e, a
-	ld hl, PacketDataEnd
+	ld hl, packet_data_end
 	add hl, de
 
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
-	ld a, b
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
 	inc a
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, PacketDataEnd_End - PacketDataEnd
+	cp a, packet_data_end_end - packet_data_end
 	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_STATUS
-		copy [WRAM_PRINT_STATE + PRINT_STATE_PHASE], 0
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_PRINT
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
@@ -203,27 +200,26 @@ SendPacketByte_Break:
 
 SendPacketByte_Status:
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld b, a ; keep in for later
 	ld d, 0
 	ld e, a
-	ld hl, PacketStatus
+	ld hl, packet_status
 	add hl, de
 
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
-	ld a, b
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
 	inc a
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, PacketStatus_End - PacketStatus
+	cp a, packet_status_end - packet_status
 	jr nz, .packet_done
 		;wait for transfer to end
 		;check status
 		;  if printing send packet again
 		;  else print over (error or success), return
-		;ld hl, WRAM_PRINT_STARTED
-		;res 0, [hl]
-		;ret
+		ld hl, WRAM_PRINT_STARTED
+		res 0, [hl]
+		ret
 	.packet_done
 
 	call StartTimer
@@ -247,7 +243,7 @@ macro StartPrinting
 	set 0, [hl]
 
 	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_INIT
-	copy [WRAM_PRINT_STATE + PRINT_STATE_PHASE], 0
+	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 	copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 	copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 
@@ -271,6 +267,15 @@ WRAM_END						rb 0
 WRAM_USAGE						equ (WRAM_END - _RAM)
 print "WRAM usage: {d:WRAM_USAGE} bytes\n"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Graphics
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "print_data", rom0
+print_data:
+incbin "print_data.chr"
+print_data_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Exports

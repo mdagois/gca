@@ -71,6 +71,10 @@ if %errorlevel% neq 0 goto end
 %CGB_CONV% -mt %CGB_ASSETS_DIR%alphabet.png %CGB_ASSETS_DIR%cpu_speed_test.png
 if %errorlevel% neq 0 goto end
 
+:: printer sample
+%CGB_CONV% %CGB_ASSETS_DIR%print_data.png
+if %errorlevel% neq 0 goto end
+
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %CGB_CHR_DIR% 2> nul
 mkdir %CGB_CHR_DIR% 2> nul
