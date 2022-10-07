@@ -1,6 +1,8 @@
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Interrupts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
 	push af
@@ -12,6 +14,8 @@ section "vblank_interrupt", rom0[$0040]
 section "timer_interrupt", rom0[$0050]
 	jp TimerInterrupt
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Timer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "timer", rom0
@@ -29,28 +33,23 @@ StopTimer:
 	ret
 
 TimerInterrupt:
-	push af
-	push bc
-	push de
-	push hl
+	PushAllRegisters
 
 	call StopTimer
-	;xxx
+	call SendPacketByte
 
-	pop hl
-	pop de
-	pop bc
-	pop af
+	PopAllRegisters
 	reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-section "protocol", rom0
+; Protocol
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
 COMMAND_TYPE_INIT			rb 1
 COMMAND_TYPE_PRINT			rb 1
 COMMAND_TYPE_DATA			rb 1
+COMMAND_TYPE_DATA_END		rb 1
 COMMAND_TYPE_BREAK			rb 1
 COMMAND_TYPE_STATUS			rb 1
 COMMAND_TYPES_COUNT			rb 0
@@ -74,21 +73,11 @@ PRINT_STATE_BYTE_NUMBER		rb 1
 PRINT_STATE_FLAGS			rb 1
 sizeof_PRINT_STATE			rb 0
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 macro FixedPacket
 db PACKET_MAGIC_0, PACKET_MAGIC_1, \1, PACKET_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
 endm
-
-PacketInit:
-	FixedPacket PACKET_TYPE_INIT
-
-PacketDataEnd:
-	FixedPacket PACKET_TYPE_DATA
-
-PacketBreak:
-	FixedPacket PACKET_TYPE_BREAK
-
-PacketStatus:
-	FixedPacket PACKET_TYPE_STATUS
 
 macro BuildPrintPacket
 	ld hl, \1
@@ -127,6 +116,60 @@ macro BuildPrintPacket
 	ld [hli], $00
 endm
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "protocol", rom0
+
+PacketInit:
+	FixedPacket PACKET_TYPE_INIT
+PacketInit_End:
+
+PacketDataEnd:
+	FixedPacket PACKET_TYPE_DATA
+PacketDataEnd_End:
+
+PacketBreak:
+	FixedPacket PACKET_TYPE_BREAK
+PacketBreak_End:
+
+PacketStatus:
+	FixedPacket PACKET_TYPE_STATUS
+PacketStatus_End:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SendPacketByte_Init:
+	ret
+
+SendPacketByte_Print:
+	ret
+
+SendPacketByte_Data:
+	ret
+
+SendPacketByte_DataEnd:
+	ret
+
+SendPacketByte_Break:
+	ret
+
+SendPacketByte_Status:
+	ret
+
+CommandFunctionTable:
+	dw SendPacketByte_Init
+	dw SendPacketByte_Print
+	dw SendPacketByte_Data
+	dw SendPacketByte_DataEnd
+	dw SendPacketByte_Break
+	dw SendPacketByte_Status
+
+SendPacketByte:
+	CallFunctionFromTable CommandFunctionTable, [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE]
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Memory
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
@@ -143,6 +186,8 @@ WRAM_USAGE						equ (WRAM_END - _RAM)
 print "WRAM usage: {d:WRAM_USAGE} bytes\n"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0

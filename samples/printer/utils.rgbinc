@@ -168,6 +168,64 @@ macro TestPadInput_ReleasedAny
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function calls
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro PushAllRegisters
+	push af
+	push bc
+	push de
+	push hl
+endm
+
+macro PopAllRegisters
+	pop hl
+	pop de
+	pop bc
+	pop af
+endm
+
+; call the function pointed by (hl)
+macro CallHL
+	ld de, .call_return_address\@
+	push de
+	jp hl
+	.call_return_address\@
+endm
+
+; extract an address from a table
+; \1 = table, \2 = index memory location
+macro ExtractAddressFromTableIntoHL
+	; compute a pointer to the address of the function
+	; pointer = table address + (index * 2)
+	ld a, \2
+	ld d, 0
+	ld e, a
+	ld hl, \1
+	add hl, de
+	add hl, de
+
+	; unpack the function address and call it
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+endm
+
+; call a function from a function table
+; \1 = table, \2 = index memory location
+macro CallFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
+	CallHL
+endm
+
+; jump to a function from a function table
+; \1 = table, \2 = index memory location
+macro JumpToFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
+	jp hl
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 endc
 
