@@ -14,6 +14,9 @@ set PAL_EXTENSION=pal
 set TLM_EXTENSION=tlm
 set TM1_EXTENSION=idx
 set TM2_EXTENSION=prm
+set PKT_EXTENSION=pkt
+
+set PKT_CONV=%BIN_DIR%packetize.exe
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: DMG
@@ -63,6 +66,7 @@ set CGB_GENERATED_DIR=%GENERATED_DIR%cgb\
 set CGB_CHR_DIR=%CGB_GENERATED_DIR%%CHR_EXTENSION%\
 set CGB_PAL_DIR=%CGB_GENERATED_DIR%%PAL_EXTENSION%\
 set CGB_TLM_DIR=%CGB_GENERATED_DIR%%TLM_EXTENSION%\
+set CGB_PKT_DIR=%CGB_GENERATED_DIR%%PKT_EXTENSION%\
 
 %CGB_CONV% -mpt %CGB_ASSETS_DIR%ship.png %CGB_ASSETS_DIR%ship.png
 if %errorlevel% neq 0 goto end
@@ -73,6 +77,8 @@ if %errorlevel% neq 0 goto end
 
 :: printer sample
 %CGB_CONV% %CGB_ASSETS_DIR%print_data.png
+if %errorlevel% neq 0 goto end
+%PKT_CONV% %CGB_ASSETS_DIR%print_data.chr
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul
@@ -90,6 +96,11 @@ rmdir /s /q %CGB_TLM_DIR% 2> nul
 mkdir %CGB_TLM_DIR% 2> nul
 move %CGB_ASSETS_DIR%*.%TM1_EXTENSION% %CGB_TLM_DIR%
 move %CGB_ASSETS_DIR%*.%TM2_EXTENSION% %CGB_TLM_DIR%
+
+del /f /s /q %CGB_PKT_DIR% 2> nul 1> nul
+rmdir /s /q %CGB_PKT_DIR% 2> nul
+mkdir %CGB_PKT_DIR% 2> nul
+move %CGB_ASSETS_DIR%*.%PKT_EXTENSION% %CGB_PKT_DIR%
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Exit

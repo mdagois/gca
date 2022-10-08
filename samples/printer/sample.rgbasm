@@ -109,6 +109,24 @@ db $00, $00
 packet_print_end:
 
 ;;;;;;;;;;;;;;;;;;;;
+; data packets
+;;;;;;;;;;;;;;;;;;;;
+
+PACKET_DATA_PAYLOAD_SIZE 				equ (640)
+PACKET_DATA_BYTE_OVERHEAD				equ (10)
+PACKET_DATA_SIZE						equ (PACKET_DATA_PAYLOAD_SIZE + PACKET_DATA_BYTE_OVERHEAD)
+
+DATA_PACKET_NUMBER = 0
+rept 9
+
+packet_data_{d:DATA_PACKET_NUMBER}:
+incbin "print_data.pkt", DATA_PACKET_NUMBER * PACKET_DATA_SIZE, PACKET_DATA_SIZE
+packet_data_{d:DATA_PACKET_NUMBER}_end:
+
+DATA_PACKET_NUMBER = DATA_PACKET_NUMBER + 1
+endr
+
+;;;;;;;;;;;;;;;;;;;;
 ; fixed packets
 ;;;;;;;;;;;;;;;;;;;;
 
