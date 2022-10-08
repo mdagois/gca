@@ -16,6 +16,14 @@ enum : uint32_t
 	kPacketSize = kDataPacketPayloadSize + kPacketByteOverhead,
 };
 
+enum : uint8_t
+{
+	kMagic0 = 0x88,
+	kMagic1 = 0x33,
+	kCommandType = 0x04,
+	kCompressionFlag = 0x00,
+};
+
 enum PacketField : uint32_t
 {
 	kPacketField_Magic0,
@@ -25,8 +33,7 @@ enum PacketField : uint32_t
 	kPacketField_PayloadSizeLSB,
 	kPacketField_PayloadSizeMSB,
 	kPacketField_PayloadStart,
-	kPacketField_PayloadEnd = kPacketField_PayloadStart + kDataPacketPayloadSize,
-	kPacketField_ChecksumLSB,
+	kPacketField_ChecksumLSB = kPacketField_PayloadStart + kDataPacketPayloadSize,
 	kPacketField_ChecksumMSB,
 	kPacketField_Ack,
 	kPacketField_Status,
@@ -115,20 +122,6 @@ static bool writeOutputData(const uint8_t* data, uint32_t data_size, const char*
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Checksum
-////////////////////////////////////////////////////////////////////////////////
-
-static uint16_t ComputeChecksum(const uint8_t* data, uint32_t data_size)
-{
-	uint16_t checksum = 0;
-	for(uint32_t i = 0; i < data_size; ++i)
-	{
-		checksum += data[i];
-	}
-	return checksum;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -143,49 +136,52 @@ int main(int argc, char** argv)
 	}
 
 	const char* filename = argv[1];
-	uint8_t* data = nullptr;
-	uint32_t data_size = 0;
-	if(!LoadFile(data, data_size, filename))
+	uint8_t* file_data = nullptr;
+	uint32_t file_data_size = 0;
+	if(!LoadFile(file_data, file_data_size, filename))
 	{
 		cout << "Could not load file [" << filename << "]" << endl;
 		return 1;
 	}
 
-	if(data_size % kTileSize != 0)
+	if(file_data_size % kTileSize != 0)
 	{
 		cout << "The data size must be a multiple of a single tile size [" << kTileSize << "] in [" << filename << "]" << endl;
 		return 1;
 	}
 
-	if(data_size % kDataPacketPayloadSize != 0)
+	if(file_data_size % kDataPacketPayloadSize != 0)
 	{
 		cout << "The data size must be a multiple of the maximum packet payload [" << kDataPacketPayloadSize << "] in [" << filename << "]" << endl;
 		return 1;
 	}
 
-	const uint32_t packet_count = data_size / kDataPacketPayloadSize;
+	const uint32_t packet_count = file_data_size / kDataPacketPayloadSize;
 	const uint32_t output_size = kPacketSize * packet_count;
 	uint8_t* output = new uint8_t[output_size];
 	for(uint32_t i = 0; i < packet_count; ++i)
 	{
-		uint8_t* packet = output + i * kPacketSize;
-		const uint8_t* source = data + i * kDataPacketPayloadSize;
+		uint8_t* const packet = output + i * kPacketSize;
 
-		packet[kPacketField_Magic0] = 0x88;
-		packet[kPacketField_Magic1] = 0x33;
-		packet[kPacketField_CommandType] = 0x04;
-		packet[kPacketField_CompressionFlag] = 0x00;
+		packet[kPacketField_Magic0] = kMagic0;
+		packet[kPacketField_Magic1] = kMagic1;
+		packet[kPacketField_CommandType] = kCommandType;
+		packet[kPacketField_CompressionFlag] = kCompressionFlag;
 		packet[kPacketField_PayloadSizeLSB] = kDataPacketPayloadSize & 0xFF;
 		packet[kPacketField_PayloadSizeMSB] = (kDataPacketPayloadSize >> 8) & 0xFF;
 
-		memcpy(packet + kPacketField_PayloadStart, source, kDataPacketPayloadSize);
+		memcpy(packet + kPacketField_PayloadStart, file_data + i * kDataPacketPayloadSize, kDataPacketPayloadSize);
 
-		const uint16_t checksum =
-			packet[kPacketField_CommandType] +
-			packet[kPacketField_CompressionFlag] +
-			packet[kPacketField_PayloadSizeLSB] +
-			packet[kPacketField_PayloadSizeMSB] +
-			ComputeChecksum(source, kDataPacketPayloadSize);
+		uint32_t checksum = 0;
+		checksum += packet[kPacketField_CommandType];
+		checksum += packet[kPacketField_CompressionFlag];
+		checksum += packet[kPacketField_PayloadSizeLSB];
+		checksum += packet[kPacketField_PayloadSizeMSB];
+		for(uint32_t i = 0; i < kDataPacketPayloadSize; ++i)
+		{
+			checksum += packet[kPacketField_PayloadStart + i];
+		}
+
 		packet[kPacketField_ChecksumLSB] = checksum & 0xFF;
 		packet[kPacketField_ChecksumMSB] = (checksum >> 8) & 0xFF;
 
