@@ -1,5 +1,11 @@
 include "utils.rgbinc"
 
+;TODO GUI
+;TODO Connection check at the start
+;TODO Error management
+;TODO Error test
+;TODO Cleanup
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Interrupts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -14,6 +20,9 @@ section "vblank_interrupt", rom0[$0040]
 section "timer_interrupt", rom0[$0050]
 	jp TimerInterrupt
 
+section "serial_interrupt", rom0[$0058]
+	jp SerialInterrupt
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Timer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -21,7 +30,7 @@ section "timer_interrupt", rom0[$0050]
 section "timer", rom0
 
 StartTimer:
-	ld a, 256 - 256
+	ld a, 256 - 5
 	ld [rTMA], a
 	ld [rTIMA], a
 	ld [rDIV], a
@@ -42,6 +51,16 @@ TimerInterrupt:
 	reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Serial
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SerialInterrupt:
+	PushAllRegisters
+	call StartTimer
+	PopAllRegisters
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Protocol
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,6 +71,7 @@ COMMAND_TYPE_DATA			rb 1
 COMMAND_TYPE_DATA_END		rb 1
 COMMAND_TYPE_BREAK			rb 1
 COMMAND_TYPE_STATUS			rb 1
+COMMAND_TYPE_CLEANUP		rb 1
 COMMAND_TYPES_COUNT			rb 0
 
 PACKET_MAGIC_0				equ ($88)
@@ -175,7 +195,6 @@ SendPacketByte_Init:
 		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
 	.packet_done
 
-	call StartTimer
 	ret
 
 SendPacketByte_Print:
@@ -198,7 +217,6 @@ SendPacketByte_Print:
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
 
-	call StartTimer
 	ret
 
 SendPacketByte_Data:
@@ -234,7 +252,7 @@ SendPacketByte_Data:
 		add hl, de
 		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
 	.next_byte
-	call StartTimer
+
 	ret
 
 SendPacketByte_DataEnd:
@@ -257,7 +275,6 @@ SendPacketByte_DataEnd:
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
 
-	call StartTimer
 	ret
 
 SendPacketByte_Break:
@@ -278,16 +295,19 @@ SendPacketByte_Status:
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
 	cp a, packet_status_end - packet_status
 	jr nz, .packet_done
-		;wait for transfer to end
-		;check status
-		;  if printing send packet again
-		;  else print over (error or success), return
-		ld hl, WRAM_PRINT_STARTED
-		res 0, [hl]
-		ret
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_CLEANUP
 	.packet_done
 
-	call StartTimer
+	ret
+
+SendPacketByte_Cleanup:
+	;wait for transfer to end
+	;check status
+	;  if printing send packet again
+	;  else print over (error or success), return
+	ld hl, WRAM_PRINT_STARTED
+	res 0, [hl]
+
 	ret
 
 CommandFunctionTable:
@@ -297,6 +317,7 @@ CommandFunctionTable:
 	dw SendPacketByte_DataEnd
 	dw SendPacketByte_Break
 	dw SendPacketByte_Status
+	dw SendPacketByte_Cleanup
 
 SendPacketByte:
 	CallFunctionFromTable CommandFunctionTable, [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE]
@@ -346,7 +367,7 @@ InitSample:
 	InitPadInput WRAM_PAD_INPUT
 
 	; enable interrupts
-	copy [rIE], IEF_VBLANK | IEF_TIMER
+	copy [rIE], IEF_VBLANK | IEF_TIMER | IEF_SERIAL
 	ei
 
 	; init graphics
