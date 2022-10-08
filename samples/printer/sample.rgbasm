@@ -48,7 +48,9 @@ TimerInterrupt:
 rsreset
 COMMAND_TYPE_INIT			rb 1
 COMMAND_TYPE_PRINT			rb 1
-COMMAND_TYPE_DATA			rb 1
+COMMAND_TYPE_DATA_PART0		rb 1
+COMMAND_TYPE_DATA_PART1		rb 1
+COMMAND_TYPE_DATA_PART2		rb 1
 COMMAND_TYPE_DATA_END		rb 1
 COMMAND_TYPE_BREAK			rb 1
 COMMAND_TYPE_STATUS			rb 1
@@ -83,6 +85,10 @@ endm
 
 section "protocol", rom0
 
+;;;;;;;;;;;;;;;;;;;;
+; print packet
+;;;;;;;;;;;;;;;;;;;;
+
 PACKET_PRINT_PAYLOAD_SIZE			equ ($0004)
 PACKET_PRINT_SHEET_COUNT			equ ($01)
 PACKET_PRINT_FEEDS					equ ($14)
@@ -101,6 +107,10 @@ db PACKET_PRINT_DENSITY
 dw PACKET_PRINT_CHECKSUM
 db $00, $00
 packet_print_end:
+
+;;;;;;;;;;;;;;;;;;;;
+; fixed packets
+;;;;;;;;;;;;;;;;;;;;
 
 packet_init:
 	FixedPacket PACKET_TYPE_INIT
@@ -135,7 +145,7 @@ SendPacketByte_Init:
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
 	cp a, packet_init_end - packet_init
 	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_END
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_PART0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
@@ -168,7 +178,13 @@ SendPacketByte_Print:
 	call StartTimer
 	ret
 
-SendPacketByte_Data:
+SendPacketByte_DataPacketPart0:
+	ret
+
+SendPacketByte_DataPacketPart1:
+	ret
+
+SendPacketByte_DataPacketPart2:
 	ret
 
 SendPacketByte_DataEnd:
@@ -228,7 +244,9 @@ SendPacketByte_Status:
 CommandFunctionTable:
 	dw SendPacketByte_Init
 	dw SendPacketByte_Print
-	dw SendPacketByte_Data
+	dw SendPacketByte_DataPacketPart0
+	dw SendPacketByte_DataPacketPart1
+	dw SendPacketByte_DataPacketPart2
 	dw SendPacketByte_DataEnd
 	dw SendPacketByte_Break
 	dw SendPacketByte_Status
@@ -267,15 +285,6 @@ WRAM_END						rb 0
 WRAM_USAGE						equ (WRAM_END - _RAM)
 print "WRAM usage: {d:WRAM_USAGE} bytes\n"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Graphics
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-section "print_data", rom0
-print_data:
-incbin "print_data.chr"
-print_data_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Exports
