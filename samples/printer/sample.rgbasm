@@ -48,9 +48,7 @@ TimerInterrupt:
 rsreset
 COMMAND_TYPE_INIT			rb 1
 COMMAND_TYPE_PRINT			rb 1
-COMMAND_TYPE_DATA_PART0		rb 1
-COMMAND_TYPE_DATA_PART1		rb 1
-COMMAND_TYPE_DATA_PART2		rb 1
+COMMAND_TYPE_DATA			rb 1
 COMMAND_TYPE_DATA_END		rb 1
 COMMAND_TYPE_BREAK			rb 1
 COMMAND_TYPE_STATUS			rb 1
@@ -70,8 +68,12 @@ PACKET_COMPRESSION_ON		equ ($01)
 
 rsreset
 PRINT_STATE_COMMAND_TYPE	rb 1
-PRINT_STATE_COMMAND_PHASE	rb 1
+
 PRINT_STATE_BYTE_NUMBER		rb 1
+
+PRINT_STATE_DATA_POINTER	rb 2
+PRINT_STATE_DATA_END		rb 2
+
 PRINT_STATE_FLAGS			rb 1
 sizeof_PRINT_STATE			rb 0
 
@@ -92,7 +94,7 @@ section "protocol", rom0
 PACKET_PRINT_PAYLOAD_SIZE			equ ($0004)
 PACKET_PRINT_SHEET_COUNT			equ ($01)
 PACKET_PRINT_FEEDS					equ ($14)
-PACKET_PRINT_PALETTE				equ ($E4)
+PACKET_PRINT_PALETTE				equ ($1B)
 PACKET_PRINT_DENSITY				equ ($40)
 PACKET_PRINT_CHECKSUM				equ (PACKET_TYPE_PRINT + PACKET_PRINT_PAYLOAD_SIZE + PACKET_PRINT_SHEET_COUNT + PACKET_PRINT_FEEDS + PACKET_PRINT_PALETTE + PACKET_PRINT_DENSITY)
 
@@ -163,10 +165,14 @@ SendPacketByte_Init:
 	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
 	cp a, packet_init_end - packet_init
 	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_PART0
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
+		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
+		ld hl, packet_data_0
+		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
+		ld de, PACKET_DATA_SIZE
+		add hl, de
+		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
 	.packet_done
 
 	call StartTimer
@@ -188,7 +194,6 @@ SendPacketByte_Print:
 	cp a, packet_print_end - packet_print
 	jr nz, .packet_done
 		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_STATUS
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
@@ -196,13 +201,28 @@ SendPacketByte_Print:
 	call StartTimer
 	ret
 
-SendPacketByte_DataPacketPart0:
-	ret
+SendPacketByte_Data:
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
+	copy [rSB], [hl]
+	copy [rSC], SCF_START | SCF_SOURCE
 
-SendPacketByte_DataPacketPart1:
-	ret
+	inc hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
 
-SendPacketByte_DataPacketPart2:
+	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
+	ld a, e
+	cp a, l
+	jr nz, .next_byte
+	ld a, h
+	cp a, d
+	jr nz, .next_byte
+
+	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_END
+	copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
+	copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
+
+	.next_byte
+	call StartTimer
 	ret
 
 SendPacketByte_DataEnd:
@@ -221,7 +241,6 @@ SendPacketByte_DataEnd:
 	cp a, packet_data_end_end - packet_data_end
 	jr nz, .packet_done
 		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_PRINT
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 	.packet_done
@@ -262,9 +281,7 @@ SendPacketByte_Status:
 CommandFunctionTable:
 	dw SendPacketByte_Init
 	dw SendPacketByte_Print
-	dw SendPacketByte_DataPacketPart0
-	dw SendPacketByte_DataPacketPart1
-	dw SendPacketByte_DataPacketPart2
+	dw SendPacketByte_Data
 	dw SendPacketByte_DataEnd
 	dw SendPacketByte_Break
 	dw SendPacketByte_Status
@@ -279,7 +296,6 @@ macro StartPrinting
 	set 0, [hl]
 
 	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_INIT
-	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_PHASE], 0
 	copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
 	copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
 

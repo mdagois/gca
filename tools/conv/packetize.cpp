@@ -168,29 +168,29 @@ int main(int argc, char** argv)
 	uint8_t* output = new uint8_t[output_size];
 	for(uint32_t i = 0; i < packet_count; ++i)
 	{
-		output[kPacketField_Magic0] = 0x88;
-		output[kPacketField_Magic1] = 0x33;
-		output[kPacketField_CommandType] = 0x04;
-		output[kPacketField_CompressionFlag] = 0x00;
-		output[kPacketField_PayloadSizeLSB] = kDataPacketPayloadSize & 0xFF;
-		output[kPacketField_PayloadSizeMSB] = (kDataPacketPayloadSize >> 8) & 0xFF;
+		uint8_t* packet = output + i * kPacketSize;
+		const uint8_t* source = data + i * kDataPacketPayloadSize;
 
-		memcpy(output + kPacketField_PayloadStart, data, kDataPacketPayloadSize);
+		packet[kPacketField_Magic0] = 0x88;
+		packet[kPacketField_Magic1] = 0x33;
+		packet[kPacketField_CommandType] = 0x04;
+		packet[kPacketField_CompressionFlag] = 0x00;
+		packet[kPacketField_PayloadSizeLSB] = kDataPacketPayloadSize & 0xFF;
+		packet[kPacketField_PayloadSizeMSB] = (kDataPacketPayloadSize >> 8) & 0xFF;
+
+		memcpy(packet + kPacketField_PayloadStart, source, kDataPacketPayloadSize);
 
 		const uint16_t checksum =
-			output[kPacketField_CommandType] +
-			output[kPacketField_CompressionFlag] +
-			output[kPacketField_PayloadSizeLSB] +
-			output[kPacketField_PayloadSizeMSB] +
-			ComputeChecksum(data, kDataPacketPayloadSize);
-		output[kPacketField_ChecksumLSB] = checksum & 0xFF;
-		output[kPacketField_ChecksumMSB] = (checksum >> 8) & 0xFF;
+			packet[kPacketField_CommandType] +
+			packet[kPacketField_CompressionFlag] +
+			packet[kPacketField_PayloadSizeLSB] +
+			packet[kPacketField_PayloadSizeMSB] +
+			ComputeChecksum(source, kDataPacketPayloadSize);
+		packet[kPacketField_ChecksumLSB] = checksum & 0xFF;
+		packet[kPacketField_ChecksumMSB] = (checksum >> 8) & 0xFF;
 
-		output[kPacketField_Ack] = 0x00;
-		output[kPacketField_Status] = 0x00;
-
-		data += kDataPacketPayloadSize;
-		output += kPacketSize;
+		packet[kPacketField_Ack] = 0x00;
+		packet[kPacketField_Status] = 0x00;
 	}
 
 	const bool success = writeOutputData(output, output_size, getOutputFilename(filename, ".pkt").c_str());
