@@ -2,9 +2,7 @@ include "utils.rgbinc"
 
 ;TODO GUI
 ;TODO Connection check at the start
-;TODO Error management
 ;TODO Error test
-;TODO Cleanup
 ;TODO Break support
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -111,6 +109,18 @@ PACKET_COMPRESSION_OFF				equ ($00)
 PACKET_COMPRESSION_ON				equ ($01)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; result codes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+RESULT_SUCCESS						rb 1
+RESULT_ERROR_01						rb 1
+RESULT_ERROR_02						rb 1
+RESULT_ERROR_03						rb 1
+RESULT_ERROR_04						rb 1
+RESULTS_COUNT						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; print state
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -122,6 +132,8 @@ PRINT_STATE_DATA_END				rb 2
 
 PRINT_STATE_ACK						rb 1
 PRINT_STATE_STATUS					rb 1
+
+PRINT_STATE_RESULT					rb 1
 
 sizeof_PRINT_STATE					rb 0
 
@@ -289,17 +301,63 @@ SendPacketByte_Status:
 	ret
 
 SendPacketByte_Cleanup:
-	;ld a, [WRAM_PRINT_STATE + PRINT_STATE_FLAGS]
+	; assume success (overwrite in case of error)
+	copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_SUCCESS
 
-	;TODO check $FF $FF -> error #02
-	;TODO check low battery -> error #01
-	;TODO check paper jam -> error #03
-	;TODO check other error -> error #04
-	;TODO check printing -> if 1, return to status, otherwise, cleanup
+	.check_not_connected
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
+		cp a, $FF
+		jr nz, .connected
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+		cp a, $FF
+		jr nz, .connected
 
-	ld hl, WRAM_PRINT_STARTED
+		; not connected
+		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
+		jr .done
+
+	.connected
+
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+
+	.check_low_battery
+		bit PRINTER_STATUS_BIT_LOW_BATTERY, a
+		jr z, .low_battery
+			; low battery
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_01
+			jr .done
+		.low_battery
+
+	.check_paper_jam
+		bit PRINTER_STATUS_BIT_PAPER_JAM, a
+		jr z, .paper_jam
+			; paper jam
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_03
+			jr .done
+		.paper_jam
+
+	.check_other_error ; catch all
+		and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
+		jr z, .other_error
+			; other error
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_04
+			jr .done
+		.other_error
+
+	; no error, check whether printing is over
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+	bit PRINTER_STATUS_BIT_PRINTING, a
+	jr z, .done
+
+	; printing not over, send another status packet
+	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
+	StartTimer
+	ret
+
+	; printing is done
+	.done
+	ld hl, WRAM_PRINT_IN_PROGRESS
 	res 0, [hl]
-
 	ret
 
 SendPacketByte:
@@ -313,7 +371,7 @@ SendPacketByte:
 rsset _RAM
 
 WRAM_IS_VBLANK					rb 1
-WRAM_PRINT_STARTED				rb 1
+WRAM_PRINT_IN_PROGRESS			rb 1
 WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
 
@@ -366,13 +424,13 @@ UpdateSample:
 	UpdatePadInput WRAM_PAD_INPUT
 
 	; only accept input when no printing is occurring
-	ld a, [WRAM_PRINT_STARTED]
+	ld a, [WRAM_PRINT_IN_PROGRESS]
 	bit 0, a
 	jr nz, .accept_input
 		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
 		jr nz, .start_printing
 			; raise flag to block input while printing
-			ld hl, WRAM_PRINT_STARTED
+			ld hl, WRAM_PRINT_IN_PROGRESS
 			set 0, [hl]
 
 			; start the packet transfer sequence
