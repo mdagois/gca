@@ -1,7 +1,6 @@
 include "utils.rgbinc"
 
 ;TODO GUI
-;TODO Connection check at the start
 ;TODO Error test
 ;TODO Break support
 
@@ -252,7 +251,28 @@ endm
 
 SendPacketByte_Init:
 	SendPacketByte_Common
+	PrepareNextPacket SendPacketByte_CheckConnection, $0000, $0000
+	ret
+
+SendPacketByte_CheckConnection:
+	.check_not_connected
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
+		cp a, $FF
+		jr nz, .connected
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+		cp a, $FF
+		jr nz, .connected
+
+		; not connected
+		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
+		ld hl, WRAM_PRINT_IN_PROGRESS
+		res 0, [hl]
+		ret
+
+	.connected
+
 	PrepareNextPacket SendPacketByte_Data, packet_data_0, packet_data_0_end
+	StartTimer
 	ret
 
 SendPacketByte_Print:
