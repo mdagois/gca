@@ -1,7 +1,5 @@
 include "utils.rgbinc"
 
-;TODO GUI
-;TODO Error test
 ;TODO Break support
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -117,6 +115,7 @@ RESULT_ERROR_01						rb 1
 RESULT_ERROR_02						rb 1
 RESULT_ERROR_03						rb 1
 RESULT_ERROR_04						rb 1
+RESULT_PRINTING						rb 1
 RESULTS_COUNT						rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -265,8 +264,6 @@ SendPacketByte_CheckConnection:
 
 		; not connected
 		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
-		ld hl, WRAM_PRINT_IN_PROGRESS
-		res 0, [hl]
 		ret
 
 	.connected
@@ -321,9 +318,6 @@ SendPacketByte_Status:
 	ret
 
 SendPacketByte_Cleanup:
-	; assume success (overwrite in case of error)
-	copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_SUCCESS
-
 	.check_not_connected
 		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
 		cp a, $FF
@@ -334,7 +328,7 @@ SendPacketByte_Cleanup:
 
 		; not connected
 		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
-		jr .done
+		ret
 
 	.connected
 
@@ -345,7 +339,7 @@ SendPacketByte_Cleanup:
 		jr z, .low_battery
 			; low battery
 			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_01
-			jr .done
+			ret
 		.low_battery
 
 	.check_paper_jam
@@ -353,7 +347,7 @@ SendPacketByte_Cleanup:
 		jr z, .paper_jam
 			; paper jam
 			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_03
-			jr .done
+			ret
 		.paper_jam
 
 	.check_other_error ; catch all
@@ -361,23 +355,20 @@ SendPacketByte_Cleanup:
 		jr z, .other_error
 			; other error
 			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_04
-			jr .done
+			ret
 		.other_error
 
 	; no error, check whether printing is over
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
 	bit PRINTER_STATUS_BIT_PRINTING, a
-	jr z, .done
+	jr nz, .success
+		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_SUCCESS
+		ret
+	.success
 
 	; printing not over, send another status packet
 	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
 	StartTimer
-	ret
-
-	; printing is done
-	.done
-	ld hl, WRAM_PRINT_IN_PROGRESS
-	res 0, [hl]
 	ret
 
 SendPacketByte:
@@ -391,7 +382,6 @@ SendPacketByte:
 rsset _RAM
 
 WRAM_IS_VBLANK					rb 1
-WRAM_PRINT_IN_PROGRESS			rb 1
 WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
 
@@ -405,8 +395,6 @@ assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-TILE_UI_NUMBER_0				equ (80)
 
 TILES_COUNT						equ (384)
 BYTES_PER_TILE					equ (16)
@@ -466,6 +454,10 @@ InitSample:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+TILE_INDEX_BLANK					equ (64)
+TILE_INDEX_SELECTOR					equ (94)
+OPTION_SELECT_FIRST_TILE_ADDRESS	equ (_SCRN0 + 3 * SCRN_VX_B + 1)
+
 UpdateSample:
 	ld hl, WRAM_IS_VBLANK
 	xor a
@@ -475,19 +467,46 @@ UpdateSample:
 		jr z, .wait_vblank
 		ld [hl], a
 
+	; go through all the menu items and position
+	; the cursor in front of the correct one
+	ld hl, OPTION_SELECT_FIRST_TILE_ADDRESS
+	ld de, SCRN_VX_B * 2
+	ld c, RESULTS_COUNT
+	.set_tiles
+		; compute the iteration number
+		ld a, RESULTS_COUNT
+		sub a, c
+		ld b, a
+
+		; compare the iteration number to the current result
+		; to display the cursor in front of the correct item
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESULT]
+		cp a, b
+		jr nz, .selected
+			ld a, TILE_INDEX_SELECTOR
+			jr .selected_done
+		.selected
+			ld a, TILE_INDEX_BLANK
+		.selected_done
+		ld [hl], a
+
+		; go to the next tile
+		add hl, de
+
+		dec c
+		jr nz, .set_tiles
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	UpdatePadInput WRAM_PAD_INPUT
 
 	; only accept input when no printing is occurring
-	ld a, [WRAM_PRINT_IN_PROGRESS]
-	bit 0, a
-	jr nz, .accept_input
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESULT]
+	cp a, RESULT_PRINTING
+	jr z, .accept_input
 		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
 		jr nz, .start_printing
-			; raise flag to block input while printing
-			ld hl, WRAM_PRINT_IN_PROGRESS
-			set 0, [hl]
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_PRINTING
 
 			; start the packet transfer sequence
 			PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
