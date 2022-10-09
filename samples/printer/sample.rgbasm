@@ -92,17 +92,7 @@ PACKET_COMPRESSION_OFF				equ ($00)
 PACKET_COMPRESSION_ON				equ ($01)
 
 rsreset
-COMMAND_TYPE_INIT					rb 1
-COMMAND_TYPE_PRINT					rb 1
-COMMAND_TYPE_DATA					rb 1
-COMMAND_TYPE_DATA_END				rb 1
-COMMAND_TYPE_BREAK					rb 1
-COMMAND_TYPE_STATUS					rb 1
-COMMAND_TYPE_CLEANUP				rb 1
-COMMAND_TYPES_COUNT					rb 0
-
-rsreset
-PRINT_STATE_COMMAND_TYPE			rb 1
+PRINT_STATE_SEND_FUNCTION_ADDRESS	rb 2
 
 PRINT_STATE_DATA_POINTER			rb 2
 PRINT_STATE_DATA_END				rb 2
@@ -146,24 +136,6 @@ db $00, $00
 packet_print_end:
 
 ;;;;;;;;;;;;;;;;;;;;
-; data packets
-;;;;;;;;;;;;;;;;;;;;
-
-PACKET_DATA_PAYLOAD_SIZE 				equ (640)
-PACKET_DATA_BYTE_OVERHEAD				equ (10)
-PACKET_DATA_SIZE						equ (PACKET_DATA_PAYLOAD_SIZE + PACKET_DATA_BYTE_OVERHEAD)
-
-DATA_PACKET_NUMBER = 0
-rept 9
-
-packet_data_{d:DATA_PACKET_NUMBER}:
-incbin "print_data.pkt", DATA_PACKET_NUMBER * PACKET_DATA_SIZE, PACKET_DATA_SIZE
-packet_data_{d:DATA_PACKET_NUMBER}_end:
-
-DATA_PACKET_NUMBER = DATA_PACKET_NUMBER + 1
-endr
-
-;;;;;;;;;;;;;;;;;;;;
 ; fixed packets
 ;;;;;;;;;;;;;;;;;;;;
 
@@ -183,13 +155,31 @@ packet_status:
 	FixedPacket PACKET_TYPE_STATUS
 packet_status_end:
 
+;;;;;;;;;;;;;;;;;;;;
+; data packets
+;;;;;;;;;;;;;;;;;;;;
+
+PACKET_DATA_PAYLOAD_SIZE 				equ (640)
+PACKET_DATA_BYTE_OVERHEAD				equ (10)
+PACKET_DATA_SIZE						equ (PACKET_DATA_PAYLOAD_SIZE + PACKET_DATA_BYTE_OVERHEAD)
+
+DATA_PACKET_NUMBER = 0
+rept 9
+
+packet_data_{d:DATA_PACKET_NUMBER}:
+incbin "print_data.pkt", DATA_PACKET_NUMBER * PACKET_DATA_SIZE, PACKET_DATA_SIZE
+packet_data_{d:DATA_PACKET_NUMBER}_end:
+
+DATA_PACKET_NUMBER = DATA_PACKET_NUMBER + 1
+endr
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; set the parameters of the next packet to be sent 
-; \1 = command type, \2 = data start, \3 = data end
+; \1 = send function address, \2 = data start, \3 = data end
 macro PrepareNextPacket
-	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], \1
-
+	ld hl, \1
+	store16 WRAM_PRINT_STATE + PRINT_STATE_SEND_FUNCTION_ADDRESS, hl
 	ld hl, \2
 	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
 	ld hl, \3
@@ -219,12 +209,12 @@ endm
 
 SendPacketByte_Init:
 	SendPacketByte_Common
-	PrepareNextPacket COMMAND_TYPE_DATA, packet_data_0, packet_data_0_end
+	PrepareNextPacket SendPacketByte_Data, packet_data_0, packet_data_0_end
 	ret
 
 SendPacketByte_Print:
 	SendPacketByte_Common
-	PrepareNextPacket COMMAND_TYPE_STATUS, packet_status, packet_status_end
+	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
 	ret
 
 SendPacketByte_Data:
@@ -239,7 +229,7 @@ SendPacketByte_Data:
 	jr nz, .has_more_data_packets
 
 	; prepare to send the "data end" packet as all data packets are sent
-	PrepareNextPacket COMMAND_TYPE_DATA_END, packet_data_end, packet_data_end_end
+	PrepareNextPacket SendPacketByte_DataEnd, packet_data_end, packet_data_end_end
 	ret
 
 	.has_more_data_packets
@@ -255,7 +245,7 @@ SendPacketByte_Data:
 
 SendPacketByte_DataEnd:
 	SendPacketByte_Common
-	PrepareNextPacket COMMAND_TYPE_PRINT, packet_print, packet_print_end
+	PrepareNextPacket SendPacketByte_Print, packet_print, packet_print_end
 	ret
 
 SendPacketByte_Break:
@@ -263,7 +253,7 @@ SendPacketByte_Break:
 
 SendPacketByte_Status:
 	SendPacketByte_Common
-	PrepareNextPacket COMMAND_TYPE_CLEANUP, $0000, $0000
+	PrepareNextPacket SendPacketByte_Cleanup, $0000, $0000
 	ret
 
 SendPacketByte_Cleanup:
@@ -280,18 +270,9 @@ SendPacketByte_Cleanup:
 
 	ret
 
-CommandFunctionTable:
-	dw SendPacketByte_Init
-	dw SendPacketByte_Print
-	dw SendPacketByte_Data
-	dw SendPacketByte_DataEnd
-	dw SendPacketByte_Break
-	dw SendPacketByte_Status
-	dw SendPacketByte_Cleanup
-
 SendPacketByte:
-	CallFunctionFromTable CommandFunctionTable, [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE]
-	ret
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_SEND_FUNCTION_ADDRESS
+	jp hl
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Memory
@@ -363,7 +344,7 @@ UpdateSample:
 			set 0, [hl]
 
 			; start the packet transfer sequence
-			PrepareNextPacket COMMAND_TYPE_INIT, packet_init, packet_init_end
+			PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
 			call StartTimer
 		.start_printing
 	.accept_input
