@@ -1,10 +1,12 @@
 include "utils.rgbinc"
 
+;TODO Consolidate code for sending packets
 ;TODO GUI
 ;TODO Connection check at the start
 ;TODO Error management
 ;TODO Error test
 ;TODO Cleanup
+;TODO Break support
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Interrupts
@@ -54,8 +56,12 @@ TimerInterrupt:
 ; Serial
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+section "serial", rom0
+
 SerialInterrupt:
 	PushAllRegisters
+	copy [WRAM_PRINT_STATE + PRINT_STATE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+	copy [WRAM_PRINT_STATE + PRINT_STATE_STATUS], [rSB]
 	call StartTimer
 	PopAllRegisters
 	reti
@@ -64,38 +70,47 @@ SerialInterrupt:
 ; Protocol
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+PRINTER_STATUS_BIT_LOW_BATTERY		equ (7)
+PRINTER_STATUS_BIT_OTHER_ERROR		equ (6)
+PRINTER_STATUS_BIT_PAPER_JAM		equ (5)
+PRINTER_STATUS_BIT_PACKET_ERROR		equ (4)
+PRINTER_STATUS_BIT_READY_TO_PRINT	equ (3)
+PRINTER_STATUS_BIT_DATA_FULL		equ (2)
+PRINTER_STATUS_BIT_PRINTING			equ (1)
+PRINTER_STATUS_BIT_CHECKSUM_ERROR	equ (0)
+
+PACKET_MAGIC_0						equ ($88)
+PACKET_MAGIC_1						equ ($33)
+
+PACKET_TYPE_INIT					equ ($01)
+PACKET_TYPE_PRINT					equ ($02)
+PACKET_TYPE_DATA					equ ($04)
+PACKET_TYPE_BREAK					equ ($08)
+PACKET_TYPE_STATUS					equ ($0F)
+
+PACKET_COMPRESSION_OFF				equ ($00)
+PACKET_COMPRESSION_ON				equ ($01)
+
 rsreset
-COMMAND_TYPE_INIT			rb 1
-COMMAND_TYPE_PRINT			rb 1
-COMMAND_TYPE_DATA			rb 1
-COMMAND_TYPE_DATA_END		rb 1
-COMMAND_TYPE_BREAK			rb 1
-COMMAND_TYPE_STATUS			rb 1
-COMMAND_TYPE_CLEANUP		rb 1
-COMMAND_TYPES_COUNT			rb 0
-
-PACKET_MAGIC_0				equ ($88)
-PACKET_MAGIC_1				equ ($33)
-
-PACKET_TYPE_INIT			equ ($01)
-PACKET_TYPE_PRINT			equ ($02)
-PACKET_TYPE_DATA			equ ($04)
-PACKET_TYPE_BREAK			equ ($08)
-PACKET_TYPE_STATUS			equ ($0F)
-
-PACKET_COMPRESSION_OFF		equ ($00)
-PACKET_COMPRESSION_ON		equ ($01)
+COMMAND_TYPE_INIT					rb 1
+COMMAND_TYPE_PRINT					rb 1
+COMMAND_TYPE_DATA					rb 1
+COMMAND_TYPE_DATA_END				rb 1
+COMMAND_TYPE_BREAK					rb 1
+COMMAND_TYPE_STATUS					rb 1
+COMMAND_TYPE_CLEANUP				rb 1
+COMMAND_TYPES_COUNT					rb 0
 
 rsreset
-PRINT_STATE_COMMAND_TYPE	rb 1
+PRINT_STATE_COMMAND_TYPE			rb 1
 
-PRINT_STATE_BYTE_NUMBER		rb 1
+PRINT_STATE_DATA_POINTER			rb 2
+PRINT_STATE_DATA_END				rb 2
 
-PRINT_STATE_DATA_POINTER	rb 2
-PRINT_STATE_DATA_END		rb 2
+PRINT_STATE_ACK						rb 1
+PRINT_STATE_STATUS					rb 1
 
-PRINT_STATE_FLAGS			rb 1
-sizeof_PRINT_STATE			rb 0
+sizeof_PRINT_STATE					rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -170,141 +185,96 @@ packet_status_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SendPacketByte_Init:
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld d, 0
-	ld e, a
-	ld hl, packet_init
-	add hl, de
+; set the parameters of the next packet to be sent 
+; \1 = command type, \2 = data start, \3 = data end
+macro PrepareNextPacket
+	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], \1
 
-	copy [rSB], [hl]
-	copy [rSC], SCF_START | SCF_SOURCE
+	ld hl, \2
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
+	ld hl, \3
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
+endm
 
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	inc a
-	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, packet_init_end - packet_init
-	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA
-		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
-		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-		ld hl, packet_data_0
-		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
-		ld de, PACKET_DATA_SIZE
-		add hl, de
-		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
-	.packet_done
-
-	ret
-
-SendPacketByte_Print:
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld d, 0
-	ld e, a
-	ld hl, packet_print
-	add hl, de
-
-	copy [rSB], [hl]
-	copy [rSC], SCF_START | SCF_SOURCE
-
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	inc a
-	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, packet_print_end - packet_print
-	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_STATUS
-		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
-		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-	.packet_done
-
-	ret
-
-SendPacketByte_Data:
+; perform tasks common to all packets
+macro SendPacketByte_Common
+	; send next byte
 	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
+	; update data pointer
 	inc hl
 	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
 
+	; return if the end condition is not met
 	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
 	ld a, e
 	cp a, l
-	jr nz, .next_byte
+	ret nz
 	ld a, h
 	cp a, d
-	jr nz, .next_byte
+	ret nz
+endm
 
-	ld hl, WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER
-	inc [hl]
-	ld a, 9
-	cp a, [hl]
-	jr nz, .data_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA_END
-		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
-		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-		jr .next_byte
-	.data_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_DATA
-		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-		load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
-		ld de, PACKET_DATA_SIZE
-		add hl, de
-		store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
-	.next_byte
+SendPacketByte_Init:
+	SendPacketByte_Common
+	PrepareNextPacket COMMAND_TYPE_DATA, packet_data_0, packet_data_0_end
+	ret
+
+SendPacketByte_Print:
+	SendPacketByte_Common
+	PrepareNextPacket COMMAND_TYPE_STATUS, packet_status, packet_status_end
+	ret
+
+SendPacketByte_Data:
+	SendPacketByte_Common
+
+	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
+	ld a, e
+	cp a, low(packet_data_8_end)
+	jr nz, .has_more_data_packets
+	ld a, h
+	cp a, high(packet_data_8_end)
+	jr nz, .has_more_data_packets
+
+	; prepare to send the "data end" packet as all data packets are sent
+	PrepareNextPacket COMMAND_TYPE_DATA_END, packet_data_end, packet_data_end_end
+	ret
+
+	.has_more_data_packets
+	; prepare to send the next data packet
+	; all that is required is to update the data end pointer
+	; the rest of the print state is already set up
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
+	ld de, PACKET_DATA_SIZE
+	add hl, de
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
 
 	ret
 
 SendPacketByte_DataEnd:
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld d, 0
-	ld e, a
-	ld hl, packet_data_end
-	add hl, de
-
-	copy [rSB], [hl]
-	copy [rSC], SCF_START | SCF_SOURCE
-
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	inc a
-	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, packet_data_end_end - packet_data_end
-	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_PRINT
-		copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
-		copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-	.packet_done
-
+	SendPacketByte_Common
+	PrepareNextPacket COMMAND_TYPE_PRINT, packet_print, packet_print_end
 	ret
 
 SendPacketByte_Break:
 	ret
 
 SendPacketByte_Status:
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	ld d, 0
-	ld e, a
-	ld hl, packet_status
-	add hl, de
-
-	copy [rSB], [hl]
-	copy [rSC], SCF_START | SCF_SOURCE
-
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER]
-	inc a
-	ld [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], a
-	cp a, packet_status_end - packet_status
-	jr nz, .packet_done
-		copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_CLEANUP
-	.packet_done
-
+	SendPacketByte_Common
+	PrepareNextPacket COMMAND_TYPE_CLEANUP, $0000, $0000
 	ret
 
 SendPacketByte_Cleanup:
-	;wait for transfer to end
-	;check status
-	;  if printing send packet again
-	;  else print over (error or success), return
+	;ld a, [WRAM_PRINT_STATE + PRINT_STATE_FLAGS]
+
+	;TODO check $FF $FF -> error #02
+	;TODO check low battery -> error #01
+	;TODO check paper jam -> error #03
+	;TODO check other error -> error #04
+	;TODO check printing -> if 1, return to status, otherwise, cleanup
+
 	ld hl, WRAM_PRINT_STARTED
 	res 0, [hl]
 
@@ -322,18 +292,6 @@ CommandFunctionTable:
 SendPacketByte:
 	CallFunctionFromTable CommandFunctionTable, [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE]
 	ret
-
-; $1 = data packet count, $2 = data address
-macro StartPrinting
-	ld hl, WRAM_PRINT_STARTED
-	set 0, [hl]
-
-	copy [WRAM_PRINT_STATE + PRINT_STATE_COMMAND_TYPE], COMMAND_TYPE_INIT
-	copy [WRAM_PRINT_STATE + PRINT_STATE_BYTE_NUMBER], 0
-	copy [WRAM_PRINT_STATE + PRINT_STATE_FLAGS], 0
-
-	call StartTimer
-endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Memory
@@ -390,14 +348,23 @@ UpdateSample:
 		jr z, .wait_vblank
 		ld [hl], a
 
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	UpdatePadInput WRAM_PAD_INPUT
 
+	; only accept input when no printing is occurring
 	ld a, [WRAM_PRINT_STARTED]
 	bit 0, a
 	jr nz, .accept_input
 		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
 		jr nz, .start_printing
-			StartPrinting 9, $0000
+			; raise flag to block input while printing
+			ld hl, WRAM_PRINT_STARTED
+			set 0, [hl]
+
+			; start the packet transfer sequence
+			PrepareNextPacket COMMAND_TYPE_INIT, packet_init, packet_init_end
+			call StartTimer
 		.start_printing
 	.accept_input
 
