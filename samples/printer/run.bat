@@ -1,7 +1,7 @@
 echo off
 pushd "%~dp0"
 
-set simulator_rom=..\..\tools\printer\rom\debug\printer.gbc
+set simulator_rom=..\..\tools\printer\rom\release\printer.gbc
 
 set PORT=8765
 

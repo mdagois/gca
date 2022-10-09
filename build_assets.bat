@@ -33,7 +33,7 @@ set DMG_CHR_DIR=%DMG_GENERATED_DIR%%CHR_EXTENSION%\
 set DMG_TLM_DIR=%DMG_GENERATED_DIR%%TLM_EXTENSION%\
 
 :: general samples
-%DMG_CONV% %DMG_TILESET_DIR%tileset.png %DMG_TILEMAP_DIR%background.png %DMG_TILEMAP_DIR%ch1_continuous.png %DMG_TILEMAP_DIR%ch3_simple.png %DMG_TILEMAP_DIR%ch3_waveforms.png %DMG_TILEMAP_DIR%ch4_example.png %DMG_TILEMAP_DIR%counter_rng.png %DMG_TILEMAP_DIR%frame.png %DMG_TILEMAP_DIR%input_interrupt.png %DMG_TILEMAP_DIR%interrupt_trigger.png %DMG_TILEMAP_DIR%serial_multibytes.png %DMG_TILEMAP_DIR%serial_parent_child.png %DMG_TILEMAP_DIR%serial_switch_roles.png %DMG_TILEMAP_DIR%serial_transfer.png %DMG_TILEMAP_DIR%sound_duty.png %DMG_TILEMAP_DIR%sound_envelope.png %DMG_TILEMAP_DIR%sound_frequency.png %DMG_TILEMAP_DIR%sound_length.png %DMG_TILEMAP_DIR%sound_sweep.png %DMG_TILEMAP_DIR%sound_volume.png %DMG_TILEMAP_DIR%timer_sec.png %DMG_TILEMAP_DIR%window.png
+%DMG_CONV% %DMG_TILESET_DIR%tileset.png %DMG_TILEMAP_DIR%background.png %DMG_TILEMAP_DIR%ch1_continuous.png %DMG_TILEMAP_DIR%ch3_simple.png %DMG_TILEMAP_DIR%ch3_waveforms.png %DMG_TILEMAP_DIR%ch4_example.png %DMG_TILEMAP_DIR%counter_rng.png %DMG_TILEMAP_DIR%frame.png %DMG_TILEMAP_DIR%input_interrupt.png %DMG_TILEMAP_DIR%interrupt_trigger.png %DMG_TILEMAP_DIR%printer.png %DMG_TILEMAP_DIR%serial_multibytes.png %DMG_TILEMAP_DIR%serial_parent_child.png %DMG_TILEMAP_DIR%serial_switch_roles.png %DMG_TILEMAP_DIR%serial_transfer.png %DMG_TILEMAP_DIR%sound_duty.png %DMG_TILEMAP_DIR%sound_envelope.png %DMG_TILEMAP_DIR%sound_frequency.png %DMG_TILEMAP_DIR%sound_length.png %DMG_TILEMAP_DIR%sound_sweep.png %DMG_TILEMAP_DIR%sound_volume.png %DMG_TILEMAP_DIR%timer_sec.png %DMG_TILEMAP_DIR%window.png
 if %errorlevel% neq 0 goto end
 
 :: parallax sample
