@@ -246,12 +246,8 @@ macro SendPacketByte_Common
 	; all the packet data has been sent
 endm
 
-SendPacketByte_Init:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_CheckConnection, $0000, $0000
-	ret
-
-SendPacketByte_CheckConnection:
+; set the error code and return when an error is detected
+macro CheckForErrors
 	.check_not_connected
 		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
 		cp a, $FF
@@ -266,6 +262,42 @@ SendPacketByte_CheckConnection:
 
 	.connected
 
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+
+	.check_low_battery
+		bit PRINTER_STATUS_BIT_LOW_BATTERY, a
+		jr z, .low_battery
+			; low battery
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_01
+			ret
+		.low_battery
+
+	.check_paper_jam
+		bit PRINTER_STATUS_BIT_PAPER_JAM, a
+		jr z, .paper_jam
+			; paper jam
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_03
+			ret
+		.paper_jam
+
+	.check_other_error ; catch all
+		and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
+		jr z, .other_error
+			; other error
+			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_04
+			ret
+		.other_error
+endm
+
+SendPacketByte_Init:
+	SendPacketByte_Common
+	PrepareNextPacket SendPacketByte_CheckConnection, $0000, $0000
+	ret
+
+SendPacketByte_CheckConnection:
+	CheckForErrors
+
+	; no error
 	PrepareNextPacket SendPacketByte_Data, packet_data_0, packet_data_0_end
 	StartTimer
 	ret
@@ -316,45 +348,7 @@ SendPacketByte_Status:
 	ret
 
 SendPacketByte_Cleanup:
-	.check_not_connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
-		cp a, $FF
-		jr nz, .connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
-		cp a, $FF
-		jr nz, .connected
-
-		; not connected
-		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
-		ret
-
-	.connected
-
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
-
-	.check_low_battery
-		bit PRINTER_STATUS_BIT_LOW_BATTERY, a
-		jr z, .low_battery
-			; low battery
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_01
-			ret
-		.low_battery
-
-	.check_paper_jam
-		bit PRINTER_STATUS_BIT_PAPER_JAM, a
-		jr z, .paper_jam
-			; paper jam
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_03
-			ret
-		.paper_jam
-
-	.check_other_error ; catch all
-		and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
-		jr z, .other_error
-			; other error
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_04
-			ret
-		.other_error
+	CheckForErrors
 
 	; no error, check whether printing is over
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
