@@ -129,17 +129,17 @@ The batch uses ***gfxconv*** and ***cgbconv*** from the **bin** folder, so there
 
 For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
 
-## Printer simulator
+## Printer Simulator
 
-The Game Boy printer simulator referenced in the book is available in the [tools/printer](https://github.com/mdagois/gca/tree/main/tools/printer) directory.
-Check the [README](https://github.com/mdagois/gca/tree/main/tools/printer/README.md) file there to know more about the simulator.
+The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) directory.
+Check the [README](tools/printer/README.md) file there to know more about the simulator.
 
 ## Makefile for custom project
 
-A makefile is available in the [tools/build](https://github.com/mdagois/gca/tree/main/tools/build) directory.
+A makefile is available in the [tools/build](tools/build) directory.
 It is meant to make it easy to build ROMs.
-It is used to build the Printer Simulator.
-Please follow the instructions in the makefile file itself to know how to use it.
+It is used to build the [Printer Simulator](tools/printer).
+Please follow the instructions in the makefile file itself to know how to leverage it, and use the Printer Simulator [makefile](tools/printer/makefile) as a reference.
 
 ## Support
 
