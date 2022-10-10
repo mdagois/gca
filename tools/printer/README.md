@@ -16,8 +16,8 @@ Instead, its main goal is to help developers quickly test and iterate over the p
 
 ## Build instructions
 
-The build system for the printer simulator uses _make_ 4.0+.
-A Windows binary of _make_ is available [here](../../bin).
+The build system for the Printer Simulator uses `make 4.0+`.
+A Windows binary of `make` is available [here](../../bin).
 For other operating systems, use the available package manager to get it if it is not already installed.
 
 Use the command `make rom` to build a release version.

@@ -4,7 +4,7 @@ Companion repository for the book [**Game Boy Coding Adventure**](https://mdagoi
 
 ## Samples
 
-All the code samples referenced in the book are available in the ***samples*** folder.
+All the code samples referenced in the book are available in the [samples](samples) folder.
 
 ### Building the samples
 
@@ -20,31 +20,31 @@ Older versions of the toolchain might work, but they are not actively supported.
 #### Scripts
 
 There are build scripts in each sample folder.
-For Windows, use the batch file named ***build.bat***.
-For other operating systems, use the shell script named ***build.sh***.
+For Windows, use the batch file named `build.bat`.
+For other operating systems, use the shell script named `build.sh`.
 
 There are also scripts to build all the samples at once.
-They are located at the root of the repository: ***build_samples.bat*** for Windows and ***build_samples.sh*** (a bash script) for the other operating systems.
-The built ROMs are gathered into the ***generated/roms*** folder at the root of the repository.
+They are located at the root of the repository: [build_samples.bat](build_samples.bat) for Windows and [build_samples.sh](build_samples.sh) (a bash script) for the other operating systems.
+The built ROMs are gathered into the `generated/roms` folder at the root of the repository.
 
 ## Assets
 
-All the sample assets are available in the ***assets*** folder.
+All the sample assets are available in the [assets](assets) folder.
 The graphics assets (tilesets and tilemaps) are PNG files.
 
 ### Converting assets
 
 Assets are already converted and ready to use in the samples.
-However, it is possible to convert them again using the ***gfxconv*** and ***cgbconv*** tools.
+However, it is possible to convert them again using the `gfxconv` and `cgbconv` tools.
 
 ### The gfxconv tool
 
-The ***gfxconv*** tool converts PNG files into tilesets and tilemaps compatible with the DMG VRAM.
+The `gfxconv` tool converts PNG files into tilesets and tilemaps compatible with the DMG VRAM.
 
 #### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
-Here are a few example of using ***gfxconv***.
+Here are a few example of using `gfxconv`.
 
 ```
 # Converting a tileset.
@@ -74,12 +74,12 @@ They can be copied as is in VRAM.
 
 ### The cgbconv tool
 
-The ***cgbconv*** tool converts PNG files into tilesets, palettes, tilemap indices and tilemap parameters compatible with the CGB VRAM.
+The `cgbconv` tool converts PNG files into tilesets, palettes, tilemap indices and tilemap parameters compatible with the CGB VRAM.
 
 #### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
-Here are a few example of using ***cgbconv***.
+Here are a few example of using `cgbconv`.
 
 ```
 # Converting a tileset.
@@ -112,20 +112,22 @@ They are meant to be copied into bank 1 of the VRAM.
 
 ### Tool binaries
 
-Windows binaries for ***gfxconv*** and ***cgbconv*** are available in the ***bin*** folder.
+Windows binaries for `gfxconv` and `cgbconv` are available in the [bin](bin) folder.
 For other operating systems, it is necessary to build the tools.
 
 #### Building the tools
 
-A cmake file is available in the ***tools/conv*** folder.
+A [cmake](https://cmake.org/) file is available in the [tools/conv](tools/conv) folder.
 As each tool's code fits into a single source file, it should be straightforward to use any other build system.
 The only dependency is [libpng](http://www.libpng.org/pub/png/libpng.html).
+One good way to manage dependencies on any operating system is [vcpkg](https://vcpkg.io/).
+It also supports `cmake` out of the box.
 
 ### Conversion script
 
-A Windows batch file, ***build_assets.bat***, is available to rebuild all the assets.
-It puts the converted files (tilesets, palettes, tilemaps, etc.) into the **generated** folder.
-The batch uses ***gfxconv*** and ***cgbconv*** from the **bin** folder, so there is no need to rebuild them.
+A Windows batch file, [build_assets.bat](build_assets.bat), is available to rebuild all the assets.
+It puts the converted files (tilesets, palettes, tilemaps, etc.) into the [generated](generated) folder.
+The batch uses `gfxconv` and `cgbconv` from the [bin](bin) folder, so there is no need to rebuild them.
 
 For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
 
