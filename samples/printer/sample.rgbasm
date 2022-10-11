@@ -57,7 +57,6 @@ section "serial", rom0
 SerialInterrupt:
 	PushAllRegisters
 
-	; BEWARE
 	; These instructions are only meaningful on the last byte of each packet.
 	; However, it is convenient to just execute the instructions each time a byte is received
 	; as trying to detect the last byte of a packet is more work.
@@ -211,7 +210,7 @@ endr
 ; send functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; set the parameters of the next packet to be sent 
+; set the parameters of the next packet to be sent
 ; \1 = send function address, \2 = data start, \3 = data end
 macro PrepareNextPacket
 	ld hl, \1
@@ -247,6 +246,8 @@ macro SendPacketByte_Common
 endm
 
 ; set the error code and return when an error is detected
+; this must only be used between packets, as it relies and PRINT_STATE_ACK
+; and PRINT_STATE_STATUS which are only valid between packets.
 macro CheckForErrors
 	.check_not_connected
 		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
