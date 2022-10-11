@@ -60,9 +60,9 @@ SerialInterrupt:
 	; These instructions are only meaningful on the last byte of each packet.
 	; However, it is convenient to just execute the instructions each time a byte is received
 	; as trying to detect the last byte of a packet is more work.
-	; The values of PRINT_STATE_ACK and PRINT_STATE_STATUS should only be used between packets.
-	copy [WRAM_PRINT_STATE + PRINT_STATE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
-	copy [WRAM_PRINT_STATE + PRINT_STATE_STATUS], [rSB]
+	; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS should only be used between packets.
+	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS], [rSB]
 
 	StartTimer
 
@@ -122,15 +122,15 @@ RESULTS_COUNT						rb 0
 NULL_POINTER						equ ($0000)
 
 rsreset
-PRINT_STATE_SEND_FUNCTION_ADDRESS	rb 2
+PRINT_STATE_FUNCTION_ADDRESS		rb 2
 
-PRINT_STATE_DATA_POINTER			rb 2
-PRINT_STATE_DATA_END				rb 2
+PRINT_STATE_DATA_POINTER_NEXT_BYTE	rb 2
+PRINT_STATE_DATA_POINTER_LAST_BYTE	rb 2
 
-PRINT_STATE_ACK						rb 1
-PRINT_STATE_STATUS					rb 1
+PRINT_STATE_RESPONSE_ACK			rb 1
+PRINT_STATE_RESPONSE_STATUS			rb 1
 
-PRINT_STATE_RESULT					rb 1
+PRINT_STATE_TRANSFER_RESULT			rb 1
 
 sizeof_PRINT_STATE					rb 0
 
@@ -209,27 +209,27 @@ packet_data_end:
 ; \1 = send function address, \2 = data start, \3 = data end
 macro PrepareNextPacket
 	ld hl, \1
-	store16 WRAM_PRINT_STATE + PRINT_STATE_SEND_FUNCTION_ADDRESS, hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS, hl
 	ld hl, \2
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
 	ld hl, \3
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE, hl
 endm
 
 ; perform tasks common to all packets
 macro SendPacketByte_Common
 	; send a byte
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE
 	copy [rSB], [hl]
 	copy [rSC], SCF_START | SCF_SOURCE
 
 	; update the data pointer to point to the next byte to send
 	inc hl
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER, hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
 
 	; check whether all the data for the packet has been sent
 	; and return if that is not the case
-	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
+	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE
 	ld a, e
 	cp a, l
 	ret nz
@@ -241,30 +241,30 @@ macro SendPacketByte_Common
 endm
 
 ; set the error code and return when an error is detected
-; this must only be used between packets, as it relies and PRINT_STATE_ACK
-; and PRINT_STATE_STATUS which are only valid between packets.
+; this must only be used between packets, as it relies and PRINT_STATE_RESPONSE_ACK
+; and PRINT_STATE_RESPONSE_STATUS which are only valid between packets.
 macro CheckForErrors
 	.check_not_connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_ACK]
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK]
 		cp a, $FF
 		jr nz, .connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
 		cp a, $FF
 		jr nz, .connected
 
 		; not connected
-		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_02
+		copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_02
 		ret
 
 	.connected
 
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
 
 	.check_low_battery
 		bit PRINTER_STATUS_BIT_LOW_BATTERY, a
 		jr z, .low_battery
 			; low battery
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_01
+			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_01
 			ret
 		.low_battery
 
@@ -272,7 +272,7 @@ macro CheckForErrors
 		bit PRINTER_STATUS_BIT_PAPER_JAM, a
 		jr z, .paper_jam
 			; paper jam
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_03
+			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_03
 			ret
 		.paper_jam
 
@@ -280,7 +280,7 @@ macro CheckForErrors
 		and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
 		jr z, .other_error
 			; other error
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_ERROR_04
+			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_04
 			ret
 		.other_error
 endm
@@ -307,7 +307,7 @@ SendPacketByte_Data:
 	SendPacketByte_Common
 
 	; check whether the last data packet was sent
-	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
+	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE
 	ld a, e
 	cp a, low(packet_data_end)
 	jr nz, .has_more_data_packets
@@ -323,10 +323,10 @@ SendPacketByte_Data:
 	; there are more data packet to send, so prepare to send the next data packet
 	; all that is required is to update the data end pointer
 	; the rest of the print state is already set up
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE
 	ld de, PACKET_DATA_SIZE
 	add hl, de
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_END, hl
+	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE, hl
 
 	ret
 
@@ -347,10 +347,10 @@ SendPacketByte_CheckStatus:
 	CheckForErrors
 
 	; no error, check whether printing is over
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_STATUS]
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
 	bit PRINTER_STATUS_BIT_PRINTING, a
 	jr nz, .success
-		copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_SUCCESS
+		copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_SUCCESS
 		ret
 	.success
 
@@ -360,7 +360,7 @@ SendPacketByte_CheckStatus:
 	ret
 
 SendPacketByte:
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_SEND_FUNCTION_ADDRESS
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS
 	jp hl
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -468,7 +468,7 @@ UpdateSample:
 
 		; compare the iteration number to the current result
 		; to display the cursor in front of the correct item
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESULT]
+		ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
 		cp a, b
 		jr nz, .selected
 			ld a, TILE_INDEX_SELECTOR
@@ -489,12 +489,12 @@ UpdateSample:
 	UpdatePadInput WRAM_PAD_INPUT
 
 	; only accept input when no printing is occurring
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESULT]
+	ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
 	cp a, RESULT_PRINTING
 	jr z, .accept_input
 		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
 		jr nz, .start_printing
-			copy [WRAM_PRINT_STATE + PRINT_STATE_RESULT], RESULT_PRINTING
+			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_PRINTING
 
 			; start the packet transfer sequence
 			PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
