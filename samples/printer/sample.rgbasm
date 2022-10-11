@@ -345,10 +345,10 @@ SendPacketByte_Break:
 
 SendPacketByte_Status:
 	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_Cleanup, $0000, $0000
+	PrepareNextPacket SendPacketByte_CheckStatus, $0000, $0000
 	ret
 
-SendPacketByte_Cleanup:
+SendPacketByte_CheckStatus:
 	CheckForErrors
 
 	; no error, check whether printing is over
