@@ -119,6 +119,8 @@ RESULTS_COUNT						rb 0
 ; print state
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+NULL_POINTER						equ ($0000)
+
 rsreset
 PRINT_STATE_SEND_FUNCTION_ADDRESS	rb 2
 
@@ -152,9 +154,9 @@ packet_init:
 	FixedPacket PACKET_TYPE_INIT
 packet_init_end:
 
-packet_data_end:
+packet_data_sentinel:
 	FixedPacket PACKET_TYPE_DATA
-packet_data_end_end:
+packet_data_sentinel_end:
 
 packet_break:
 	FixedPacket PACKET_TYPE_BREAK
@@ -195,16 +197,9 @@ PACKET_DATA_PAYLOAD_SIZE 				equ (640)
 PACKET_DATA_BYTE_OVERHEAD				equ (10) ; fields that are not part of the payload
 PACKET_DATA_SIZE						equ (PACKET_DATA_PAYLOAD_SIZE + PACKET_DATA_BYTE_OVERHEAD)
 
-; data packets are defined in a single file, but imported separately into their own labels
-DATA_PACKET_NUMBER = 0
-rept 9
-
-packet_data_{d:DATA_PACKET_NUMBER}:
-incbin "print_data.pkt", DATA_PACKET_NUMBER * PACKET_DATA_SIZE, PACKET_DATA_SIZE
-packet_data_{d:DATA_PACKET_NUMBER}_end:
-
-DATA_PACKET_NUMBER = DATA_PACKET_NUMBER + 1
-endr
+packet_data:
+incbin "print_data.pkt"
+packet_data_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; send functions
@@ -292,14 +287,14 @@ endm
 
 SendPacketByte_Init:
 	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_CheckConnection, $0000, $0000
+	PrepareNextPacket SendPacketByte_CheckConnection, NULL_POINTER, NULL_POINTER
 	ret
 
 SendPacketByte_CheckConnection:
 	CheckForErrors
 
 	; no error
-	PrepareNextPacket SendPacketByte_Data, packet_data_0, packet_data_0_end
+	PrepareNextPacket SendPacketByte_Data, packet_data, packet_data + PACKET_DATA_SIZE
 	StartTimer
 	ret
 
@@ -314,14 +309,14 @@ SendPacketByte_Data:
 	; check whether the last data packet was sent
 	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_END
 	ld a, e
-	cp a, low(packet_data_8_end)
+	cp a, low(packet_data_end)
 	jr nz, .has_more_data_packets
 	ld a, h
-	cp a, high(packet_data_8_end)
+	cp a, high(packet_data_end)
 	jr nz, .has_more_data_packets
 
 	; the last data packet was sent, so prepare to send the "data end" packet
-	PrepareNextPacket SendPacketByte_DataEnd, packet_data_end, packet_data_end_end
+	PrepareNextPacket SendPacketByte_DataEnd, packet_data_sentinel, packet_data_sentinel_end
 	ret
 
 	.has_more_data_packets
@@ -345,7 +340,7 @@ SendPacketByte_Break:
 
 SendPacketByte_Status:
 	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_CheckStatus, $0000, $0000
+	PrepareNextPacket SendPacketByte_CheckStatus, NULL_POINTER, NULL_POINTER
 	ret
 
 SendPacketByte_CheckStatus:
