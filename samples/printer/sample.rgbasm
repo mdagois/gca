@@ -98,7 +98,6 @@ PACKET_MAGIC_1						equ ($33)
 PACKET_TYPE_INIT					equ ($01)
 PACKET_TYPE_PRINT					equ ($02)
 PACKET_TYPE_DATA					equ ($04)
-PACKET_TYPE_BREAK					equ ($08)
 PACKET_TYPE_STATUS					equ ($0F)
 
 PACKET_COMPRESSION_OFF				equ ($00)
@@ -160,10 +159,6 @@ packet_data_sentinel:
 	FixedPacket PACKET_TYPE_DATA
 packet_data_sentinel_end:
 
-packet_break:
-	FixedPacket PACKET_TYPE_BREAK
-packet_break_end:
-
 packet_status:
 	FixedPacket PACKET_TYPE_STATUS
 packet_status_end:
@@ -194,10 +189,6 @@ packet_print_end:
 ;;;;;;;;;;;;;;;;;;;;
 ; data packets
 ;;;;;;;;;;;;;;;;;;;;
-
-PACKET_DATA_PAYLOAD_SIZE 				equ (640)
-PACKET_DATA_BYTE_OVERHEAD				equ (10) ; fields that are not part of the payload
-PACKET_DATA_SIZE						equ (PACKET_DATA_PAYLOAD_SIZE + PACKET_DATA_BYTE_OVERHEAD)
 
 packet_data:
 incbin "print_data.pkt"
@@ -296,7 +287,7 @@ SendPacketByte_CheckConnection:
 	CheckForErrors
 
 	; no error
-	PrepareNextPacket SendPacketByte_Data, packet_data, packet_data + PACKET_DATA_SIZE
+	PrepareNextPacket SendPacketByte_Data, packet_data, packet_data_end
 	StartTimer
 	ret
 
@@ -307,37 +298,12 @@ SendPacketByte_Print:
 
 SendPacketByte_Data:
 	SendPacketByte_Common
-
-	; check whether the last data packet was sent
-	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE
-	ld a, e
-	cp a, low(packet_data_end)
-	jr nz, .has_more_data_packets
-	ld a, h
-	cp a, high(packet_data_end)
-	jr nz, .has_more_data_packets
-
-	; the last data packet was sent, so prepare to send the "data end" packet
 	PrepareNextPacket SendPacketByte_DataEnd, packet_data_sentinel, packet_data_sentinel_end
-	ret
-
-	.has_more_data_packets
-	; there are more data packet to send, so prepare to send the next data packet
-	; all that is required is to update the data end pointer
-	; the rest of the print state is already set up
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE
-	ld de, PACKET_DATA_SIZE
-	add hl, de
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE, hl
-
 	ret
 
 SendPacketByte_DataEnd:
 	SendPacketByte_Common
 	PrepareNextPacket SendPacketByte_Print, packet_print, packet_print_end
-	ret
-
-SendPacketByte_Break:
 	ret
 
 SendPacketByte_Status:
