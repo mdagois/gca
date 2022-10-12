@@ -112,7 +112,7 @@ RESULT_ERROR_01						rb 1
 RESULT_ERROR_02						rb 1
 RESULT_ERROR_03						rb 1
 RESULT_ERROR_04						rb 1
-RESULT_PRINTING						rb 1
+RESULT_IN_PROGRESS					rb 1
 RESULTS_COUNT						rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -490,11 +490,11 @@ UpdateSample:
 
 	; only accept input when no printing is occurring
 	ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
-	cp a, RESULT_PRINTING
+	cp a, RESULT_IN_PROGRESS
 	jr z, .accept_input
 		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
 		jr nz, .start_printing
-			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_PRINTING
+			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_IN_PROGRESS
 
 			; start the packet transfer sequence
 			PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
