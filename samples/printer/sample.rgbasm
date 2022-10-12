@@ -40,7 +40,9 @@ TimerInterrupt:
 	PushAllRegisters
 
 	StopTimer
-	call SendPacketByte
+
+	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS
+	CallHL
 
 	PopAllRegisters
 	reti
@@ -58,8 +60,8 @@ SerialInterrupt:
 	PushAllRegisters
 
 	; These instructions are only meaningful on the last byte of each packet.
-	; However, it is convenient to just execute the instructions each time a byte is received
-	; as trying to detect the last byte of a packet is more work.
+	; However, it is convenient to just execute the instructions each time a byte is received as trying to
+	; detect the last byte of a packet is more work.
 	; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS should only be used between packets.
 	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
 	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS], [rSB]
@@ -358,10 +360,6 @@ SendPacketByte_CheckStatus:
 	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
 	StartTimer
 	ret
-
-SendPacketByte:
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS
-	jp hl
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Memory
