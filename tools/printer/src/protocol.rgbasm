@@ -1,0 +1,984 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; enable extra sanity checks that make the byte processing too slow
+; (i.e. bytes are missed)
+; CGB games are especially sensible to this
+; better left disabled
+;def PERFORM_HEAVY_CHECKS=1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Protocol
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; magic bytes sent at the start of every packet
+PRINTER_MAGIC_BYTE_0				equ ($88)
+PRINTER_MAGIC_BYTE_1				equ ($33)
+
+; packet types
+PRINTER_PACKET_TYPE_INIT			equ ($01)
+PRINTER_PACKET_TYPE_PRINT			equ ($02)
+PRINTER_PACKET_TYPE_DATA			equ ($04)
+PRINTER_PACKET_TYPE_BREAK			equ ($08)
+PRINTER_PACKET_TYPE_NUL				equ ($0F)
+
+; compression flag
+PRINTER_COMPRESSION_FLAG_OFF		equ (%00000000)
+PRINTER_COMPRESSION_FLAG_ON			equ (%00000001)
+
+; ack value
+PRINTER_ACK_VALUE					equ ($81)
+
+; status bits
+PRINTER_STATUS_BIT_LOW_BATTERY		equ (7)
+PRINTER_STATUS_BIT_OTHER_ERROR		equ (6)
+PRINTER_STATUS_BIT_PAPER_JAM		equ (5)
+PRINTER_STATUS_BIT_PACKET_ERROR		equ (4)
+PRINTER_STATUS_BIT_READY_TO_PRINT	equ (3)
+PRINTER_STATUS_BIT_DATA_FULL		equ (2)
+PRINTER_STATUS_BIT_PRINTING			equ (1)
+PRINTER_STATUS_BIT_CHECKSUM_ERROR	equ (0)
+
+; status flags
+PRINTER_STATUS_FLAG_LOW_BATTERY		equ (1 << PRINTER_STATUS_BIT_LOW_BATTERY)
+PRINTER_STATUS_FLAG_OTHER_ERROR		equ (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
+PRINTER_STATUS_FLAG_PAPER_JAM		equ (1 << PRINTER_STATUS_BIT_PAPER_JAM)
+PRINTER_STATUS_FLAG_PACKET_ERROR	equ (1 << PRINTER_STATUS_BIT_PACKET_ERROR)
+PRINTER_STATUS_FLAG_READY_TO_PRINT	equ (1 << PRINTER_STATUS_BIT_READY_TO_PRINT)
+PRINTER_STATUS_FLAG_DATA_FULL		equ (1 << PRINTER_STATUS_BIT_DATA_FULL)
+PRINTER_STATUS_FLAG_PRINTING		equ (1 << PRINTER_STATUS_BIT_PRINTING)
+PRINTER_STATUS_FLAG_CHECKSUM_ERROR	equ (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR)
+
+; flags that persist between packets (except init)
+PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_READY_TO_PRINT | PRINTER_STATUS_FLAG_DATA_FULL | PRINTER_STATUS_FLAG_PRINTING)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Byte types
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+
+BYTE_MAGIC_0				rb 1
+BYTE_MAGIC_1				rb 1
+BYTE_HEADER_PACKET_TYPE		rb 1
+BYTE_HEADER_COMPRESSION		rb 1
+BYTE_HEADER_DATA_SIZE_LSB	rb 1
+BYTE_HEADER_DATA_SIZE_MSB	rb 1
+BYTE_PACKET_DATA			rb 1
+BYTE_PACKET_PRINT			rb 1
+BYTE_PACKET_CHECKSUM_LSB	rb 1
+BYTE_PACKET_CHECKSUM_MSB	rb 1
+BYTE_PACKET_ACK				rb 1
+BYTE_PACKET_STATUS			rb 1
+BYTES_COUNT					rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Miscellaneous
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+IMAGE_BYTES_PER_VRAM_TRANSFER		equ (16)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "protocol", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProtocolInitialize:
+	copy [vNextByte], BYTE_MAGIC_0
+
+	; get ready to receive the first byte
+	reset [rSB]
+	copy [rSC], SCF_START
+
+	; start the timeout timer
+	xor a
+	ld [rTMA], a
+	ld [rTIMA], a
+	ld [rDIV], a
+	copy [rTAC], TACF_START | TACF_16KHZ
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Update
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; DMG colors used to set the palette
+DmgColors:
+	; white
+	db $FC
+	db $6B
+	; light gray
+	db $11
+	db $3B
+	; dark gray
+	db $A6
+	db $29
+	; black
+	db $61
+	db $10
+
+RefreshPalette:
+	debug "[INFO] refreshing the palette"
+
+	; reset the palette refresh flag
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
+
+	; retrieve the palette data received from serial
+	ld a, [vPrintParameters + PRINT_PARAMETER_PALETTE]
+	ld b, a
+
+	; get ready to set the colors of the first palette
+	copy [rBCPS], 0 | BCPSF_AUTOINC
+
+	; set the color 0
+	ld hl, DmgColors
+	ld a, b
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 1
+	ld hl, DmgColors
+	ld a, b
+	srl a
+	srl a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 2
+	ld hl, DmgColors
+	ld a, b
+	swap a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	; set the color 2
+	ld hl, DmgColors
+	ld a, b
+	swap a
+	srl a
+	srl a
+	and a, $03
+	sla a
+	ld d, 0
+	ld e, a
+	add hl, de
+	copy [rBCPD], [hli]
+	copy [rBCPD], [hl]
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessChunks:
+; decompress all chunks
+CHUNK_LOOP_COUNT = 0
+rept 9
+	xor a
+	ld [vDecompressedSize + 0], a
+	ld [vDecompressedSize + 1], a
+
+	; check that the chunk is valid
+	ld a, [vChunkCount]
+	cp a, CHUNK_LOOP_COUNT + 1
+	jr c, .skip_chunk_decompression\@
+
+	; check whether the chunk needs decompression
+	ld hl, vChunkProperties + (sizeof_CHUNK_PROPERTY * CHUNK_LOOP_COUNT) + CHUNK_PROPERTY_COMPRESSION
+	bit 0, [hl]
+	jr z, .skip_chunk_decompression\@
+	; flag the chunk as decompressed
+	res 0, [hl]
+
+	ld hl, vImageData + (CHUNK_BYTE_SIZE * CHUNK_LOOP_COUNT)
+	ld de, vDecompressedChunk
+
+	.decompress_chunk\@
+		ld a, [hli]
+		bit 7, a
+		jr z, .raw_bytes\@
+
+		.repeat_byte\@
+			; compute the number of time to repeat the byte
+			and a, $7F
+			add a, 2
+			ld b, a
+
+			push hl
+			push de
+				load16 hl, vDecompressedSize
+				ld d, 0
+				ld e, b
+				add hl, de
+				store16 vDecompressedSize, hl
+			pop de
+			pop hl
+
+			; get the byte to repeat
+			ld a, [hli]
+
+			; copy the byte over
+			.copy_single_byte\@
+				ld [de], a
+				inc de
+				dec b
+				jr nz, .copy_single_byte\@
+
+			jr .byte_decompression_done\@
+
+		.raw_bytes\@
+			; compute the number of raw bytes to copy
+			inc a
+			ld b, a
+
+			push hl
+			push de
+				load16 hl, vDecompressedSize
+				ld d, 0
+				ld e, b
+				add hl, de
+				store16 vDecompressedSize, hl
+			pop de
+			pop hl
+
+			.copy_raw_bytes\@
+				; copy the next byte
+				ld a, [hli]
+				ld [de], a
+				inc de
+
+				dec b
+				jr nz, .copy_raw_bytes\@
+
+		.byte_decompression_done\@
+		
+		ld a, [vDecompressedSize + 0]
+		cp a, $80
+		jr nz, .decompress_chunk\@
+		ld a, [vDecompressedSize + 1]
+		cp a, $02
+		jr nz, .decompress_chunk\@
+
+	.chunk_decompression_done\@
+
+	; copy the compressed chunk back into the image chunk
+	ld hl, vImageData + (CHUNK_BYTE_SIZE * CHUNK_LOOP_COUNT)
+	ld de, vDecompressedChunk
+	; copy 5 blocks of 128 bytes
+	ld c, 5
+	.copy_all_blocks\@
+		ld b, 128
+		.copy_single_block\@
+			ld a, [de]
+			inc de
+			ld [hli], a
+			dec b
+			jr nz, .copy_single_block\@
+		dec c
+		jr nz, .copy_all_blocks\@
+
+	; return after one chunk has been decompressed
+	; to limit the amount of work per frame
+	ret
+
+	.skip_chunk_decompression\@
+
+CHUNK_LOOP_COUNT = CHUNK_LOOP_COUNT + 1
+endr
+
+	; compute the image size
+	ld hl, 0
+	ld de, CHUNK_BYTE_SIZE
+	ld a, [vChunkCount]
+	ld c, a
+	.compute_data_size
+		add hl, de
+		dec c
+		jr nz, .compute_data_size
+	store16 vImageDataSize, hl
+
+	; consider printing done if there are no chunks
+	ld a, [vChunkCount]
+	or a
+	jr nz, .has_chunk
+		ld hl, vStatus
+		res PRINTER_STATUS_BIT_PRINTING, [hl]
+		debug "[INFO] printing skipped"
+	.has_chunk
+
+	; update the flags to indicate chunks have been processed
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	set PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+GenerateUserTriggeredErrors:
+	; clear errors
+	ld hl, vStatusUserTriggeredErrors
+	xor a
+	ld [hl], a
+
+	; check input keys and raise error flags accordingly
+	TestPadInput_HeldAll vPadInput, PADF_UP
+	jr nz, .low_battery
+		set PRINTER_STATUS_BIT_LOW_BATTERY, [hl] 
+	.low_battery
+	TestPadInput_HeldAll vPadInput, PADF_DOWN
+	jr nz, .other_error
+		set PRINTER_STATUS_BIT_OTHER_ERROR, [hl] 
+	.other_error
+	TestPadInput_HeldAll vPadInput, PADF_LEFT
+	jr nz, .paper_jam
+		set PRINTER_STATUS_BIT_PAPER_JAM, [hl] 
+	.paper_jam
+	TestPadInput_HeldAll vPadInput, PADF_RIGHT
+	jr nz, .packet_error
+		set PRINTER_STATUS_BIT_PACKET_ERROR, [hl] 
+	.packet_error
+	
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProtocolUpdate:
+	; check whether the palette needs a refresh
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
+	call nz, RefreshPalette
+
+	; check whether chunks need to be processed
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	call nz, ProcessChunks
+
+	call GenerateUserTriggeredErrors
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Vblank
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TransferTiles:
+	; compute the source and destination addresses
+	load16 bc, vVramTransferredSize
+		; get the source data address into (de)
+		ld hl, vImageData
+		add hl, bc
+		ldr16 de, hl
+		; get the destination data address into (hl)
+		ld hl, _VRAM
+		add hl, bc
+
+	; transfer a fixed amount of bytes from the image data to VRAM
+	; the aim is to not go beyond the vblank (i.e. when VRAM access is prohibited)
+	ld c, IMAGE_BYTES_PER_VRAM_TRANSFER
+	.vram_transfer
+		ld a, [de]
+		ld [hli], a
+		inc de
+		dec c
+	jr nz, .vram_transfer
+
+	; update the size of the image data transferred to VRAM
+	load16 hl, vVramTransferredSize
+	ld de, IMAGE_BYTES_PER_VRAM_TRANSFER
+	add hl, de
+	store16 vVramTransferredSize, hl
+
+	; check whether the printing is over
+	ld a, [vVramTransferredSize + 0]
+	ld b, a
+	ld a, [vImageDataSize + 0]
+	cp a, b
+	ret nz
+	ld a, [vVramTransferredSize + 1]
+	ld b, a
+	ld a, [vImageDataSize + 1]
+	cp a, b
+	ret nz
+
+	; done transferring tiles
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
+	set PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+
+	ret
+
+ClearUnusedTiles:
+	; check whether clearing is necessary
+	ld a, [vVramTransferredSize + 0]
+	ld b, a
+	ld a, $00
+	cp a, b
+	jr nz, .clear_tiles
+	ld a, [vVramTransferredSize + 1]
+	ld b, a
+	ld a, $18
+	cp a, b
+	jr z, .clearing_over
+
+	.clear_tiles
+
+	; compute the destination address for clearing
+	load16 bc, vVramTransferredSize
+	ld hl, _VRAM
+	add hl, bc
+
+	; clear a fixed amount of tile bytes
+	ld c, IMAGE_BYTES_PER_VRAM_TRANSFER
+	xor a
+	.vram_clear
+		ld [hli], a
+		dec c
+	jr nz, .vram_clear
+
+	; update the size of the image data transferred to VRAM
+	load16 hl, vVramTransferredSize
+	ld de, IMAGE_BYTES_PER_VRAM_TRANSFER
+	add hl, de
+	store16 vVramTransferredSize, hl
+
+	; return here
+	; the next frame will check whether clearing is over
+	ret
+
+	.clearing_over
+
+	; done clearing unused tiles
+	ld hl, vControlFlags
+	res PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+
+	; update the status to indicate that printing is over
+	ld hl, vStatus
+	res PRINTER_STATUS_BIT_PRINTING, [hl]
+	res PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
+
+	debug "[INFO] printing done"
+	ret
+
+ProtocolUpdateVblank:
+	; check whether printing has started
+	ld hl, vStatus
+	bit PRINTER_STATUS_BIT_PRINTING, [hl]
+	ret z
+
+	; tiles transfer
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_TRANSFER_TILES, [hl]
+	call nz, TransferTiles
+	
+	; clear unused tiles
+	ld hl, vControlFlags
+	bit PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES, [hl]
+	call nz, ClearUnusedTiles
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Timeout
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Reset:
+	copy [vNextByte], BYTE_MAGIC_0
+
+	; get ready to receive the first byte
+	reset [rSB]
+	copy [rSC], SCF_START
+
+	; reset the state
+	xor a
+	ld [vStatus], a
+	ld [vStatusDelayed], a
+	ld [vReceivedDataSize + 0], a
+	ld [vReceivedDataSize + 1], a
+	ld [vVramTransferredSize + 0], a
+	ld [vVramTransferredSize + 1], a
+	ld [vControlFlags], a
+	ld [vChunkCount], a
+
+	ret
+
+; number of interrupts before the timeout is triggered
+; the formula depends on the timer parameters (rTAC and rTMA)
+; 0.100 = 100 ms (the timeout value)
+; 16384 * 2 = frequency of the timer (multiplied by 2 as the program runs in double speed mode)
+; 256 = number of timer updates before an interrupt is triggered (256 - rTMA)
+; + 1 = round up to next integer
+TIMEOUT_TRIGGER				equ ((0.100 * (16384 * 2) / 256.0) + 1)
+
+ProtocolCheckTimeout:
+	; check that roughly 100 ms have elapsed
+	ld a, [vTimeoutCounter]
+	inc a
+	ld [vTimeoutCounter], a
+	cp a, TIMEOUT_TRIGGER
+	ret nz
+
+	; reset the state of the printer
+	ld a, [vNextByte]
+	cp a, BYTE_MAGIC_0
+	jr z, .reset
+		debug "[ERROR] timeout"
+		call Reset
+	.reset
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Serial communication
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; table of all the byte processing functions
+ProcessFunctionTable:
+dw ProcessMagicByte0
+dw ProcessMagicByte1
+dw ProcessHeaderPacketType
+dw ProcessHeaderDataCompression
+dw ProcessHeaderDataSizeLSB
+dw ProcessHeaderDataSizeMSB
+dw ProcessPacketData
+dw ProcessPacketPrint
+dw ProcessPacketChecksumLSB
+dw ProcessPacketChecksumMSB
+dw ProcessPacketAck
+dw ProcessPacketStatus
+
+ProtocolHandlePacketByte:
+	; reset the timeout
+	xor a
+	ld [vTimeoutCounter], a
+
+	; get ready to receive the next byte
+	copy [rSC], SCF_START
+
+	; call the proper function to handle the received byte
+	JumpToFunctionFromTable ProcessFunctionTable, [vNextByte]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Checksum helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; set the current packet checksum to zero
+macro ResetChecksum
+	xor a
+	ld [vPacketChecksum + 0], a
+	ld [vPacketChecksum + 1], a
+endm
+
+; add (a) to the current packet checksum
+; preserve value in (a)
+macro UpdateChecksumWithA
+	push af
+
+	ld d, 0
+	ld e, a
+	load16 hl, vPacketChecksum
+	add hl, de
+	store16 vPacketChecksum, hl
+
+	pop af
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; table of all the chunks property addresses
+ChunkPropertyAddresses:
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 0)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 1)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 2)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 3)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 4)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 5)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 6)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 7)
+dw vChunkProperties + (sizeof_CHUNK_PROPERTY * 8)
+dw vChunkPropertyDummy
+
+; get the address of the current chunk property \1 into (hl)
+macro GetChunkPropertyAddressIntoHL
+if def(PERFORM_HEAVY_CHECKS)
+	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be <= 9"
+endc
+	ExtractAddressFromTableIntoHL ChunkPropertyAddresses, [vChunkCount]
+
+	; add the property index
+	ld d, 0
+	ld e, \1
+	add hl, de
+endm
+
+; table of all the chunks addresses
+ChunkAddresses:
+dw vImageData + (CHUNK_BYTE_SIZE * 0)
+dw vImageData + (CHUNK_BYTE_SIZE * 1)
+dw vImageData + (CHUNK_BYTE_SIZE * 2)
+dw vImageData + (CHUNK_BYTE_SIZE * 3)
+dw vImageData + (CHUNK_BYTE_SIZE * 4)
+dw vImageData + (CHUNK_BYTE_SIZE * 5)
+dw vImageData + (CHUNK_BYTE_SIZE * 6)
+dw vImageData + (CHUNK_BYTE_SIZE * 7)
+dw vImageData + (CHUNK_BYTE_SIZE * 8)
+
+; get the address of the current chunk into (hl)
+macro GetChunkAddressIntoHL
+if def(PERFORM_HEAVY_CHECKS)
+	force_lt [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] the chunk count is expected to be < 9"
+endc
+	ExtractAddressFromTableIntoHL ChunkAddresses, [vChunkCount]
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Magic
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessMagicByte0:
+	debug "[INFO] ===================="
+	debug "[INFO] magic LSB"
+	check_eq [rSB], PRINTER_MAGIC_BYTE_0, "[ERROR] magic LSB mismatch"
+
+	; clean error flags (but keep the other ones)
+	ld a, [vStatus]
+	and a, PRINTER_STATUS_PERSISTENT_FLAGS
+	ld [vStatus], a
+
+	reset [rSB]
+	reset [vStatusDelayed]
+	copy [vNextByte], BYTE_MAGIC_1
+	ret
+
+ProcessMagicByte1:
+	debug "[INFO] magic MSB"
+	check_eq [rSB], PRINTER_MAGIC_BYTE_1, "[ERROR] magic MSB mismatch"
+
+	reset [rSB]
+	copy [vNextByte], BYTE_HEADER_PACKET_TYPE
+	ResetChecksum
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Packet type (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessHeaderPacketType:
+	ld a, [rSB]
+	UpdateChecksumWithA
+	ld [vPacketType], a
+
+	; perform packet-specific operations
+	cp a, PRINTER_PACKET_TYPE_INIT
+	jr nz, .type_init
+		debug "[INFO] header (type=init)"
+		xor a
+		ld [vStatus], a
+		ld [vChunkCount], a
+		jp .packet_type_done
+	.type_init
+	cp a, PRINTER_PACKET_TYPE_PRINT
+	jr nz, .type_print
+		debug "[INFO] header (type=print)"
+		jp .packet_type_done
+	.type_print
+	cp a, PRINTER_PACKET_TYPE_DATA
+	jr nz, .type_data
+		debug "[INFO] header (type=data)"
+		jp .packet_type_done
+	.type_data
+	cp a, PRINTER_PACKET_TYPE_BREAK
+	jr nz, .type_break
+		debug "[INFO] header (type=break)"
+		debug "[WARN] break is not supported"
+		jr .packet_type_done
+	.type_break
+	cp a, PRINTER_PACKET_TYPE_NUL
+	jr nz, .type_nul
+		debug "[INFO] header (type=nul)"
+		jr .packet_type_done
+	.type_nul
+
+	debug "[ERROR] unknown packet type"
+	.packet_type_done
+
+	reset [rSB]
+	copy [vNextByte], BYTE_HEADER_COMPRESSION
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data compression (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessHeaderDataCompression:
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_COMPRESSION
+	ld a, [rSB]
+	ld [hl], a
+
+	debug "%a=$01%[INFO] header (compressed);[INFO] header (uncompressed);"
+	UpdateChecksumWithA
+	reset [rSB]
+	copy [vNextByte], BYTE_HEADER_DATA_SIZE_LSB
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data size (header)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessHeaderDataSizeLSB:
+	debug "[INFO] header (size LSB)"
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
+	ld a, [rSB]
+	ld [hl], a
+	UpdateChecksumWithA
+	reset [rSB]
+	copy [vNextByte], BYTE_HEADER_DATA_SIZE_MSB
+	ret
+
+ProcessHeaderDataSizeMSB:
+	debug "[INFO] header (size MSB)"
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE + 1
+	ld a, [rSB]
+	ld [hl], a
+	UpdateChecksumWithA
+	reset [rSB]
+
+	; check whether there is data inside the packet (size > 0)
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
+	ld a, [hli]
+	cp a, 0
+	jr nz, .has_data
+	ld a, [hl]
+	cp a, 0
+	jr nz, .has_data
+
+	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
+	ret
+
+	.has_data
+
+	; reset the number of data bytes transferred
+	xor a
+	ld [vReceivedDataSize + 0], a
+	ld [vReceivedDataSize + 1], a
+
+	; check the packet type to determine which type of bytes is coming next
+	ld a, [vPacketType]
+	cp a, PRINTER_PACKET_TYPE_DATA
+	jr nz, .packet_data
+		copy [vNextByte], BYTE_PACKET_DATA
+		ret
+	.packet_data
+	cp a, PRINTER_PACKET_TYPE_PRINT
+	jr nz, .packet_print
+		copy [vNextByte], BYTE_PACKET_PRINT
+		ret
+	.packet_print
+
+	; only two types of packet have a data section: "data" and "print"
+	; assume a data byte when the packet type is unexpected
+	; it probably won't work, but logs should help debug
+	debug "[ERROR] unknown data packet"
+	copy [vNextByte], BYTE_PACKET_DATA
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessPacketData:
+	ld a, [rSB]
+	ld b, a
+	UpdateChecksumWithA
+
+if def(PERFORM_HEAVY_CHECKS)
+	check_z vStatus, PRINTER_STATUS_BIT_DATA_FULL, "[ERROR] data is already full"
+endc
+
+	; find the next image data byte address
+	; put the received byte into it
+	; update the amount of received bytes
+	GetChunkAddressIntoHL
+	load16 de, vReceivedDataSize
+	add hl, de
+	ld [hl], b
+	inc de
+	store16 vReceivedDataSize, de
+
+	reset [rSB]
+
+	; check whether all bytes have been received
+	GetChunkPropertyAddressIntoHL CHUNK_PROPERTY_DATA_SIZE
+	ld a, [vReceivedDataSize + 0]
+	cp a, [hl]
+	ret nz
+	inc hl
+	ld a, [vReceivedDataSize + 1]
+	cp a, [hl]
+	ret nz
+
+	; increment the chunks count
+	ld hl, vChunkCount
+	inc [hl]
+if def(PERFORM_HEAVY_CHECKS)
+	force_le [vChunkCount], CHUNKS_MAX_COUNT, "[ERROR] chunk count overflow"
+endc
+
+	; all the data has been received
+	; the printer is ready to print
+	debug "[INFO] data received"
+	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
+	ld hl, vStatusDelayed
+	set PRINTER_STATUS_BIT_READY_TO_PRINT, [hl]
+
+	; check whether the image data is full and raise the corresponding flag
+	ld a, [vChunkCount]
+	cp a, CHUNKS_MAX_COUNT
+	ret nz
+	debug "[INFO] data full"
+	ld hl, vStatusDelayed
+	set PRINTER_STATUS_BIT_DATA_FULL, [hl]
+	ret
+
+ProcessPacketPrint:
+	debug "[INFO] print"
+	ld a, [rSB]
+	UpdateChecksumWithA
+
+	; find the next parameter data byte address and put the received byte into it
+	ld d, 0
+	ld hl, vReceivedDataSize
+	ld e, [hl]
+	ld hl, vPrintParameters
+	add hl, de
+	ld [hl], a
+	inc e
+	ld hl, vReceivedDataSize
+	ld [hl], e
+
+	reset [rSB]
+
+	; check whether all parameters have been received
+	ld a, [vReceivedDataSize]
+	cp a, sizeof_PRINT_PARAMETERS
+	ret nz
+
+	copy [vNextByte], BYTE_PACKET_CHECKSUM_LSB
+
+	; prepare for printing
+	xor a
+	ld [vVramTransferredSize + 0], a
+	ld [vVramTransferredSize + 1], a
+	ld hl, vControlFlags
+	set PRINTER_CONTROL_BIT_REFRESH_PALETTE, [hl]
+	set PRINTER_CONTROL_BIT_PROCESS_CHUNKS, [hl]
+	ld hl, vStatusDelayed
+	set PRINTER_STATUS_BIT_PRINTING, [hl]
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Checksum
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessPacketChecksumLSB:
+	debug "[INFO] checksum LSB"
+	ld a, [rSB]
+
+	; validate the checksum LSB
+	ld b, a
+	ld a, [vPacketChecksum + 0]
+	cp a, b
+	jr z, .no_error
+		debug "[ERROR] checksum LSB failure"
+		ld hl, vStatus
+		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
+	.no_error
+
+	copy [vNextByte], BYTE_PACKET_CHECKSUM_MSB
+	reset [rSB]
+	ret
+
+ProcessPacketChecksumMSB:
+	debug "[INFO] checksum MSB"
+	ld a, [rSB]
+
+	; validate the checksum MSB
+	ld b, a
+	ld a, [vPacketChecksum + 1]
+	cp a, b
+	jr z, .no_error
+		debug "[ERROR] checksum MSB failure"
+		ld hl, vStatus
+		set PRINTER_STATUS_BIT_CHECKSUM_ERROR, [hl]
+	.no_error
+
+	copy [vNextByte], BYTE_PACKET_ACK
+	; prepare to send back the ack value
+	copy [rSB], PRINTER_ACK_VALUE
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Response
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ProcessPacketAck:
+	debug "[INFO] ack"
+	; prepare to send the status
+	ld a, [vStatus]
+	; merge the user-triggered errors
+	ld b, a
+	ld a, [vStatusUserTriggeredErrors]
+	or a, b
+	ld [rSB], a
+
+	; merge the delayed status (reflected in the next packet response)
+	ld b, a
+	ld a, [vStatusDelayed]
+	or a, b
+	ld [vStatus], a
+
+	copy [vNextByte], BYTE_PACKET_STATUS
+	ret
+
+ProcessPacketStatus:
+	debug "[INFO] status"
+	; the packet is done
+	; prepare for the next packet
+	reset [rSB]
+	copy [vNextByte], BYTE_MAGIC_0
+	ret
+

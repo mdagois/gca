@@ -1,0 +1,114 @@
+if !def(MEMORY_RGBINC)
+MEMORY_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; a chunk is a group of 20x2 tiles
+; the memory holds up to 9 chunks for a total of 20x18 tiles, a screen worth of tiles
+TILE_BYTE_SIZE							equ (16)
+TILE_ROWS_PER_CHUNK						equ (2)
+CHUNK_BYTE_SIZE							equ (TILE_BYTE_SIZE * SCRN_X_B * TILE_ROWS_PER_CHUNK)
+CHUNKS_MAX_COUNT						equ (9)
+CHUNK_DATA_MAX_SIZE						equ (CHUNK_BYTE_SIZE * CHUNKS_MAX_COUNT)
+
+assert CHUNK_BYTE_SIZE == $0280, "Unexpected chunk size"
+
+rsreset
+CHUNK_PROPERTY_COMPRESSION				rb 1
+CHUNK_PROPERTY_DATA_SIZE				rb 2
+sizeof_CHUNK_PROPERTY					rb 0
+
+CHUNK_PROPERTIES_MAX_SIZE				equ (sizeof_CHUNK_PROPERTY * CHUNKS_MAX_COUNT)
+
+rsreset
+PRINT_PARAMETER_SHEET_COUNT				rb 1
+PRINT_PARAMETER_MARGINS					rb 1
+PRINT_PARAMETER_PALETTE					rb 1
+PRINT_PARAMETER_BURNING					rb 1
+sizeof_PRINT_PARAMETERS					rb 0
+
+rsreset
+PRINTER_CONTROL_BIT_REFRESH_PALETTE		rb 1
+PRINTER_CONTROL_BIT_PROCESS_CHUNKS		rb 1
+PRINTER_CONTROL_BIT_TRANSFER_TILES		rb 1
+PRINTER_CONTROL_BIT_CLEAR_UNUSED_TILES	rb 1
+PRINTER_CONTROL_BIT_COUNT				rb 0
+
+assert PRINTER_CONTROL_BIT_COUNT <= 8, "Too many control bits defined"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; WRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+; hold the image data (up to 9 chunks)
+vImageData						rb CHUNK_DATA_MAX_SIZE
+
+; hold temporary data during chunk decompression
+vDecompressedChunk				rb CHUNK_BYTE_SIZE
+vDecompressedSize				rb 2
+
+WRAM_END						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; HRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _HRAM
+
+; indicates whether the vblank ocurred or not
+vIsVblank						rb 1
+
+vPadInput						rb sizeof_PAD_INPUT
+
+; hold data during packet transfer
+vPacketType						rb 1
+vPacketChecksum					rb 2
+vStatus							rb 1
+
+; hold flags that are raised only after the packet is processed
+vStatusDelayed					rb 1
+
+; hold error flags that are raised via user input
+vStatusUserTriggeredErrors		rb 1
+
+; type of the next expected byte
+vNextByte						rb 1
+
+; size of the image data currently held in memory
+; used to track whether memory is full or not
+vImageDataSize					rb 2
+
+; hold the print parameters
+vPrintParameters				rb sizeof_PRINT_PARAMETERS
+
+; amount of packet data received (for data and print packets)
+vReceivedDataSize				rb 2
+
+; tracks amount of image data transferred to VRAM during print
+vVramTransferredSize			rb 2
+
+; control flags
+vControlFlags					rb 1
+
+; timeout counter
+vTimeoutCounter					rb 1
+
+; hold up to 9 chunk properties
+vChunkCount						rb 1
+vChunkProperties				rb CHUNK_PROPERTIES_MAX_SIZE
+vChunkPropertyDummy				rb sizeof_CHUNK_PROPERTY
+
+HRAM_END						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

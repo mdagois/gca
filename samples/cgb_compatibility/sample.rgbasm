@@ -124,7 +124,7 @@ InitSample_CGB:
 	jp InitSample_CGB_GBA
 
 ; change (a) to ((a) * 3 / 4 + 8)
-CorrectColorChannel: macro
+macro CorrectColorChannel
 	; (a) * 3
 	ld b, a
 	add a, a

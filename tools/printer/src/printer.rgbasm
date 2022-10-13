@@ -1,0 +1,83 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export PrinterInitialize, PrinterUpdate
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "printer_initialize", rom0
+
+PrinterInitialize:
+	; games expect the printer to process bytes sent over serial pretty fast
+	; so, the CPU double speed mode is enabled throughout the program
+	ToggleCpuSpeed
+
+	; clear and initialize memory
+	ClearMemory _RAM, WRAM_END
+	ClearMemory _HRAM, HRAM_END
+	ClearMemory _VRAM, _VRAM + (8 * 1024)
+	InitPadInput vPadInput
+	call ProtocolInitialize
+
+	; set a tilemap to display the image data
+	xor a
+	ld hl, _SCRN0
+	ld de, SCRN_VX_B - SCRN_X_B
+	ld c, SCRN_Y_B
+	.set_line
+rept SCRN_X_B
+		ld [hli], a
+		inc a
+endr
+		add hl, de
+		dec c
+		jr nz, .set_line
+
+	; enable interrupts
+	copy [rIE], IEF_VBLANK | IEF_STAT | IEF_TIMER | IEF_SERIAL
+	copy [rSTAT], STATF_LYC
+	copy [rLYC], 12 * 8
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "printer_update", rom0
+
+PrinterUpdate:
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; vblank
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	; make sure halt returned from vblank (as several interrupts are used)
+	ld hl, vIsVblank
+	xor a
+	.wait_vblank
+		halt
+		cp a, [hl]
+		jr z, .wait_vblank
+		ld [hl], a
+
+	; switch to tile addressing mode 8000 from line 0
+	; tiles 0 to 239 are displayed
+	ld a, [rLCDC]
+	set LCDCB_BG8000, a
+	ld [rLCDC], a
+
+	call ProtocolUpdateVblank
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; frame logic
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput vPadInput
+	call ProtocolUpdate
+
+	ret
+

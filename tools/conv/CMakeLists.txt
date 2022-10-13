@@ -13,3 +13,7 @@ target_compile_definitions(cgbconv PUBLIC _CRT_SECURE_NO_WARNINGS)
 find_package(libpng CONFIG REQUIRED)
 target_link_libraries(cgbconv PRIVATE png)
 
+# Packetizer
+add_executable(packetize packetize.cpp)
+target_compile_definitions(packetize PUBLIC _CRT_SECURE_NO_WARNINGS)
+

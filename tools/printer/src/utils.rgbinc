@@ -1,0 +1,536 @@
+if !def(UTILS_RGBINC)
+UTILS_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "hardware.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Macro-instructions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; copy \2 into \1 through (a)
+; example: copy [$FF84], 10
+macro copy
+	ld a, \2
+	ld \1, a
+endm
+
+; set \1 to zero through (a)
+; example: reset [$FF84]
+macro reset
+	xor a
+	ld \1, a
+endm
+
+; copy 16-bit register \2 into 16-bit register \1
+; example: ldr hl, de
+macro ldr16
+	ld low(\1), low(\2)
+	ld high(\1), high(\2)
+endm
+
+; load 2 bytes at address \2 into 16-bit register \1
+; example: load16 de, $FF82
+macro load16
+	ld a, [\2 + 0]
+	ld low(\1), a
+	ld a, [\2 + 1]
+	ld high(\1), a
+endm
+
+; load the content of 16-bit register \2 into two bytes at address \1
+; example: store16 $FF82, hl
+macro store16
+	ld a, low(\2)
+	ld [\1 + 0], a
+	ld a, high(\2)
+	ld [\1 + 1], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Utility
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; clear a memory region between two addresses
+; \1 = start address
+; \2 = end address
+macro ClearMemory
+	assert \1 < \2, "Clear memory's end address must be strictly inferior to the start address"
+	ld hl, \1
+	.clear\@
+		xor a
+		ld [hli], a
+		ld a, low(\2)
+		cp a, l
+		jr nz, .clear\@
+		ld a, high(\2)
+		cp a, h
+		jr nz, .clear\@
+endm
+
+; copy memory from one address to another
+; \1 = destination
+; \2 = source
+; \3 = size
+macro CopyMemory
+	assert (\1 < \2) || (\1 >= \2 + \3), "Invalid memory range overlap"
+	assert \3 < 256, "Only copies of less than 256 bytes are supported (\3 < 256)"
+	ld hl, \1
+	ld de, \2
+	ld c, \3
+	.copy\@
+		ld a, [de]
+		ld [hli], a
+		inc de
+		dec c
+		jr nz, .copy\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; add a code breakpoint
+macro breakpoint
+if def(BUILD_DEBUG)
+	ld b, b
+endc
+endm
+
+; output debug message \1
+macro debug
+if def(BUILD_DEBUG)
+	ld d, d
+	jr .message\@
+	db $64, $64, $00, $00, \1
+	.message\@
+endc
+endm
+
+; output debug message \3 when flag \2 in byte \1 is raised
+macro check_z
+if def(BUILD_DEBUG)
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop hl
+	pop af
+endc
+endm
+
+; output debug message \3 when flag \2 in byte \1 is raised
+macro check_nz
+if def(BUILD_DEBUG)
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr nz, .test\@
+		debug \3
+	.test\@
+
+	pop hl
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 >= \2
+macro check_lt
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 > \2
+macro check_le
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 != \2
+macro check_eq
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr z, .test\@
+		debug \3
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 when \1 <= \2
+macro check_gt
+	check_lt \2, \1
+endm
+
+; output debug message \3 when \1 < \2
+macro check_ge
+	check_le \2, \1
+endm
+
+; output debug message \3 and block when flag \2 in byte \1 is raised
+macro force_z
+if def(BUILD_DEBUG)
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr z, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop hl
+	pop af
+endc
+endm
+
+; output debug message \3 and block when flag \2 in byte \1 is raised
+macro force_nz
+if def(BUILD_DEBUG)
+	push af
+	push hl
+
+	ld hl, \1
+	bit \2, [hl]
+	jr nz, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop hl
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 >= \2
+macro force_lt
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 > \2
+macro force_le
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr c, .test\@
+	jr z, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 != \2
+macro force_eq
+if def(BUILD_DEBUG)
+	push af
+	push bc
+
+	ld a, \2
+	ld b, a
+	ld a, \1
+	cp a, b
+	jr z, .test\@
+		debug \3
+		.wait\@
+			jr .wait\@
+	.test\@
+
+	pop bc
+	pop af
+endc
+endm
+
+; output debug message \3 and block when \1 <= \2
+macro force_gt
+	force_lt \2, \1
+endm
+
+; output debug message \3 and block when \1 < \2
+macro force_ge
+	force_le \2, \1
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Pad input
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; struct to hold the pad input (dpad + buttons)
+rsreset
+PAD_INPUT_CURRENT	rb 1
+PAD_INPUT_PREVIOUS	rb 1
+PAD_INPUT_PRESSED	rb 1
+PAD_INPUT_RELEASED	rb 1
+sizeof_PAD_INPUT	rb 0
+
+; init a pad input struct at address \1
+; expected to be used only once at initialization
+; example: InitPadInput _RAM + 16
+macro InitPadInput
+	ld a, $FF
+	ld [\1 + PAD_INPUT_CURRENT], a
+	ld [\1 + PAD_INPUT_PREVIOUS], a
+	ld [\1 + PAD_INPUT_PRESSED], a
+	ld [\1 + PAD_INPUT_RELEASED], a
+endm
+
+; read the keypad input into a pad input struct at address \1
+; expected to be used only once in the main loop
+; example: UpdatePadInput _HRAM + 4
+macro UpdatePadInput
+	; store the previous input into the struct and (c)
+	ld a, [\1 + PAD_INPUT_CURRENT]
+	ld [\1 + PAD_INPUT_PREVIOUS], a
+	ld c, a
+
+	; read the dpad
+	ld a, P1F_GET_DPAD
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; put the dpad input into (b)'s high nibble
+	swap a
+	and a, $F0
+	ld b, a
+
+	; read the buttons
+	ld a, P1F_GET_BTN
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; merge the buttons' input into (b)'s low nibble
+	and a, $0F
+	or a, b
+	ld b, a
+
+	; store the current input
+	ld [\1 + PAD_INPUT_CURRENT], a
+
+	; disable input polling
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
+
+	; compute and store pressed buttons
+	ld a, c
+	cpl
+	or a, b
+	ld [\1 + PAD_INPUT_PRESSED], a
+
+	; compute and store released buttons
+	ld a, b
+	cpl
+	or a, c
+	ld [\1 + PAD_INPUT_RELEASED], a
+endm
+
+; raise the zero flag if all keys in \2 are held in the pad input struct \1
+; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
+macro TestPadInput_HeldAll
+	ld a, [\1 + PAD_INPUT_CURRENT]
+	and a, \2
+endm
+
+; raise the zero flag if input \2 is pressed in the pad input struct \1
+; example: TestPadInput_Pressed _HRAM + 12, PADF_LEFT
+macro TestPadInput_Pressed
+	ld a, [\1 + PAD_INPUT_PRESSED]
+	and a, \2
+endm
+
+; raise the zero flag if input \2 is released in the pad input struct \1
+; example: TestPadInput_Released _RAM + 24, PADF_A
+macro TestPadInput_Released
+	ld a, [\1 + PAD_INPUT_RELEASED]
+	and a, \2
+endm
+
+; raise the zero flag if none of the flags in input \2 are released in the pad struct \1
+; example: TestPadInput_ReleasedAny _RAM, PADF_LEFT | PADF_RIGHT
+macro TestPadInput_ReleasedAny
+	ld a, [\1 + PAD_INPUT_RELEASED]
+	and a, \2
+	xor a, \2
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; OAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; hides all sprites
+macro OamHideAll
+	ld c, OAM_COUNT
+	ld hl, _OAMRAM + OAMA_Y
+	ld de, sizeof_OAM_ATTRS
+	.init_oam\@
+		ld [hl], 0
+		add hl, de
+		dec c
+		jr nz, .init_oam\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function calls
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro PushAllRegisters
+	push af
+	push bc
+	push de
+	push hl
+endm
+
+macro PopAllRegisters
+	pop hl
+	pop de
+	pop bc
+	pop af
+endm
+
+; call the function pointed by (hl)
+macro CallHL
+	ld de, .call_return_address\@
+	push de
+	jp hl
+	.call_return_address\@
+endm
+
+; extract an address from a table
+; \1 = table, \2 = index memory location
+macro ExtractAddressFromTableIntoHL
+	; compute a pointer to the address of the function
+	; pointer = table address + (index * 2)
+	ld a, \2
+	ld d, 0
+	ld e, a
+	ld hl, \1
+	add hl, de
+	add hl, de
+
+	; unpack the function address and call it
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+endm
+
+; call a function from a function table
+; \1 = table, \2 = index memory location
+macro CallFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
+	CallHL
+endm
+
+; jump to a function from a function table
+; \1 = table, \2 = index memory location
+macro JumpToFunctionFromTable
+	ExtractAddressFromTableIntoHL \1, \2
+	jp hl
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CGB
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro ToggleCpuSpeed
+	; request a CPU speed change
+	ld hl, rKEY1
+	set 0, [hl]
+
+	; disable input polling
+	copy [rP1], P1F_GET_NONE
+
+	; save the interrupt flags into (b)
+	copy b, [rIE]
+
+	; disable all interrupts and clear pending interrupts
+	xor a
+	ld [rIE], a
+	ld [rIF], a
+
+	; trigger the speed change
+	stop
+
+	; restore the interrupt flags
+	copy [rIE], b
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

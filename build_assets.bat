@@ -14,6 +14,9 @@ set PAL_EXTENSION=pal
 set TLM_EXTENSION=tlm
 set TM1_EXTENSION=idx
 set TM2_EXTENSION=prm
+set PKT_EXTENSION=pkt
+
+set PKT_CONV=%BIN_DIR%packetize.exe
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: DMG
@@ -29,12 +32,15 @@ set DMG_GENERATED_DIR=%GENERATED_DIR%dmg\
 set DMG_CHR_DIR=%DMG_GENERATED_DIR%%CHR_EXTENSION%\
 set DMG_TLM_DIR=%DMG_GENERATED_DIR%%TLM_EXTENSION%\
 
-%DMG_CONV% %DMG_TILESET_DIR%tileset.png %DMG_TILEMAP_DIR%background.png %DMG_TILEMAP_DIR%ch1_continuous.png %DMG_TILEMAP_DIR%ch3_simple.png %DMG_TILEMAP_DIR%ch3_waveforms.png %DMG_TILEMAP_DIR%ch4_example.png %DMG_TILEMAP_DIR%counter_rng.png %DMG_TILEMAP_DIR%frame.png %DMG_TILEMAP_DIR%input_interrupt.png %DMG_TILEMAP_DIR%interrupt_trigger.png %DMG_TILEMAP_DIR%serial_multibytes.png %DMG_TILEMAP_DIR%serial_parent_child.png %DMG_TILEMAP_DIR%serial_switch_roles.png %DMG_TILEMAP_DIR%serial_transfer.png %DMG_TILEMAP_DIR%sound_duty.png %DMG_TILEMAP_DIR%sound_envelope.png %DMG_TILEMAP_DIR%sound_frequency.png %DMG_TILEMAP_DIR%sound_length.png %DMG_TILEMAP_DIR%sound_sweep.png %DMG_TILEMAP_DIR%sound_volume.png %DMG_TILEMAP_DIR%timer_sec.png %DMG_TILEMAP_DIR%window.png
+:: general samples
+%DMG_CONV% %DMG_TILESET_DIR%tileset.png %DMG_TILEMAP_DIR%background.png %DMG_TILEMAP_DIR%ch1_continuous.png %DMG_TILEMAP_DIR%ch3_simple.png %DMG_TILEMAP_DIR%ch3_waveforms.png %DMG_TILEMAP_DIR%ch4_example.png %DMG_TILEMAP_DIR%counter_rng.png %DMG_TILEMAP_DIR%frame.png %DMG_TILEMAP_DIR%input_interrupt.png %DMG_TILEMAP_DIR%interrupt_trigger.png %DMG_TILEMAP_DIR%printer.png %DMG_TILEMAP_DIR%serial_multibytes.png %DMG_TILEMAP_DIR%serial_parent_child.png %DMG_TILEMAP_DIR%serial_switch_roles.png %DMG_TILEMAP_DIR%serial_transfer.png %DMG_TILEMAP_DIR%sound_duty.png %DMG_TILEMAP_DIR%sound_envelope.png %DMG_TILEMAP_DIR%sound_frequency.png %DMG_TILEMAP_DIR%sound_length.png %DMG_TILEMAP_DIR%sound_sweep.png %DMG_TILEMAP_DIR%sound_volume.png %DMG_TILEMAP_DIR%timer_sec.png %DMG_TILEMAP_DIR%window.png
 if %errorlevel% neq 0 goto end
 
+:: parallax sample
 %DMG_CONV% %DMG_TILESET_DIR%parallax.png %DMG_TILEMAP_DIR%parallax.png
 if %errorlevel% neq 0 goto end
 
+:: sound test
 %DMG_CONV% %DMG_TILESET_DIR%sound_test.png %DMG_TILEMAP_DIR%ch1_test.png %DMG_TILEMAP_DIR%ch2_test.png %DMG_TILEMAP_DIR%ch3_test.png %DMG_TILEMAP_DIR%ch4_test.png
 if %errorlevel% neq 0 goto end
 
@@ -60,12 +66,19 @@ set CGB_GENERATED_DIR=%GENERATED_DIR%cgb\
 set CGB_CHR_DIR=%CGB_GENERATED_DIR%%CHR_EXTENSION%\
 set CGB_PAL_DIR=%CGB_GENERATED_DIR%%PAL_EXTENSION%\
 set CGB_TLM_DIR=%CGB_GENERATED_DIR%%TLM_EXTENSION%\
+set CGB_PKT_DIR=%CGB_GENERATED_DIR%%PKT_EXTENSION%\
 
 %CGB_CONV% -mpt %CGB_ASSETS_DIR%ship.png %CGB_ASSETS_DIR%ship.png
 if %errorlevel% neq 0 goto end
 %CGB_CONV% %CGB_ASSETS_DIR%coins.png %CGB_ASSETS_DIR%coins.png
 if %errorlevel% neq 0 goto end
 %CGB_CONV% -mt %CGB_ASSETS_DIR%alphabet.png %CGB_ASSETS_DIR%cpu_speed_test.png
+if %errorlevel% neq 0 goto end
+
+:: printer sample
+%CGB_CONV% %CGB_ASSETS_DIR%print_data.png
+if %errorlevel% neq 0 goto end
+%PKT_CONV% %CGB_ASSETS_DIR%print_data.chr
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul
@@ -83,6 +96,11 @@ rmdir /s /q %CGB_TLM_DIR% 2> nul
 mkdir %CGB_TLM_DIR% 2> nul
 move %CGB_ASSETS_DIR%*.%TM1_EXTENSION% %CGB_TLM_DIR%
 move %CGB_ASSETS_DIR%*.%TM2_EXTENSION% %CGB_TLM_DIR%
+
+del /f /s /q %CGB_PKT_DIR% 2> nul 1> nul
+rmdir /s /q %CGB_PKT_DIR% 2> nul
+mkdir %CGB_PKT_DIR% 2> nul
+move %CGB_ASSETS_DIR%*.%PKT_EXTENSION% %CGB_PKT_DIR%
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Exit

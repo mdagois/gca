@@ -24,7 +24,7 @@ GRAPHICS_DATA_ADDRESS_END		equ ($8000)
 GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
-LoadGraphicsDataIntoVRAM: macro
+macro LoadGraphicsDataIntoVRAM
 	ld de, GRAPHICS_DATA_ADDRESS_START
 	ld hl, _VRAM8000
 	.load_tile\@
@@ -65,7 +65,7 @@ sizeof_TRANSFER_LIST			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-ResetTransferList: macro
+macro ResetTransferList
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
 	ld [hl], 0
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
@@ -101,8 +101,7 @@ PushTransferFunc:
 	ld b, a
 
 	; read the tile index into (e)
-	ld a, [hl]
-	ld e, a
+	ld e, [hl]
 
 	; get a pointer to the transfer list next element in (hl)
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
@@ -128,7 +127,7 @@ PushTransferFunc:
 
 ; helper macro for PushTransferFunc
 ; \1 = tilemap address, \2 = tile index
-PushTransfer: macro
+macro PushTransfer
 	ld d, high(\1)
 	ld e, low(\1)
 	add sp, -sizeof_PUSH_TRANSFER_PARAM
@@ -145,7 +144,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; perform all the requested transfers
-ProcessTransferList: macro
+macro ProcessTransferList
 	ld a, [WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN]
 	or a, a
 	jr z, .end\@
@@ -228,7 +227,7 @@ section "update", rom0
 ; macro to handle the menu navigation
 ; \1 = previous line, \2 = current line, \3 = next line
 ; \4 = previous index, \5 = next index
-ProcessSelection: macro
+macro ProcessSelection
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
 	jr nz, .down\@
 		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
@@ -788,7 +787,7 @@ UpdateSweepDir:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -803,7 +802,7 @@ db $98, $99, $A1, $A2
 db $A3, $A4, $A5, $A6
 
 ; \1 = line, \2 = offset x
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F

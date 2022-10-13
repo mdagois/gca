@@ -11,7 +11,7 @@ include "hardware.rgbinc"
 
 ; copy \2 into \1 through (a)
 ; example: copy [$FF84], 10
-copy: macro
+macro copy
 	ld a, \2
 	ld \1, a
 endm
@@ -21,7 +21,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; clear the OAM
-InitOAM: macro
+macro InitOAM
 	ld c, OAM_COUNT
 	ld hl, _OAMRAM + OAMA_Y
 	ld de, sizeof_OAM_ATTRS
@@ -41,7 +41,7 @@ endm
 ; \2 = source address
 ; \3 = size
 ; \4 = mode (HDMA5F_MODE_GP or HDMA5F_MODE_HBL)
-DmaCopy: macro
+macro DmaCopy
 	assert (\3) >= 16, "The DMA copy size must at least be 16 bytes"
 	assert (\3) % 16 == 0, "The DMA copy size must be a multiple of 16 bytes"
 	copy [rHDMA1], high(\2)
@@ -55,7 +55,7 @@ endm
 ; \1 = destination address
 ; \2 = source address
 ; \3 = size
-DmaCopy_General: macro
+macro DmaCopy_General
 	DmaCopy \1, \2, \3, HDMA5F_MODE_GP
 endm
 
@@ -63,7 +63,7 @@ endm
 ; \1 = destination address
 ; \2 = source address
 ; \3 = size
-DmaCopy_Hblank: macro
+macro DmaCopy_Hblank
 	DmaCopy \1, \2, \3, HDMA5F_MODE_HBL
 endm
 
@@ -82,7 +82,7 @@ sizeof_PAD_INPUT	rb 0
 ; init a pad input struct at address \1
 ; expected to be used only once at initialization
 ; example: InitPadInput _RAM + 16
-InitPadInput: macro
+macro InitPadInput
 	ld a, $FF
 	ld [\1 + PAD_INPUT_CURRENT], a
 	ld [\1 + PAD_INPUT_PREVIOUS], a
@@ -93,7 +93,7 @@ endm
 ; read the keypad input into a pad input struct at address \1
 ; expected to be used only once in the main loop
 ; example: UpdatePadInput _HRAM + 4
-UpdatePadInput: macro
+macro UpdatePadInput
 	; store the previous input into the struct and (c)
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	ld [\1 + PAD_INPUT_PREVIOUS], a
@@ -146,22 +146,22 @@ UpdatePadInput: macro
 endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
-; example: CheckPadInputHeld _RAM + 4, PADF_LEFT | PADF_DOWN
-TestPadInput_HeldAll: macro
+; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
+macro TestPadInput_HeldAll
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2
 endm
 
 ; raise the zero flag if input \2 is pressed in the pad input struct \1
-; example: CheckPadInputPressed _HRAM + 12, PADF_LEFT
-TestPadInput_Pressed: macro
+; example: TestPadInput_Pressed _HRAM + 12, PADF_LEFT
+macro TestPadInput_Pressed
 	ld a, [\1 + PAD_INPUT_PRESSED]
 	and a, \2
 endm
 
 ; raise the zero flag if input \2 is released in the pad input struct \1
-; example: CheckPadInputReleased _RAM + 24, PADF_A
-TestPadInput_Released: macro
+; example: TestPadInput_Released _RAM + 24, PADF_A
+macro TestPadInput_Released
 	ld a, [\1 + PAD_INPUT_RELEASED]
 	and a, \2
 endm

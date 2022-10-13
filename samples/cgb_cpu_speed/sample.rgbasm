@@ -11,7 +11,6 @@ rsset _RAM
 
 WRAM_INPUT						rb sizeof_PAD_INPUT
 WRAM_IS_VBLANK					rb 1
-WRAM_TOGGLE_SPEED				rb 1
 
 WRAM_END						rb 0
 
@@ -77,7 +76,6 @@ InitSample:
 	InitPadInput WRAM_INPUT
 	xor a
 	ld [WRAM_IS_VBLANK], a
-	ld [WRAM_TOGGLE_SPEED], a
 
 	; set background palettes
 	copy [rBCPS], 0 | BCPSF_AUTOINC
@@ -118,7 +116,7 @@ InitSample:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
-HexToTileA: macro
+macro HexToTileA
 	ld h, 0
 	ld l, a
 	ld de, HexToTileTable
@@ -133,7 +131,7 @@ db $18, $19, $21, $22
 db $23, $24, $25, $26
 
 ; \1 = line, \2 = offset x
-DisplayRegisterA: macro
+macro DisplayRegisterA
 	push af
 	swap a
 	and a, $0F

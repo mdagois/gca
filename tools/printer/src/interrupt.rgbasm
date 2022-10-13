@@ -1,0 +1,48 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	push af
+	ld a, 1
+	ld [vIsVblank], a
+	pop af
+	reti
+
+section "lcd_interrupt", rom0[$0048]
+	jp LcdInterrupt
+
+section "timer_interrupt", rom0[$0050]
+	jp TimerInterrupt
+
+section "serial_interrupt", rom0[$0058]
+	jp SerialInterrupt
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "interrupt_handlers", rom0
+
+LcdInterrupt:
+	push af
+	; switch to tile addressing mode 8800 on line 12 * 8 to display tiles 240 to 359
+	; switching is necessary to display all the 360 tiles that compose a 160x144 image
+	; mode 8000 is used for tiles 0 to 239 and mode 8800 for tiles 240 to 359
+	ld a, [rLCDC]
+	res LCDCB_BG8000, a
+	ld [rLCDC], a
+	pop af
+	reti
+
+TimerInterrupt:
+	PushAllRegisters
+	call ProtocolCheckTimeout
+	PopAllRegisters
+	reti
+
+SerialInterrupt:
+	PushAllRegisters
+	call ProtocolHandlePacketByte
+	PopAllRegisters
+	reti
+
