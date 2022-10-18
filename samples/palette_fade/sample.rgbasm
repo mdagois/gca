@@ -30,10 +30,15 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+FADE_ANIM_FRAME_COUNT			equ (8)
+
 rsset _RAM
 
-WRAM_FADE_LEVEL					rb 1
 WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+
+WRAM_FADE_CURRENT_LEVEL			rb 1
+WRAM_FADE_TARGET_LEVEL			rb 1
+WRAM_FADE_FRAME_COUNTER			rb 1
 
 WRAM_END						rb 0
 
@@ -78,7 +83,9 @@ InitSample:
 	; init the WRAM state
 	ClearMemory _RAM, WRAM_END
 	InitPadInput WRAM_PAD_INPUT
-	copy [WRAM_FADE_LEVEL], FADE_LEVEL_NORMAL
+	ld a, FADE_LEVEL_NORMAL
+	ld [WRAM_FADE_CURRENT_LEVEL], a
+	ld [WRAM_FADE_TARGET_LEVEL], a
 
 	; init the palette
 	ld a, %11100100
@@ -102,36 +109,71 @@ InitSample:
 UpdateSample:
 	halt
 
+	; set the current palette
 	ld hl, palettes
 	ld d, 0
-	ld a, [WRAM_FADE_LEVEL]
+	ld a, [WRAM_FADE_CURRENT_LEVEL]
 	ld e, a
 	add hl, de
 	ld a, [hl]
 	ld [rBGP], a
 
+	; fade animation
+	ld hl, WRAM_FADE_CURRENT_LEVEL
+	ld a, [WRAM_FADE_TARGET_LEVEL]
+	cp a, [hl]
+	jr z, .check_animation
+		ld hl, WRAM_FADE_FRAME_COUNTER
+		dec [hl]
+		jr nz, .animate_fade
+			ld [hl], FADE_ANIM_FRAME_COUNT
+
+			ld hl, WRAM_FADE_CURRENT_LEVEL
+			ld a, [WRAM_FADE_TARGET_LEVEL]
+			cp a, [hl]
+			jr c, .fade_up
+				; target is superior to current
+				inc [hl]
+				jr .fade_done
+			.fade_up
+				; current is superior to target
+				dec [hl]
+			.fade_done
+		.animate_fade
+	.check_animation
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	UpdatePadInput WRAM_PAD_INPUT
 
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_A
-	jr nz, .lighten
-		ld a, [WRAM_FADE_LEVEL]
-		cp a, FADE_LEVEL_LIGHTEST
-		jr z, .lighten
-		inc a
-		ld [WRAM_FADE_LEVEL], a
-	.lighten
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .fade_out_black
+		copy [WRAM_FADE_CURRENT_LEVEL], FADE_LEVEL_NORMAL
+		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_DARKEST
+		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+	.fade_out_black
 
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_B
-	jr nz, .darken
-		ld a, [WRAM_FADE_LEVEL]
-		cp a, FADE_LEVEL_DARKEST
-		jr z, .darken
-		dec a
-		ld [WRAM_FADE_LEVEL], a
-	.darken
-	
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .fade_in_black
+		copy [WRAM_FADE_CURRENT_LEVEL], FADE_LEVEL_DARKEST
+		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_NORMAL
+		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+	.fade_in_black
+
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_DOWN
+	jr nz, .fade_out_white
+		copy [WRAM_FADE_CURRENT_LEVEL], FADE_LEVEL_NORMAL
+		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_LIGHTEST
+		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+	.fade_out_white
+
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_UP
+	jr nz, .fade_in_white
+		copy [WRAM_FADE_CURRENT_LEVEL], FADE_LEVEL_LIGHTEST
+		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_NORMAL
+		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+	.fade_in_white
+
 	ret
 
 export InitSample, UpdateSample
