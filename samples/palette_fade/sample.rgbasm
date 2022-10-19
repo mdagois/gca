@@ -132,11 +132,11 @@ UpdateSample:
 			ld a, [WRAM_FADE_TARGET_LEVEL]
 			cp a, [hl]
 			jr c, .fade_up
-				; target is superior to current
+				; the target level is superior to the current level
 				inc [hl]
 				jr .fade_done
 			.fade_up
-				; current is superior to target
+				; the current level is superior to the target level
 				dec [hl]
 			.fade_done
 		.animate_fade
