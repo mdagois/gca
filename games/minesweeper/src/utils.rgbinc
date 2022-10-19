@@ -1,0 +1,253 @@
+if !def(UTILS_INC)
+UTILS_INC		equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+include "hardware.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILE_SIDE		equ (8)
+OAM_OFFSET_X	equ (8)
+OAM_OFFSET_Y	equ (16)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Instructions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; load 16-bits register \1 into 16-bits register \2
+macro ld_r16_r16
+	ld high(\1), high(\2)
+	ld low(\1), low(\2)
+endm
+
+; load the value \1 into [hl] and increment (hl)
+macro ld_hli_v8
+	ld a, \1
+	ld [hli], a
+endm
+
+; load 8-bit register \2 into 16-bit register \1
+macro ld_r16_r8
+	ld high(\1), 0
+	ld low(\1), \2
+endm
+
+; store 16-bits register \2 into location \1
+macro ld_n16_r16
+	ld a, low(\2)
+	ld [\1], a
+	ld a, high(\2)
+	ld [\1 + 1], a
+endm
+
+; load location \2 into 16-bits register \1 
+macro ld_r16_n16
+	ld a, [\2]
+	ld low(\1), a
+	ld a, [\2 + 1]
+	ld high(\1), a
+endm
+
+; shift-left 16-bit register \1
+macro sla_r16
+	sla low(\1)
+	rl high(\1)
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; LFSR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; pick a seed for LFSR and put it in (a)
+macro LFSR8_PickSeed
+	; get a semi-random value from the div timer
+	ld a, [rDIV]
+
+	; make sure the value is not zero
+	or a
+	jr nz, .not_zero\@
+		inc a
+	.not_zero\@
+endm
+
+; produce the next LFSR value from the value in (a)
+; (a) should not be zero, otherwise zero will be returned
+; this will never produce zero if (a) is not zero
+macro LFSR8_GetNextValue
+	ld d, a ; save the value
+	ld e, a ; used to perform the taps
+	
+	; bit 7, 5, 4 and 3 are used as taps; the new bit will be in the highest bit of (a)
+		; bit 7 is already at the right place in (a)
+
+		; bit 5
+		sla e
+		sla e
+		xor a, e
+
+		; bit 4
+		sla e
+		xor a, e
+
+		; bit 3
+		sla e
+		xor a, e
+
+	; bring the new bit into the carry
+	rla
+	; transfer the new bit into the original value
+	rl d
+	; save the result in (a)
+	ld a, d
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Input
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; struct to hold the input
+rsreset
+INPUT_CURRENT	rb 1
+INPUT_PREVIOUS	rb 1
+INPUT_PRESSED	rb 1
+INPUT_RELEASED	rb 1
+sizeof_INPUT	rb 0
+
+; init an INPUT struct at location \1
+macro InitInput
+	ld a, $FF
+	ld [\1 + INPUT_CURRENT], a
+	ld [\1 + INPUT_PREVIOUS], a
+	ld [\1 + INPUT_PRESSED], a
+	ld [\1 + INPUT_RELEASED], a
+endm
+
+; read the keypad input into an INPUT struct at location \1
+macro ProcessInput
+	; store the previous input into memory and (c)
+	ld a, [\1 + INPUT_CURRENT]
+	ld [\1 + INPUT_PREVIOUS], a
+	ld c, a
+
+	; read the dpad
+	ld a, P1F_GET_DPAD
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; put the dpad input into (b)'s high nibble
+	swap a
+	and a, $F0
+	ld b, a
+
+	; read the buttons
+	ld a, P1F_GET_BTN
+	ldh [rP1], a
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+	ldh a, [rP1]
+
+	; merge the buttons' input into (b)'s low nibble
+	and a, $0F
+	or a, b
+	ld b, a
+
+	; disable input polling
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
+
+	; store the current input
+	ld a, b
+	ld [\1 + INPUT_CURRENT], a
+
+	; compute and store pressed buttons
+	ld a, c
+	cpl
+	or a, b
+	ld [\1 + INPUT_PRESSED], a
+
+	; compute and store released buttons
+	ld a, b
+	cpl
+	or a, c
+	ld [\1 + INPUT_RELEASED], a
+endm
+
+; check input \2 from input mask \1
+macro CheckInput
+	ld a, [\1]
+	and a, \2
+endm
+
+; check pressed input \2 from input struct \1 
+macro CheckInputPressed
+	CheckInput \1 + INPUT_PRESSED, \2
+endm
+
+; check released input \2 from input struct \1 
+macro CheckInputReleased
+	CheckInput \1 + INPUT_RELEASED, \2
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Lookup table
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; extract the word at index (a) from the look up table \1 into HL
+macro FetchFromLookUpTable
+	ld hl, \1
+	sla a
+	ld b, 0
+	ld c, a
+	add hl, bc
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+endm
+
+; call the function at index in (a) from the look up table in \1
+macro CallFromLookUpTable
+	FetchFromLookUpTable \1
+	ld de, call_return_address\@
+	push de
+	jp hl
+call_return_address\@:
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function call
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; call the function pointed by (hl)
+macro CallHL
+	ld de, .call_return_address\@
+	push de
+	jp hl
+	.call_return_address\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Memory
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; copy \1 bytes from memory pointed by (hl) to memory pointed by (de)
+macro CopyMemory
+	ld c, \1
+	.copy\@
+		ld a, [hli]
+		ld [de], a
+		inc de
+		dec c
+	jr nz, .copy\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

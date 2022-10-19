@@ -1,0 +1,74 @@
+include "hardware.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro DisableLcd
+	; wait for the vblank
+	.wait_vblank\@
+		ld a, [rLY]
+		cp a, SCRN_Y
+		jr nz, .wait_vblank\@
+
+	; clear the LCD register to disable it
+	xor a
+	ld [rLCDC], a
+endm
+
+macro ClearHram
+	; zero clear the hram ($FF80 to $FFFE)
+	ld hl, _HRAM
+	ld c, ($FFFE - $FF80 + 1)
+	xor a
+	.zero_clear_hram\@
+		ld [hli], a
+		dec c
+		jr nz, .zero_clear_hram\@
+endm
+
+; must be used when the LCD is off
+macro ClearOam
+	; zero clear OAMs one at a time
+	ld hl, _OAMRAM
+	ld c, OAM_COUNT
+	xor a
+	.clear_oam\@
+		ld [hli], a
+		ld [hli], a
+		ld [hli], a
+		ld [hli], a
+		dec c
+		jr nz, .clear_oam\@
+endm
+
+macro EnableInterrupts
+	ld a, IEF_VBLANK
+	ld [rIE], a
+	ei
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$40]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "header", rom0[$100]
+entrypoint:
+	di
+	jr main
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "main", rom0[$150]
+main:
+	DisableLcd
+	ClearHram
+	ClearOam
+	call InitGame
+	EnableInterrupts
+
+game_loop:
+	call UpdateGame
+	jr game_loop
+

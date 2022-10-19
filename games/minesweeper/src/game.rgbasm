@@ -1,0 +1,1278 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;DEBUG_SHOW_MINES				equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tiles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; tiles ids
+rsreset
+TILE_BOARD_HIDDEN				rb 1
+TILE_BOARD_MINE					rb 1
+TILE_BOARD_FLAG					rb 1
+TILE_BOARD_NUMBER_0				rb 9
+TILE_WALL_PLAIN					rb 1
+TILE_WALL_TOP_LEFT				rb 1
+TILE_WALL_TOP					rb 1
+TILE_WALL_TOP_RIGHT				rb 1
+TILE_WALL_LEFT					rb 1
+TILE_WALL_RIGHT					rb 1
+TILE_WALL_BOTTOM_LEFT			rb 1
+TILE_WALL_BOTTOM				rb 1
+TILE_WALL_BOTTOM_RIGHT			rb 1
+TILE_CURSOR_ON					rb 1
+TILE_CURSOR_OFF					rb 1
+TILE_UI_NUMBER_0				rb 10
+TILE_WINDOW_TOP_LEFT			rb 1
+TILE_WINDOW_TOP					rb 1
+TILE_WINDOW_TOP_RIGHT			rb 1
+TILE_WINDOW_LEFT				rb 1
+TILE_WINDOW_PLAIN				rb 1
+TILE_WINDOW_RIGHT				rb 1
+TILE_WINDOW_BOTTOM_LEFT			rb 1
+TILE_WINDOW_BOTTOM				rb 1
+TILE_WINDOW_BOTTOM_RIGHT		rb 1
+TILE_WINDOW_TITLE_WELCOME		rb 4
+TILE_WINDOW_TITLE_LOSE			rb 4
+TILE_WINDOW_TITLE_WIN			rb 4
+TILE_WINDOW_BUTTON_A			rb 1
+TILE_WINDOW_BUTTON_B			rb 1
+TILE_WINDOW_BUTTON_START		rb 3
+TILE_WINDOW_FLAG_TILE			rb 5
+TILE_WINDOW_UNCOVER_TILE		rb 6
+TILE_WINDOW_NEW_GAME			rb 5
+
+; constants to store the tiles at the end of the rom
+TILES_COUNT						equ (128)
+BYTES_PER_TILE					equ (16)
+TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+TILES_ROM_ADDRESS_END			equ ($8000)
+TILES_ROM_ADDRESS_START			equ (TILES_ROM_ADDRESS_END - TILES_BYTE_SIZE)
+static_assert low(TILES_ROM_ADDRESS_END) == 0, "End address lower byte must be zero"
+
+; load the tiles data from rom to vram at vram address \1
+macro LoadTilesIntoVram
+	ld de, TILES_ROM_ADDRESS_START
+	ld hl, \1
+	.load_tiles_data\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(TILES_ROM_ADDRESS_END)
+		jr nz, .load_tiles_data\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Board
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; 16x16 logical board
+BOARD_TILE_NUM_X				equ (16)
+BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
+BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
+
+; board graphics
+BOARD_TILE_OFFSET_X				equ (1)
+BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
+BOARD_BORDER_TILES_COUNT		equ (2)
+BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILES_COUNT)
+BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
+BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
+
+; 32x16 board state (same coordinates as the vram BG)
+BOARD_STATE_EXTRA_WIDTH			equ (SCRN_VX_B - BOARD_TILE_NUM_X)
+BOARD_STATE_WIDTH				equ (BOARD_TILE_NUM_X + BOARD_STATE_EXTRA_WIDTH)
+BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
+BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
+
+; constants
+BOARD_STATE_MINES_COUNT			equ (40)
+BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
+static_assert BOARD_STATE_WIDTH == SCRN_VX_B, "Board state width must be a power of two {d:BOARD_STATE_WIDTH}"
+
+MINES_COUNT_BIT_COUNT			equ (4)
+MINE_COUNT_MASK					equ ((1 << MINES_COUNT_BIT_COUNT) - 1)
+
+; board state flags
+rsreset
+BOARD_BIT_MINES_COUNT			rb MINES_COUNT_BIT_COUNT
+BOARD_BIT_FLAGGED				rb 1
+BOARD_BIT_MINE					rb 1
+BOARD_BIT_HIDDEN				rb 1
+BOARD_BITS_COUNT				rb 0
+static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
+static_assert BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; UI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILES_COUNT_UI_DIGITS_COUNT		equ (3)
+TILES_COUNT_UI_X				equ (OAM_OFFSET_X + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
+TILES_COUNT_UI_Y				equ (OAM_OFFSET_Y + TILE_SIDE)
+TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; HRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _HRAM
+
+; input
+HRAM_INPUT						rb sizeof_INPUT
+
+; graphics
+HRAM_CURSOR_OAM					rb sizeof_OAM_ATTRS
+HRAM_BOARD_TILE_REQUEST_ADDRESS	rw 1
+HRAM_BOARD_TILE_REQUEST_VALUE	rb 1
+HRAM_TILES_COUNT_UI_OAMS		rb (sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT)
+HRAM_WINDOW_TITLE_TILE			rb 1
+
+; game state
+HRAM_GAMESTATE_FUNC				rw 1
+HRAM_UNCOVERED_COUNT			rb 1
+HRAM_FLAG_COORDINATE			rw 1
+
+; random
+HRAM_LFSR_VALUE					rb 1
+
+HRAM_END						rb 0
+
+HRAM_USAGE equ (HRAM_END - _HRAM)
+print "HRAM usage: {d:HRAM_USAGE} bytes\n"
+static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; RAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+; board state
+RAM_BOARD_SAFETY_TOP			rb BOARD_STATE_WIDTH + 1
+RAM_BOARD						rb BOARD_STATE_SIZE
+RAM_BOARD_SAFETY_BOTTOM			rb BOARD_STATE_WIDTH + 1
+
+; list of board coordinates to uncover
+RAM_UNCOVER_LIST_SIZE			rb 1
+RAM_UNCOVER_LIST				rw BOARD_TILES_COUNT
+
+RAM_END							rb 0
+
+RAM_USAGE equ (RAM_END - _RAM)
+print "RAM usage: {d:RAM_USAGE} bytes\n"
+print "RAM_BOARD: ${X:RAM_BOARD}\n"
+print "RAM_UNCOVER_LIST: ${X:RAM_UNCOVER_LIST}\n"
+static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
+
+; zero clear the ram
+macro ClearRam
+	ld hl, _RAM
+	.clear_ram\@
+		xor a
+		ld [hli], a
+
+		ld a, low(RAM_END)
+		cp a, l
+		jr nz, .clear_ram\@
+
+		ld a, high(RAM_END)
+		cp a, h
+		jr nz, .clear_ram\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Game state function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; set \1 as the state function
+macro SetGameStateFunc
+	ld hl, \1
+	ld_n16_r16 HRAM_GAMESTATE_FUNC, hl
+endm
+
+; update the game state by calling the current state function
+macro CallGameStateFunc
+	ld_r16_n16 hl, HRAM_GAMESTATE_FUNC
+	CallHL
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Coordinates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; convert the logical coordinate \1 into a board state coordinate; save the coordinate into (hl)
+macro ConvertLogicalToBoardStateCoordinate
+	; save the parameter into (b)
+	ld b, \1
+
+	; reset (hl)
+	ld hl, $0000
+
+	; add the row contribution
+	ld a, b
+	and a, ~(BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	sla_r16 de
+	add hl, de
+
+	; add the column contribution
+	ld a, b
+	and a, (BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	add hl, de
+endm
+
+; convert the OAM struct \1 into a board state coordinate; save the coordinate into (hl)
+macro ConvertOamToBoardStateCoordinate
+	; reset (hl)
+	ld hl, $0000
+
+	; compute the row contribution and put it into (hl)
+	ld a, [\1 + OAMA_Y]
+	add a, -(OAM_OFFSET_Y + BOARD_TILE_OFFSET_Y * TILE_SIDE)
+	ld_r16_r8 hl, a
+	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
+	sla_r16 hl
+	sla_r16 hl
+
+	; compute the column contribution and add to (hl)
+	ld a, [\1 + OAMA_X]
+	add a, -(OAM_OFFSET_X + BOARD_TILE_OFFSET_X * TILE_SIDE)
+	; equivalent to (a / TILE_SIDE)
+	rrca
+	rrca
+	rrca
+	ld_r16_r8 de, a
+	add hl, de
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Uncover list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; reset the uncover list size to zero
+macro InitUncoverList
+	xor a
+	ld [RAM_UNCOVER_LIST_SIZE], a
+endm
+
+; push board state coordinate \1 into the uncover list
+macro PushIntoUncoverList
+	; save the coordinate into (bc)
+	ld_r16_r16 bc, \1
+
+	; get the board state value for the coordinate into (a)
+	ld_r16_r16 hl, bc
+	ld de, RAM_BOARD
+	add hl, de
+	ld a, [hl]
+
+	; check if the element was already added to the list previously
+	; if so, skip it as it has already been dealt with
+	bit BOARD_BIT_HIDDEN, a
+	jr z, .already_added_to_list\@
+		; clear the uncover flag as we are adding the coordinate to the list
+		res BOARD_BIT_HIDDEN, a
+		ld [hl], a
+
+		; get a pointer in (hl) to the next slot in the list
+		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, RAM_UNCOVER_LIST
+		add hl, de
+
+		; store the coordinate in the list
+		ld [hl], c
+		inc hl
+		ld [hl], b
+
+		; update the list size
+		ld hl, RAM_UNCOVER_LIST_SIZE
+		inc [hl]
+	.already_added_to_list\@
+endm
+
+; pop the last uncover element into (hl)
+macro PopFromUncoverList
+	; sanity check the list size to make sure we do not pop too much
+	ld hl, RAM_UNCOVER_LIST_SIZE
+	ld a, [hl]
+	or a
+	jr z, .cannot_pop\@
+		; decrement list size
+		dec [hl]
+
+		; compute the index of the element
+		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, RAM_UNCOVER_LIST
+		add hl, de
+
+		; fetch the value and put it in (hl)
+		ld c, [hl]
+		inc hl
+		ld b, [hl]
+		ld_r16_r16 hl, bc
+
+		jr .pop_done\@
+	.cannot_pop\@
+		ld hl, BOARD_STATE_INVALID_COORDINATE
+	.pop_done\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tile change
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; request a tile change for board state coordinate \1 to value \2
+macro RequestBoardTileChange
+	; set the tile value
+	ld a, \2
+	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
+
+	; set the tile address
+	ld_r16_r16 hl, \1
+	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
+	add hl, de
+	ld_n16_r16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
+endm
+
+; perform tile change if requested (high byte is non-zero)
+macro ProcessBoardTileChangeRequest
+	ld_r16_n16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
+	ld a, h
+	or a
+	jr z, .no_tile_operation\@
+		; set the vram value
+		ld a, [HRAM_BOARD_TILE_REQUEST_VALUE]
+		ld [hl], a
+
+		; reset tile change by zero clearing the high byte
+		xor a
+		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
+	.no_tile_operation\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Cursor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; hide the cursor
+macro HideCursor
+	ld a, TILE_CURSOR_OFF
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+endm
+
+; show the cursor
+macro ShowCursor
+	ld a, TILE_CURSOR_ON
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+endm
+
+; update the cursor graphics
+; must be used during vblank
+macro UpdateCursorGraphics
+	ld hl, HRAM_CURSOR_OAM
+	ld de, _OAMRAM
+	CopyMemory sizeof_OAM_ATTRS
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Window
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; constants
+WINDOW_X						equ (7)
+WINDOW_HIDE_Y					equ (SCRN_Y)
+WINDOW_LINES_COUNT				equ (7)
+WINDOW_SHOW_Y					equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
+WINDOW_TITLE_ROW				equ (1)
+WINDOW_TITLE_TILES_COUNT		equ (4)
+WINDOW_TITLE_COLUMN				equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
+
+WINDOW_DESCRIPTION_MARGIN		equ (3)
+WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
+
+; init a action description line in the window
+; \1 -> action start tile
+; \2 -> action tile's count
+; \3 -> description start tile
+; \4 -> description tile's count
+macro InitWindowActionDescriptionLine
+	; left border and margin
+	ld_hli_v8 TILE_WINDOW_LEFT
+	rept WINDOW_DESCRIPTION_MARGIN
+		ld_hli_v8 TILE_WINDOW_PLAIN
+	endr
+
+	; action
+REPT_TILE_INDEX = 0
+	rept \2
+		ld_hli_v8 \1 + REPT_TILE_INDEX
+REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
+	endr
+
+	; space between action and description
+	rept WINDOW_DESCRIPTION_CONTENT - (\2 + \4)
+		ld_hli_v8 TILE_WINDOW_PLAIN
+	endr
+
+	; description
+REPT_TILE_INDEX = 0
+	rept \4
+		ld_hli_v8 \3 + REPT_TILE_INDEX
+REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
+	endr
+
+	; right margin and border
+	rept WINDOW_DESCRIPTION_MARGIN
+		ld_hli_v8 TILE_WINDOW_PLAIN
+	endr
+	ld_hli_v8 TILE_WINDOW_RIGHT
+
+	; move the next line in the window
+	ld de, SCRN_VX_B - SCRN_X_B
+	add hl, de
+endm
+
+; init the window
+; must be called when LCD is off
+macro InitWindow
+	; position the window
+	ld a, WINDOW_X
+	ld [rWX], a
+	ld a, WINDOW_HIDE_Y
+	ld [rWY], a
+
+	; init the tiles map
+	ld hl, _SCRN1
+		; top line
+		ld_hli_v8 TILE_WINDOW_TOP_LEFT
+		rept SCRN_X_B - 2
+			ld_hli_v8 TILE_WINDOW_TOP
+		endr
+		ld_hli_v8 TILE_WINDOW_TOP_RIGHT
+		ld de, SCRN_VX_B - SCRN_X_B
+		add hl, de
+
+		; title line (initialized as empty) + an additional empty line
+		ld c, 2
+		.title\@
+			ld_hli_v8 TILE_WINDOW_LEFT
+			rept SCRN_X_B - 2
+				ld_hli_v8 TILE_WINDOW_PLAIN
+			endr
+			ld_hli_v8 TILE_WINDOW_RIGHT
+			ld de, SCRN_VX_B - SCRN_X_B
+			add hl, de
+
+			dec c
+			jr nz, .title\@
+
+		; button descriptions
+		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_A, 1, TILE_WINDOW_FLAG_TILE, 5
+		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_B, 1, TILE_WINDOW_UNCOVER_TILE, 6
+		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_START, 3, TILE_WINDOW_NEW_GAME, 5
+
+		; bottom line
+		ld_hli_v8 TILE_WINDOW_BOTTOM_LEFT
+		rept SCRN_X_B - 2
+			ld_hli_v8 TILE_WINDOW_BOTTOM
+		endr
+		ld_hli_v8 TILE_WINDOW_BOTTOM_RIGHT
+
+	; set the default title tile
+	ld a, TILE_WINDOW_TITLE_WELCOME
+	ld [HRAM_WINDOW_TITLE_TILE], a
+endm
+
+; hide the window
+; should be called during vblank or when lcd is off
+macro HideWindow
+	ld a, WINDOW_HIDE_Y
+	ld [rWY], a
+endm
+
+; show the window and update the title tile
+; must be called during vblank or when lcd is off
+macro ShowWindow
+	ld a, WINDOW_SHOW_Y
+	ld [rWY], a
+
+	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
+	ld a, [HRAM_WINDOW_TITLE_TILE]
+	ld b, a
+	rept 4
+		ld_hli_v8 b
+		inc b
+	endr
+endm
+
+; set the window title tile to \1
+; ShowWindow must be called so that the changes take effect
+macro SetWindowTitle
+	ld a, \1
+	ld [HRAM_WINDOW_TITLE_TILE], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tiles count UI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; init the OAMs for the tiles count
+macro InitTilesCountUi
+	; set vertical position of all OAMs
+	ld a, TILES_COUNT_UI_Y
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_Y], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_Y], a
+
+	; set horizontal position of all OAMs
+	ld a, TILES_COUNT_UI_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_X], a
+	add a, TILES_COUNT_UI_ADVANCE_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_X], a
+	add a, TILES_COUNT_UI_ADVANCE_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_X], a
+
+	; set the tile id to a default value for all OAMs
+	ld a, TILE_UI_NUMBER_0
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+
+	; flags are not used, so set to zero
+	xor a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_FLAGS], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_FLAGS], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_FLAGS], a
+endm
+
+; update the UI to display the number \1
+macro SetTilesCountUi
+	ld a, \1
+
+	; compute the hundreds into (b)
+	; (a) is also updated to remove the hundreds
+	ld b, $FF
+	.hundreds\@
+		inc b
+		sub a, 100
+	jr nc, .hundreds\@
+	add a, 100
+
+	; set up the tile id for the hundreds' OAM
+	ld c, a
+	ld a, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a	
+	ld a, c
+	
+	; compute the tens into (b)
+	; (a) is also updated to remove the tens
+	ld b, $FF
+	.tens\@
+		inc b
+		sub a, 10
+	jr nc, .tens\@
+	add a, 10
+	
+	; set up the tile id for the tens' OAM
+	ld c, a
+	ld a, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld a, c
+
+	; at that point, (a) contains the units
+	; set up the tile id for the units' OAM
+	ld b, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+endm
+
+; update the tiles count graphics
+; must be used during vblank
+macro UpdateTilesCountGraphics
+	ld hl, HRAM_TILES_COUNT_UI_OAMS
+	ld de, _OAMRAM + sizeof_OAM_ATTRS
+	CopyMemory sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Rom
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "game", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: waiting for a new game to be started 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateGame_WaitForNewGame:
+	CheckInputReleased HRAM_INPUT, PADF_START
+	jr nz, .start_not_pushed
+		SetGameStateFunc UpdateGame_NewGame
+		halt
+		HideWindow
+		ret
+	.start_not_pushed
+
+	halt
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: initializing the board for a new game to begin
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; reset the board (no mines yet)
+macro ResetBoard
+	; go over the board line by line
+	ld hl, RAM_BOARD
+	ld c, BOARD_TILE_NUM_Y
+	.clear_board\@
+		; set all the board coordinates for the line to an initial value
+		ld a, (1 << BOARD_BIT_HIDDEN)
+		ld b, BOARD_TILE_NUM_X
+		.clear_line\@
+			ld [hli], a
+			dec b
+			jr nz, .clear_line\@
+
+		; skip the remaining columns on the line as they must remain at zero
+		ld de, BOARD_STATE_WIDTH - BOARD_TILE_NUM_X
+		add hl, de
+
+		dec c
+		jr nz, .clear_board\@
+endm
+
+; add \1 mines to the board
+macro GenerateMines
+	LFSR8_PickSeed
+	ld [HRAM_LFSR_VALUE], a
+	ld c, \1
+	.generating_mine\@
+		; load the seed and generate the next lfsr
+		ld a, [HRAM_LFSR_VALUE]
+		LFSR8_GetNextValue
+		ld [HRAM_LFSR_VALUE], a
+
+		; lfsr can only generate 255 values, but the board has 256 coordinates
+		; when the lfsr result is 1, allow the value to be set to 0 semi-randomly
+		cp a, 1
+		jr nz, .lfsr_not_one\@
+			ld a, [rDIV]
+			and a, $01
+		.lfsr_not_one\@
+
+		; add the mine flag to the coordinate
+		ConvertLogicalToBoardStateCoordinate a
+		ld de, RAM_BOARD
+		add hl, de
+		ld a, [hl]
+		or a, (1 << BOARD_BIT_MINE)
+		ld [hl], a
+
+		dec c
+		jr nz, .generating_mine\@
+endm
+
+; compute the mines count for each coordinate on the board
+macro ComputeMineCounts
+; temp variables on the stack
+rsreset
+mine_compute_LOGICAL_BOARD_COORDINATE	rb 1
+mine_compute_COUNT						rb 1
+sizeof_mine_compute_TEMP				rb 0
+
+	add sp, -sizeof_mine_compute_TEMP
+
+	ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
+	xor a
+	ld [hl], a
+	.mine_count_for_coordinate\@
+		; set initial mine count to zero
+		ld hl, sp + mine_compute_COUNT
+		ld [hl], 0
+
+		; get a pointer to the board state coordinate that is one row above and one column left from our base coordinate
+		ConvertLogicalToBoardStateCoordinate a
+		ld de, RAM_BOARD - (BOARD_STATE_WIDTH + 1)
+		add hl, de
+
+		ld b, 3
+		.mine_count_for_column\@
+			ld c, 3 ; three colums per row
+			.mine_count_for_row\@
+				ld a, [hli]
+				bit BOARD_BIT_MINE, a
+				jr z, .no_mine\@
+					ld_r16_r16 de, hl
+					ld hl, sp + mine_compute_COUNT
+					inc [hl]
+					ld_r16_r16 hl, de
+				.no_mine\@
+				dec c
+				jr nz, .mine_count_for_row\@
+
+			; move to the next row, three columns left
+			ld de, (BOARD_STATE_WIDTH - 3)
+			add hl, de
+
+			dec b
+			jr nz, .mine_count_for_column\@
+
+		; put the mines' count in (b) for reference below
+		ld_r16_r16 de, hl
+		ld hl, sp + mine_compute_COUNT
+		ld b, [hl]
+		ld_r16_r16 hl, de
+
+		; go back to the coordinate for which we compute the mines' count
+		ld de, -(BOARD_STATE_WIDTH * 2 - 1)
+		add hl, de
+
+		; set the mines' count for the coordinate
+		ld a, [hl]
+		or a, b
+		ld [hl], a
+
+		; iterator to the next logical coordinate
+		ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
+		inc [hl]
+		; keep the counter in (a), as it is used at the start of the next iteration
+		ld a, [hl]
+		jr nz, .mine_count_for_coordinate\@
+
+	add sp, sizeof_mine_compute_TEMP
+endm
+
+; initialize the cursor OAM and place it at an arbitrary place
+macro ResetCursor
+	ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_OFFSET_Y
+	ld [HRAM_CURSOR_OAM + OAMA_Y], a
+	ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_OFFSET_X
+	ld [HRAM_CURSOR_OAM + OAMA_X], a
+	ld a, TILE_CURSOR_ON
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+	xor a
+	ld [HRAM_CURSOR_OAM + OAMA_FLAGS], a
+endm
+
+; reset board variables to default values
+macro ResetBoardVariables
+	; reset counters
+	ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
+	ld [HRAM_UNCOVERED_COUNT], a
+	SetTilesCountUi a
+
+	; clear the flag coordinate used by the flag toggling mechanics
+	ld de, BOARD_STATE_INVALID_COORDINATE
+	ld_n16_r16 HRAM_FLAG_COORDINATE, de
+endm
+
+; initialize the board graphics
+macro InitBoardGraphics
+	ld hl, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
+	ld c, BOARD_TILE_NUM_Y
+	.clear_vram_line\@
+		halt
+if !def(DEBUG_SHOW_MINES)
+		; set the full line to the default brick graphics
+		ld a, TILE_BOARD_HIDDEN
+		ld b, BOARD_TILE_NUM_X
+		.clear_vram_location
+			ld [hli], a
+			dec b
+			jr nz, .clear_vram_location
+else
+		ld b, BOARD_TILE_NUM_X
+		.check_mine
+			; get the board value into (a) in order to check the mine flag
+			push hl
+				; convert (hl) from a vram pointer to board state pointer
+				ld de, (-(_SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X) & $FFFF)
+				add hl, de
+				ld de, RAM_BOARD
+				add hl, de
+
+				; get the board value
+				ld a, [hl]
+			pop hl
+
+			; display the mine graphics if there is a mine
+			bit BOARD_BIT_MINE, a
+			jr z, .not_a_mine
+				ld a, TILE_BOARD_MINE
+				ld [hli], a
+				jr .setup_done
+			.not_a_mine
+				ld a, TILE_BOARD_HIDDEN
+				ld [hli], a
+			.setup_done
+
+			dec b
+			jr nz, .check_mine
+endc
+		; advance the (hl) pointer to the next line
+		ld de, SCRN_VX_B - BOARD_TILE_NUM_X
+		add hl, de
+
+		dec c
+		jr nz, .clear_vram_line\@
+endm
+
+UpdateGame_NewGame:
+	ResetBoard
+	GenerateMines BOARD_STATE_MINES_COUNT
+	ComputeMineCounts
+	ResetCursor
+	ResetBoardVariables
+	SetGameStateFunc UpdateGame_Play
+
+	halt
+	UpdateTilesCountGraphics
+	InitBoardGraphics
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: interactive play
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; move the cursor based on the player's input
+; the cursor will wrap around when moved over any side of the board
+macro CheckCursorMove
+	; check dpad left
+	CheckInputPressed HRAM_INPUT, PADF_LEFT
+	jr nz, .left_not_pressed\@
+		ld a, [HRAM_CURSOR_OAM + OAMA_X]
+		add a, -TILE_SIDE
+		cp a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_OFFSET_X
+		jr nc, .no_left_wrap\@
+			ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X - 1) * TILE_SIDE + OAM_OFFSET_X
+		.no_left_wrap\@
+		ld [HRAM_CURSOR_OAM + OAMA_X], a
+	.left_not_pressed\@
+
+	; check dpad right
+	CheckInputPressed HRAM_INPUT, PADF_RIGHT
+	jr nz, .right_not_pressed\@
+		ld a, [HRAM_CURSOR_OAM + OAMA_X]
+		add a, TILE_SIDE
+		cp a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X) * TILE_SIDE + OAM_OFFSET_X
+		jr c, .no_right_wrap\@
+			ld a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_OFFSET_X
+		.no_right_wrap\@
+		ld [HRAM_CURSOR_OAM + OAMA_X], a
+	.right_not_pressed\@
+
+	; check dpad up
+	CheckInputPressed HRAM_INPUT, PADF_UP
+	jr nz, .up_not_pressed\@
+		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
+		add a, -TILE_SIDE
+		cp a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_OFFSET_Y
+		jr nc, .no_up_wrap\@
+			ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y - 1) * TILE_SIDE + OAM_OFFSET_Y
+		.no_up_wrap\@
+		ld [HRAM_CURSOR_OAM + OAMA_Y], a
+	.up_not_pressed\@
+
+	; check dpad down
+	CheckInputPressed HRAM_INPUT, PADF_DOWN
+	jr nz, .down_not_pressed\@
+		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
+		add a, TILE_SIDE
+		cp a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y) * TILE_SIDE + OAM_OFFSET_Y
+		jr c, .no_down_wrap\@
+			ld a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_OFFSET_Y
+		.no_down_wrap\@
+		ld [HRAM_CURSOR_OAM + OAMA_Y], a
+	.down_not_pressed\@
+endm
+
+; trigger actions based on the player's input
+; only one action can be triggered at the same time as they change the game state
+macro CheckActions
+	; check flag action
+	CheckInputPressed HRAM_INPUT, PADF_A
+	jr nz, .no_flag_action\@
+		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
+		ld_n16_r16 HRAM_FLAG_COORDINATE, hl
+		SetGameStateFunc UpdateGame_Flag
+		jr .actions_check_done\@
+	.no_flag_action\@
+
+	; check uncover action
+	CheckInputPressed HRAM_INPUT, PADF_B
+	jr nz, .no_uncover_action\@
+		InitUncoverList
+		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
+		PushIntoUncoverList hl
+		SetGameStateFunc UpdateGame_Uncover
+	.no_uncover_action\@
+
+	.actions_check_done\@
+endm
+
+UpdateGame_Play:
+	ShowCursor
+	CheckCursorMove
+	CheckActions
+	halt
+	UpdateCursorGraphics
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: flag check
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateGame_Flag:
+	; get the board state coordinate for the flag toggling
+	ld_r16_n16 de, HRAM_FLAG_COORDINATE
+
+	; return early if the coordinate is not set properly
+	ld a, d
+	cp a, high(BOARD_STATE_INVALID_COORDINATE)
+	jr nz, .coordinate_is_valid
+		SetGameStateFunc UpdateGame_Play
+		halt
+		ret
+	.coordinate_is_valid
+
+	; retrieve the board value into (a)
+	ld hl, RAM_BOARD
+	add hl, de
+	ld a, [hl]
+
+	; return early if the coordinate is not hidden
+	bit BOARD_BIT_HIDDEN, a
+	jr nz, .coordinate_is_hidden
+		SetGameStateFunc UpdateGame_Play
+		halt
+		ret
+	.coordinate_is_hidden
+
+	; toggle the flag based on the value at the coordinate
+	bit BOARD_BIT_FLAGGED, a
+	jr nz, .has_flag
+		set BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		RequestBoardTileChange de, TILE_BOARD_FLAG
+		jr .flag_toggle_done
+	.has_flag
+if !def(DEBUG_SHOW_MINES)
+		res BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		RequestBoardTileChange de, TILE_BOARD_HIDDEN
+else
+		res BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		bit BOARD_BIT_MINE, a
+		jr z, .no_mine
+			RequestBoardTileChange de, TILE_BOARD_MINE
+			jr .mine_check_end
+		.no_mine
+			RequestBoardTileChange de, TILE_BOARD_HIDDEN
+		.mine_check_end
+endc
+	.flag_toggle_done
+
+	; clear the flag coordinate
+	ld de, BOARD_STATE_INVALID_COORDINATE
+	ld_n16_r16 HRAM_FLAG_COORDINATE, de
+
+	SetGameStateFunc UpdateGame_Play
+
+	halt
+	ProcessBoardTileChangeRequest
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: uncovering board coordinates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; push an index into the uncover list
+; \1 is an index relative to the coordinate the player uncovered which is in (hl)
+; (hl) remains unchanged
+macro PushAdjacentIntoUncoverList
+	push hl
+		ld de, \1
+		add hl, de
+		PushIntoUncoverList hl
+	pop hl
+endm
+
+UpdateGame_Uncover:
+	HideCursor
+
+	; pop the coordinate to uncover
+	PopFromUncoverList
+	; (hl) contains the board state coordinate
+	; go back to interactive gameplay if the uncover list is empty
+	ld a, high(BOARD_STATE_INVALID_COORDINATE)
+	cp a, h
+	jr nz, .list_not_empty
+		SetGameStateFunc UpdateGame_Play
+		halt
+		ret
+	.list_not_empty
+
+	; get the board state value, but make sure to keep (hl) unchanged
+	ld de, RAM_BOARD
+	add hl, de
+	ld a, [hl]
+	ld de, -RAM_BOARD & $FFFF
+	add hl, de
+
+	; check for lose condition (a mine is uncovered)
+	bit BOARD_BIT_MINE, a
+	jr z, .no_lose
+		RequestBoardTileChange hl, TILE_BOARD_MINE
+		SetGameStateFunc UpdateGame_Lose
+		jp .update_graphics
+	.no_lose
+
+	; (a) still holds the value at the coordinate
+	; retrieve the number of mines adjacent to the board coordinate
+	and a, MINE_COUNT_MASK
+
+	; request the tile change, but keep (hl) and (a) unchanged
+	ld_r16_r8 de, a
+	push de
+	push hl
+		add a, TILE_BOARD_NUMBER_0
+		RequestBoardTileChange hl, a
+	pop hl
+	pop de
+	ld a, e
+
+	; check if the number of mines is zero around the coordinate
+	; if so, push the adjacent coordinates to be uncovered
+	or a
+	jp nz, .sum_not_zero
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH + 1)
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH + 0)
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH - 1)
+		PushAdjacentIntoUncoverList -1
+		PushAdjacentIntoUncoverList +1
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH - 1)
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH + 0)
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH + 1)
+	.sum_not_zero
+
+	; decrement the uncover counter and check for the win condition
+	ld hl, HRAM_UNCOVERED_COUNT
+	dec [hl]
+	jr nz, .no_win
+		SetGameStateFunc UpdateGame_Win
+	.no_win
+	
+	; update the counter ui
+	ld hl, HRAM_UNCOVERED_COUNT
+	ld a, [hl]
+	SetTilesCountUi a
+
+	.update_graphics
+	halt
+	UpdateCursorGraphics
+	ProcessBoardTileChangeRequest
+	UpdateTilesCountGraphics
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: winning the game
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateGame_Win:
+	HideCursor
+	SetWindowTitle TILE_WINDOW_TITLE_WIN
+	SetGameStateFunc UpdateGame_WaitForNewGame
+	
+	halt
+	UpdateCursorGraphics
+	ShowWindow
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State: losing the game
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateGame_Lose:
+; temp variables on the stack
+rsreset
+lose_LOGICAL_BOARD_COORDINATE	rb 1
+sizeof_lose_TEMP				rb 0
+
+	add sp, -sizeof_lose_TEMP
+
+	; hide the cursor
+	HideCursor
+	halt
+	UpdateCursorGraphics
+
+	; uncover all board remaining coordinates
+	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+	ld [hl], 0
+	ld a, 0
+	; at the start of the loop, (a) must contain the logical coordinate to uncover
+	.uncover_hidden
+		; vsync every 8 coordinates
+		and a, $07
+		jr nz, .no_vsync
+			halt
+		.no_vsync
+
+		; get the value at the coordinate
+		ld a, [hl]
+		ConvertLogicalToBoardStateCoordinate a
+		ld de, RAM_BOARD
+		add hl, de
+		ld a, [hl]
+
+		; get the board state coordinate back into (hl) for tile change requests
+		ld de, -RAM_BOARD & $FFFF
+		add hl, de
+
+		; uncover the tile (either mine or number)
+		bit BOARD_BIT_HIDDEN, a
+		jr z, .not_hidden
+			bit BOARD_BIT_MINE, a
+			jr z, .no_mine
+				RequestBoardTileChange hl, TILE_BOARD_MINE
+				jr .mine_check_end
+			.no_mine
+				and a, MINE_COUNT_MASK
+				add a, TILE_BOARD_NUMBER_0
+				RequestBoardTileChange hl, a
+			.mine_check_end
+			ProcessBoardTileChangeRequest
+		.not_hidden
+
+		; increment the logical coordinate and put it in (a)
+		ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+		inc [hl]
+		ld a, [hl]
+	jr nz, .uncover_hidden
+
+	; set next state and clean up
+	SetWindowTitle TILE_WINDOW_TITLE_LOSE
+	SetGameStateFunc UpdateGame_WaitForNewGame
+	add sp, sizeof_lose_TEMP
+
+	halt
+	ShowWindow
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Exported functions (init and update)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+InitGame:
+	ClearRam
+	InitInput HRAM_INPUT
+	LoadTilesIntoVram _VRAM8000
+	
+	InitWindow
+	InitTilesCountUi
+	UpdateTilesCountGraphics
+
+	; init the tiles map
+	ld hl, _SCRN0
+		; top line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_TOP_LEFT
+		ld a, TILE_WALL_TOP
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_TOP_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld de, SCRN_VX_B - SCRN_X_B
+		add hl, de
+
+		; middle lines
+		ld c, BOARD_TILE_NUM_X
+		.init_middle_lines
+			rept BOARD_PLAIN_TILES_LEFT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+			ld_hli_v8 TILE_WALL_LEFT
+			ld a, TILE_BOARD_HIDDEN
+			rept BOARD_TILE_NUM_X
+				ld [hli], a
+			endr
+			ld_hli_v8 TILE_WALL_RIGHT
+			rept BOARD_PLAIN_TILES_RIGHT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+
+			ld de, SCRN_VX_B - SCRN_X_B
+			add hl, de
+
+			dec c
+			jr nz, .init_middle_lines
+
+		; bottom line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_LEFT
+		ld a, TILE_WALL_BOTTOM
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+
+	; init the palettes
+	ld a, %11100100
+	ld [rBGP], a
+	ld [rOBP0], a
+	xor a, $FF
+	ld [rOBP1], a
+
+	; window settings
+	SetWindowTitle TILE_WINDOW_TITLE_WELCOME
+	ShowWindow
+
+	; turn the lcd on and set parameters
+	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
+	ld [rLCDC], a
+
+	SetGameStateFunc UpdateGame_WaitForNewGame
+	ret
+
+UpdateGame:
+	ProcessInput HRAM_INPUT
+	CallGameStateFunc
+	ret
+
+export InitGame, UpdateGame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tile characters
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "tiles", rom0[TILES_ROM_ADDRESS_START]
+incbin "tiles.chr"
+rom_end:
+static_assert rom_end == TILES_ROM_ADDRESS_END, "The rom must end at ${X:TILES_ROM_ADDRESS_END}"
+
