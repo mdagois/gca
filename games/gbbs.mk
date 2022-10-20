@@ -244,12 +244,12 @@ $$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$
 	$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
-	$(call launch_command,$1,$2,,$(true))
-	$(call launch_command,$1,$2,2,$(false))
+	@$(call launch_command,$1,$2,,$(true))
+	@$(call launch_command,$1,$2,2,$(false))
 
 clean_$1_$2:
-	$$(rmdir_command) $$($1_$2_build_directory)
-	$$(rmdir_command) $$($1_$2_binary_directory)
+	@$$(rmdir_command) $$($1_$2_build_directory)
+	@$$(rmdir_command) $$($1_$2_binary_directory)
 
 
 endef
