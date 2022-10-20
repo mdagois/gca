@@ -161,8 +161,9 @@ $1_build_directory = $(build_directory)/$(temporary_directory)/$1
 
 all: $1
 clean: clean_$1
+$1_targets: ;
 
-.PHONY: $1 clean_$1
+.PHONY: $1 clean_$1 $1_targets
 clean_$1:
 	@$$(rmdir_command) $$($1_build_directory)
 
@@ -237,7 +238,7 @@ $2: $1_$2
 $1_$2: $$($1_$2_binary)
 
 $$($1_$2_binary): | $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
-$$($1_$2_binary): $$($1_$2_objects)
+$$($1_$2_binary): $$($1_$2_objects) | $1_targets 
 	$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
 
 $$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$(@D)/
