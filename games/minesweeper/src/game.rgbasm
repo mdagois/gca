@@ -114,8 +114,8 @@ static_assert BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 TILES_COUNT_UI_DIGITS_COUNT		equ (3)
-TILES_COUNT_UI_X				equ (OAM_OFFSET_X + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
-TILES_COUNT_UI_Y				equ (OAM_OFFSET_Y + TILE_SIDE)
+TILES_COUNT_UI_X				equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
+TILES_COUNT_UI_Y				equ (OAM_Y_OFS + TILE_SIDE)
 TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -125,7 +125,7 @@ TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
 rsset _HRAM
 
 ; input
-HRAM_INPUT						rb sizeof_INPUT
+HRAM_INPUT						rb sizeof_PAD_INPUT
 
 ; graphics
 HRAM_CURSOR_OAM					rb sizeof_OAM_ATTRS
@@ -194,12 +194,12 @@ endm
 ; set \1 as the state function
 macro SetGameStateFunc
 	ld hl, \1
-	ld_n16_r16 HRAM_GAMESTATE_FUNC, hl
+	store16 HRAM_GAMESTATE_FUNC, hl
 endm
 
 ; update the game state by calling the current state function
 macro CallGameStateFunc
-	ld_r16_n16 hl, HRAM_GAMESTATE_FUNC
+	load16 hl, HRAM_GAMESTATE_FUNC
 	CallHL
 endm
 
@@ -236,7 +236,7 @@ macro ConvertOamToBoardStateCoordinate
 
 	; compute the row contribution and put it into (hl)
 	ld a, [\1 + OAMA_Y]
-	add a, -(OAM_OFFSET_Y + BOARD_TILE_OFFSET_Y * TILE_SIDE)
+	add a, -(OAM_Y_OFS + BOARD_TILE_OFFSET_Y * TILE_SIDE)
 	ld_r16_r8 hl, a
 	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
 	sla_r16 hl
@@ -244,7 +244,7 @@ macro ConvertOamToBoardStateCoordinate
 
 	; compute the column contribution and add to (hl)
 	ld a, [\1 + OAMA_X]
-	add a, -(OAM_OFFSET_X + BOARD_TILE_OFFSET_X * TILE_SIDE)
+	add a, -(OAM_X_OFS + BOARD_TILE_OFFSET_X * TILE_SIDE)
 	; equivalent to (a / TILE_SIDE)
 	rrca
 	rrca
@@ -343,12 +343,12 @@ macro RequestBoardTileChange
 	ld_r16_r16 hl, \1
 	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
 	add hl, de
-	ld_n16_r16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
+	store16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
 endm
 
 ; perform tile change if requested (high byte is non-zero)
 macro ProcessBoardTileChangeRequest
-	ld_r16_n16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
+	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
 	ld a, h
 	or a
 	jr z, .no_tile_operation\@
@@ -381,9 +381,7 @@ endm
 ; update the cursor graphics
 ; must be used during vblank
 macro UpdateCursorGraphics
-	ld hl, HRAM_CURSOR_OAM
-	ld de, _OAMRAM
-	CopyMemory sizeof_OAM_ATTRS
+	CopyMemory _OAMRAM, HRAM_CURSOR_OAM, sizeof_OAM_ATTRS
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -603,9 +601,7 @@ endm
 ; update the tiles count graphics
 ; must be used during vblank
 macro UpdateTilesCountGraphics
-	ld hl, HRAM_TILES_COUNT_UI_OAMS
-	ld de, _OAMRAM + sizeof_OAM_ATTRS
-	CopyMemory sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
+	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -619,7 +615,7 @@ section "game", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateGame_WaitForNewGame:
-	CheckInputReleased HRAM_INPUT, PADF_START
+	TestPadInput_Released HRAM_INPUT, PADF_START
 	jr nz, .start_not_pushed
 		SetGameStateFunc UpdateGame_NewGame
 		halt
@@ -759,9 +755,9 @@ endm
 
 ; initialize the cursor OAM and place it at an arbitrary place
 macro ResetCursor
-	ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_OFFSET_Y
+	ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_Y_OFS
 	ld [HRAM_CURSOR_OAM + OAMA_Y], a
-	ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_OFFSET_X
+	ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_X_OFS
 	ld [HRAM_CURSOR_OAM + OAMA_X], a
 	ld a, TILE_CURSOR_ON
 	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
@@ -778,7 +774,7 @@ macro ResetBoardVariables
 
 	; clear the flag coordinate used by the flag toggling mechanics
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	ld_n16_r16 HRAM_FLAG_COORDINATE, de
+	store16 HRAM_FLAG_COORDINATE, de
 endm
 
 ; initialize the board graphics
@@ -853,49 +849,49 @@ UpdateGame_NewGame:
 ; the cursor will wrap around when moved over any side of the board
 macro CheckCursorMove
 	; check dpad left
-	CheckInputPressed HRAM_INPUT, PADF_LEFT
+	TestPadInput_Pressed HRAM_INPUT, PADF_LEFT
 	jr nz, .left_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_X]
 		add a, -TILE_SIDE
-		cp a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_OFFSET_X
+		cp a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_X_OFS
 		jr nc, .no_left_wrap\@
-			ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X - 1) * TILE_SIDE + OAM_OFFSET_X
+			ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X - 1) * TILE_SIDE + OAM_X_OFS
 		.no_left_wrap\@
 		ld [HRAM_CURSOR_OAM + OAMA_X], a
 	.left_not_pressed\@
 
 	; check dpad right
-	CheckInputPressed HRAM_INPUT, PADF_RIGHT
+	TestPadInput_Pressed HRAM_INPUT, PADF_RIGHT
 	jr nz, .right_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_X]
 		add a, TILE_SIDE
-		cp a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X) * TILE_SIDE + OAM_OFFSET_X
+		cp a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X) * TILE_SIDE + OAM_X_OFS
 		jr c, .no_right_wrap\@
-			ld a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_OFFSET_X
+			ld a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_X_OFS
 		.no_right_wrap\@
 		ld [HRAM_CURSOR_OAM + OAMA_X], a
 	.right_not_pressed\@
 
 	; check dpad up
-	CheckInputPressed HRAM_INPUT, PADF_UP
+	TestPadInput_Pressed HRAM_INPUT, PADF_UP
 	jr nz, .up_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
 		add a, -TILE_SIDE
-		cp a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_OFFSET_Y
+		cp a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_Y_OFS
 		jr nc, .no_up_wrap\@
-			ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y - 1) * TILE_SIDE + OAM_OFFSET_Y
+			ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y - 1) * TILE_SIDE + OAM_Y_OFS
 		.no_up_wrap\@
 		ld [HRAM_CURSOR_OAM + OAMA_Y], a
 	.up_not_pressed\@
 
 	; check dpad down
-	CheckInputPressed HRAM_INPUT, PADF_DOWN
+	TestPadInput_Pressed HRAM_INPUT, PADF_DOWN
 	jr nz, .down_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
 		add a, TILE_SIDE
-		cp a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y) * TILE_SIDE + OAM_OFFSET_Y
+		cp a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y) * TILE_SIDE + OAM_Y_OFS
 		jr c, .no_down_wrap\@
-			ld a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_OFFSET_Y
+			ld a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_Y_OFS
 		.no_down_wrap\@
 		ld [HRAM_CURSOR_OAM + OAMA_Y], a
 	.down_not_pressed\@
@@ -905,16 +901,16 @@ endm
 ; only one action can be triggered at the same time as they change the game state
 macro CheckActions
 	; check flag action
-	CheckInputPressed HRAM_INPUT, PADF_A
+	TestPadInput_Pressed HRAM_INPUT, PADF_A
 	jr nz, .no_flag_action\@
 		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
-		ld_n16_r16 HRAM_FLAG_COORDINATE, hl
+		store16 HRAM_FLAG_COORDINATE, hl
 		SetGameStateFunc UpdateGame_Flag
 		jr .actions_check_done\@
 	.no_flag_action\@
 
 	; check uncover action
-	CheckInputPressed HRAM_INPUT, PADF_B
+	TestPadInput_Pressed HRAM_INPUT, PADF_B
 	jr nz, .no_uncover_action\@
 		InitUncoverList
 		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
@@ -939,7 +935,7 @@ UpdateGame_Play:
 
 UpdateGame_Flag:
 	; get the board state coordinate for the flag toggling
-	ld_r16_n16 de, HRAM_FLAG_COORDINATE
+	load16 de, HRAM_FLAG_COORDINATE
 
 	; return early if the coordinate is not set properly
 	ld a, d
@@ -990,7 +986,7 @@ endc
 
 	; clear the flag coordinate
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	ld_n16_r16 HRAM_FLAG_COORDINATE, de
+	store16 HRAM_FLAG_COORDINATE, de
 
 	SetGameStateFunc UpdateGame_Play
 
@@ -1181,7 +1177,7 @@ sizeof_lose_TEMP				rb 0
 
 InitGame:
 	ClearRam
-	InitInput HRAM_INPUT
+	InitPadInput HRAM_INPUT
 	LoadTilesIntoVram _VRAM8000
 	
 	InitWindow
@@ -1261,7 +1257,7 @@ InitGame:
 	ret
 
 UpdateGame:
-	ProcessInput HRAM_INPUT
+	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
 
