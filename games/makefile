@@ -5,6 +5,10 @@ default_target = minesweep_release
 source_directory = .
 build_directory = build
 
+compile_options = -Werror -Weverything -Hl -I./common
+fix_options = --pad-value 0 --validate
+launch_options = --watch
+
 debug_compile_options = -DBUILD_DEBUG
 release_compile_options = -DBUILD_RELEASE
 
@@ -17,10 +21,7 @@ minesweep_sources = \
 	game.rgbasm \
 	main.rgbasm
 
-minesweep_compile_options = -Werror -Weverything -Hl
 minesweep_link_options = --dmg --tiny --wramx
-minesweep_fix_options = --pad-value 0 --validate
-minesweep_launch_options = --watch
 
 ########################################
 
