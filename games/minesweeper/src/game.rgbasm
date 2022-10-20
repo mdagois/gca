@@ -1268,7 +1268,7 @@ export InitGame, UpdateGame
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "tiles", rom0[TILES_ROM_ADDRESS_START]
-incbin "tiles.chr"
+incbin "tiles.chr", 0, TILES_BYTE_SIZE
 rom_end:
 static_assert rom_end == TILES_ROM_ADDRESS_END, "The rom must end at ${X:TILES_ROM_ADDRESS_END}"
 
