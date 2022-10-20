@@ -6,11 +6,12 @@ source_directory = .
 build_directory = build
 
 compile_options = -Werror -Weverything -Hl -I./common
-fix_options = --pad-value 0 --validate
-launch_options = --watch
-
 debug_compile_options = -DBUILD_DEBUG
 release_compile_options = -DBUILD_RELEASE
+
+fix_options = --pad-value 0 --validate
+
+launch_options = --watch
 
 ########################################
 # minesweep
