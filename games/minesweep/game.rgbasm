@@ -1,12 +1,6 @@
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Debug
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;DEBUG_SHOW_MINES				equ 1
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Tiles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -767,7 +761,7 @@ macro InitBoardGraphics
 	ld c, BOARD_TILE_NUM_Y
 	.clear_vram_line\@
 		halt
-if !def(DEBUG_SHOW_MINES)
+if !def(SHOW_MINES)
 		; set the full line to the default brick graphics
 		ld a, TILE_BOARD_HIDDEN
 		ld b, BOARD_TILE_NUM_X
@@ -951,7 +945,7 @@ UpdateGame_Flag:
 		RequestBoardTileChange de, TILE_BOARD_FLAG
 		jr .flag_toggle_done
 	.has_flag
-if !def(DEBUG_SHOW_MINES)
+if !def(SHOW_MINES)
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
 		RequestBoardTileChange de, TILE_BOARD_HIDDEN
