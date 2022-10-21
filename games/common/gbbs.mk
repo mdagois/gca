@@ -239,10 +239,10 @@ $1_$2: $$($1_$2_binary)
 
 $$($1_$2_binary): | $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
 $$($1_$2_binary): $$($1_$2_objects) | $1_targets 
-	$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
+	@$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
 
 $$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$(@D)/
-	$(call compile_command,$1,$2,$$@,$$<)
+	@$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
 	@$(call launch_command,$1,$2,,$(true))
