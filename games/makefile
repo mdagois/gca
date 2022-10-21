@@ -13,26 +13,29 @@ fix_options = --pad-value 0 --validate
 
 launch_options = --watch
 
+cgbconv = ../bin/cgbconv
+
 ########################################
 # minesweep
 ########################################
 
-minesweep_source_sub_directory = minesweeper/src
+minesweep_source_sub_directory = minesweep
 minesweep_sources = \
 	game.rgbasm \
 	main.rgbasm
-
 minesweep_link_options = --dmg --tiny --wramx
 
-minesweep_release: $(minesweep_source_sub_directory)/tiles.chr
+####################
 
-$(minesweep_source_sub_directory)/tiles.chr: $(minesweep_source_sub_directory)/tiles.png
-	@../bin/gfxconv $<
+minesweep_targets: minesweep_resources
 
-$(minesweep_source_sub_directory)/tiles.png: $(minesweep_source_sub_directory)/../art/tiles.ase
-	@aseprite -b $< --save-as $@
+minesweep_png_list = tiles.png
+minesweep_resources_list =  $(addprefix $(minesweep_source_sub_directory)/res/,$(minesweep_png_list:.png=.chr))
+minesweep_resources: $(minesweep_resources_list)
+%.chr: %.png
+	$(cgbconv) $<
 
-.INTERMEDIATE: $(minesweep_source_sub_directory)/tiles.png
+.PHONY: minesweep_resources
 
 ########################################
 
