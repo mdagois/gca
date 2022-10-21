@@ -13,7 +13,7 @@ fix_options = --pad-value 0 --validate
 
 launch_options = --watch
 
-cgbconv = ../bin/cgbconv
+gfxconv = ../bin/gfxconv
 
 ########################################
 # minesweep
@@ -22,6 +22,7 @@ cgbconv = ../bin/cgbconv
 minesweep_source_sub_directory = minesweep
 minesweep_sources = \
 	game.rgbasm \
+	interrupts.rgbasm \
 	main.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
 
@@ -33,7 +34,7 @@ minesweep_png_list = tiles.png
 minesweep_resources_list =  $(addprefix $(minesweep_source_sub_directory)/res/,$(minesweep_png_list:.png=.chr))
 minesweep_resources: $(minesweep_resources_list)
 %.chr: %.png
-	$(cgbconv) $<
+	$(gfxconv) $<
 
 .PHONY: minesweep_resources
 
