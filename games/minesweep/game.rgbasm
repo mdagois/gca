@@ -1,108 +1,9 @@
+include "board.rgbinc"
 include "data.rgbinc"
+include "memory.rgbinc"
+include "ui.rgbinc"
 include "utils.rgbinc"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Board
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; 16x16 logical board
-BOARD_TILE_NUM_X				equ (16)
-BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
-BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
-
-; board graphics
-BOARD_TILE_OFFSET_X				equ (1)
-BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
-BOARD_BORDER_TILES_COUNT		equ (2)
-BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILES_COUNT)
-BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
-BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
-
-; 32x16 board state (same coordinates as the vram BG)
-BOARD_STATE_EXTRA_WIDTH			equ (SCRN_VX_B - BOARD_TILE_NUM_X)
-BOARD_STATE_WIDTH				equ (BOARD_TILE_NUM_X + BOARD_STATE_EXTRA_WIDTH)
-BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
-BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
-
-; constants
-BOARD_STATE_MINES_COUNT			equ (40)
-BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
-static_assert BOARD_STATE_WIDTH == SCRN_VX_B, "Board state width must be a power of two {d:BOARD_STATE_WIDTH}"
-
-MINES_COUNT_BIT_COUNT			equ (4)
-MINE_COUNT_MASK					equ ((1 << MINES_COUNT_BIT_COUNT) - 1)
-
-; board state flags
-rsreset
-BOARD_BIT_MINES_COUNT			rb MINES_COUNT_BIT_COUNT
-BOARD_BIT_FLAGGED				rb 1
-BOARD_BIT_MINE					rb 1
-BOARD_BIT_HIDDEN				rb 1
-BOARD_BITS_COUNT				rb 0
-static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
-static_assert BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; UI
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-TILES_COUNT_UI_DIGITS_COUNT		equ (3)
-TILES_COUNT_UI_X				equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
-TILES_COUNT_UI_Y				equ (OAM_Y_OFS + TILE_SIDE)
-TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; HRAM
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-rsset _HRAM
-
-; input
-HRAM_INPUT						rb sizeof_PAD_INPUT
-
-; graphics
-HRAM_CURSOR_OAM					rb sizeof_OAM_ATTRS
-HRAM_BOARD_TILE_REQUEST_ADDRESS	rw 1
-HRAM_BOARD_TILE_REQUEST_VALUE	rb 1
-HRAM_TILES_COUNT_UI_OAMS		rb (sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT)
-HRAM_WINDOW_TITLE_TILE			rb 1
-
-; game state
-HRAM_GAMESTATE_FUNC				rw 1
-HRAM_UNCOVERED_COUNT			rb 1
-HRAM_FLAG_COORDINATE			rw 1
-
-; random
-HRAM_LFSR_VALUE					rb 1
-
-HRAM_END						rb 0
-
-HRAM_USAGE equ (HRAM_END - _HRAM)
-print "HRAM usage: {d:HRAM_USAGE} bytes\n"
-static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; RAM
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-rsset _RAM
-
-; board state
-RAM_BOARD_SAFETY_TOP			rb BOARD_STATE_WIDTH + 1
-RAM_BOARD						rb BOARD_STATE_SIZE
-RAM_BOARD_SAFETY_BOTTOM			rb BOARD_STATE_WIDTH + 1
-
-; list of board coordinates to uncover
-RAM_UNCOVER_LIST_SIZE			rb 1
-RAM_UNCOVER_LIST				rw BOARD_TILES_COUNT
-
-RAM_END							rb 0
-
-RAM_USAGE equ (RAM_END - _RAM)
-print "RAM usage: {d:RAM_USAGE} bytes\n"
-print "RAM_BOARD: ${X:RAM_BOARD}\n"
-print "RAM_UNCOVER_LIST: ${X:RAM_UNCOVER_LIST}\n"
-static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
+include "window.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game state function
@@ -302,144 +203,6 @@ macro UpdateCursorGraphics
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Window
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; constants
-WINDOW_X						equ (7)
-WINDOW_HIDE_Y					equ (SCRN_Y)
-WINDOW_LINES_COUNT				equ (7)
-WINDOW_SHOW_Y					equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
-WINDOW_TITLE_ROW				equ (1)
-WINDOW_TITLE_TILES_COUNT		equ (4)
-WINDOW_TITLE_COLUMN				equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
-
-WINDOW_DESCRIPTION_MARGIN		equ (3)
-WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
-
-; init a action description line in the window
-; \1 -> action start tile
-; \2 -> action tile's count
-; \3 -> description start tile
-; \4 -> description tile's count
-macro InitWindowActionDescriptionLine
-	; left border and margin
-	ld_hli_v8 TILE_WINDOW_LEFT
-	rept WINDOW_DESCRIPTION_MARGIN
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
-
-	; action
-REPT_TILE_INDEX = 0
-	rept \2
-		ld_hli_v8 \1 + REPT_TILE_INDEX
-REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
-	endr
-
-	; space between action and description
-	rept WINDOW_DESCRIPTION_CONTENT - (\2 + \4)
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
-
-	; description
-REPT_TILE_INDEX = 0
-	rept \4
-		ld_hli_v8 \3 + REPT_TILE_INDEX
-REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
-	endr
-
-	; right margin and border
-	rept WINDOW_DESCRIPTION_MARGIN
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
-	ld_hli_v8 TILE_WINDOW_RIGHT
-
-	; move the next line in the window
-	ld de, SCRN_VX_B - SCRN_X_B
-	add hl, de
-endm
-
-; init the window
-; must be called when LCD is off
-macro InitWindow
-	; position the window
-	ld a, WINDOW_X
-	ld [rWX], a
-	ld a, WINDOW_HIDE_Y
-	ld [rWY], a
-
-	; init the tiles map
-	ld hl, _SCRN1
-		; top line
-		ld_hli_v8 TILE_WINDOW_TOP_LEFT
-		rept SCRN_X_B - 2
-			ld_hli_v8 TILE_WINDOW_TOP
-		endr
-		ld_hli_v8 TILE_WINDOW_TOP_RIGHT
-		ld de, SCRN_VX_B - SCRN_X_B
-		add hl, de
-
-		; title line (initialized as empty) + an additional empty line
-		ld c, 2
-		.title\@
-			ld_hli_v8 TILE_WINDOW_LEFT
-			rept SCRN_X_B - 2
-				ld_hli_v8 TILE_WINDOW_PLAIN
-			endr
-			ld_hli_v8 TILE_WINDOW_RIGHT
-			ld de, SCRN_VX_B - SCRN_X_B
-			add hl, de
-
-			dec c
-			jr nz, .title\@
-
-		; button descriptions
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_A, 1, TILE_WINDOW_FLAG_TILE, 5
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_B, 1, TILE_WINDOW_UNCOVER_TILE, 6
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_START, 3, TILE_WINDOW_NEW_GAME, 5
-
-		; bottom line
-		ld_hli_v8 TILE_WINDOW_BOTTOM_LEFT
-		rept SCRN_X_B - 2
-			ld_hli_v8 TILE_WINDOW_BOTTOM
-		endr
-		ld_hli_v8 TILE_WINDOW_BOTTOM_RIGHT
-
-	; set the default title tile
-	ld a, TILE_WINDOW_TITLE_WELCOME
-	ld [HRAM_WINDOW_TITLE_TILE], a
-endm
-
-; hide the window
-; should be called during vblank or when lcd is off
-macro HideWindow
-	ld a, WINDOW_HIDE_Y
-	ld [rWY], a
-endm
-
-; show the window and update the title tile
-; must be called during vblank or when lcd is off
-macro ShowWindow
-	ld a, WINDOW_SHOW_Y
-	ld [rWY], a
-
-	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
-	ld a, [HRAM_WINDOW_TITLE_TILE]
-	ld b, a
-	rept 4
-		ld_hli_v8 b
-		inc b
-	endr
-endm
-
-; set the window title tile to \1
-; ShowWindow must be called so that the changes take effect
-macro SetWindowTitle
-	ld a, \1
-	ld [HRAM_WINDOW_TITLE_TILE], a
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Tiles count UI
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -536,7 +299,7 @@ UpdateGame_WaitForNewGame:
 	jr nz, .start_not_pushed
 		SetGameStateFunc UpdateGame_NewGame
 		halt
-		HideWindow
+		call HideWindow
 		ret
 	.start_not_pushed
 
@@ -1015,7 +778,7 @@ UpdateGame_Win:
 	
 	halt
 	UpdateCursorGraphics
-	ShowWindow
+	call ShowWindow
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1085,7 +848,7 @@ sizeof_lose_TEMP				rb 0
 	add sp, sizeof_lose_TEMP
 
 	halt
-	ShowWindow
+	call ShowWindow
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1100,7 +863,7 @@ Minesweep_Initialize::
 	InitPadInput HRAM_INPUT
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 	
-	InitWindow
+	call InitWindow
 	InitTilesCountUi
 	UpdateTilesCountGraphics
 
@@ -1167,7 +930,7 @@ Minesweep_Initialize::
 
 	; window settings
 	SetWindowTitle TILE_WINDOW_TITLE_WELCOME
-	ShowWindow
+	call ShowWindow
 
 	; turn the lcd on and set parameters
 	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
@@ -1185,4 +948,5 @@ Minesweep_Update::
 	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
+
 

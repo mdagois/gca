@@ -1,0 +1,14 @@
+include "memory.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; sanity checks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print "HRAM usage: {d:HRAM_USAGE} bytes\n"
+static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
+
+print "RAM usage: {d:RAM_USAGE} bytes\n"
+print "RAM_BOARD: ${X:RAM_BOARD}\n"
+print "RAM_UNCOVER_LIST: ${X:RAM_UNCOVER_LIST}\n"
+static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
+

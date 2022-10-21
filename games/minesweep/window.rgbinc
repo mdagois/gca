@@ -1,0 +1,14 @@
+if !def(WINDOW_RGBINC)
+WINDOW_RGBINC equ 1
+
+include "memory.rgbinc"
+
+; set the window title tile to \1
+; ShowWindow must be called so that the changes take effect
+macro SetWindowTitle
+	ld a, \1
+	ld [HRAM_WINDOW_TITLE_TILE], a
+endm
+
+endc
+
