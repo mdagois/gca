@@ -1,45 +1,5 @@
+include "data.rgbinc"
 include "utils.rgbinc"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tiles
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; tiles ids
-rsreset
-TILE_BOARD_HIDDEN				rb 1
-TILE_BOARD_MINE					rb 1
-TILE_BOARD_FLAG					rb 1
-TILE_BOARD_NUMBER_0				rb 9
-TILE_WALL_PLAIN					rb 1
-TILE_WALL_TOP_LEFT				rb 1
-TILE_WALL_TOP					rb 1
-TILE_WALL_TOP_RIGHT				rb 1
-TILE_WALL_LEFT					rb 1
-TILE_WALL_RIGHT					rb 1
-TILE_WALL_BOTTOM_LEFT			rb 1
-TILE_WALL_BOTTOM				rb 1
-TILE_WALL_BOTTOM_RIGHT			rb 1
-TILE_CURSOR_ON					rb 1
-TILE_CURSOR_OFF					rb 1
-TILE_UI_NUMBER_0				rb 10
-TILE_WINDOW_TOP_LEFT			rb 1
-TILE_WINDOW_TOP					rb 1
-TILE_WINDOW_TOP_RIGHT			rb 1
-TILE_WINDOW_LEFT				rb 1
-TILE_WINDOW_PLAIN				rb 1
-TILE_WINDOW_RIGHT				rb 1
-TILE_WINDOW_BOTTOM_LEFT			rb 1
-TILE_WINDOW_BOTTOM				rb 1
-TILE_WINDOW_BOTTOM_RIGHT		rb 1
-TILE_WINDOW_TITLE_WELCOME		rb 4
-TILE_WINDOW_TITLE_LOSE			rb 4
-TILE_WINDOW_TITLE_WIN			rb 4
-TILE_WINDOW_BUTTON_A			rb 1
-TILE_WINDOW_BUTTON_B			rb 1
-TILE_WINDOW_BUTTON_START		rb 3
-TILE_WINDOW_FLAG_TILE			rb 5
-TILE_WINDOW_UNCOVER_TILE		rb 6
-TILE_WINDOW_NEW_GAME			rb 5
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Board
@@ -742,7 +702,7 @@ macro InitBoardGraphics
 		halt
 if !def(SHOW_MINES)
 		; set the full line to the default brick graphics
-		ld a, TILE_BOARD_HIDDEN
+		ld a, TILE_BOARD_SQUARE_HIDDEN
 		ld b, BOARD_TILE_NUM_X
 		.clear_vram_location
 			ld [hli], a
@@ -766,11 +726,11 @@ else
 			; display the mine graphics if there is a mine
 			bit BOARD_BIT_MINE, a
 			jr z, .not_a_mine
-				ld a, TILE_BOARD_MINE
+				ld a, TILE_BOARD_SQUARE_MINE
 				ld [hli], a
 				jr .setup_done
 			.not_a_mine
-				ld a, TILE_BOARD_HIDDEN
+				ld a, TILE_BOARD_SQUARE_HIDDEN
 				ld [hli], a
 			.setup_done
 
@@ -921,22 +881,22 @@ UpdateGame_Flag:
 	jr nz, .has_flag
 		set BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		RequestBoardTileChange de, TILE_BOARD_FLAG
+		RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
 		jr .flag_toggle_done
 	.has_flag
 if !def(SHOW_MINES)
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		RequestBoardTileChange de, TILE_BOARD_HIDDEN
+		RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 else
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
 		bit BOARD_BIT_MINE, a
 		jr z, .no_mine
-			RequestBoardTileChange de, TILE_BOARD_MINE
+			RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
 			jr .mine_check_end
 		.no_mine
-			RequestBoardTileChange de, TILE_BOARD_HIDDEN
+			RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 		.mine_check_end
 endc
 	.flag_toggle_done
@@ -992,7 +952,7 @@ UpdateGame_Uncover:
 	; check for lose condition (a mine is uncovered)
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
-		RequestBoardTileChange hl, TILE_BOARD_MINE
+		RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 		SetGameStateFunc UpdateGame_Lose
 		jp .update_graphics
 	.no_lose
@@ -1005,7 +965,7 @@ UpdateGame_Uncover:
 	ld_r16_r8 de, a
 	push de
 	push hl
-		add a, TILE_BOARD_NUMBER_0
+		add a, TILE_BOARD_SQUARE_NUMBER_0
 		RequestBoardTileChange hl, a
 	pop hl
 	pop de
@@ -1103,11 +1063,11 @@ sizeof_lose_TEMP				rb 0
 		jr z, .not_hidden
 			bit BOARD_BIT_MINE, a
 			jr z, .no_mine
-				RequestBoardTileChange hl, TILE_BOARD_MINE
+				RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 				jr .mine_check_end
 			.no_mine
 				and a, MINE_COUNT_MASK
-				add a, TILE_BOARD_NUMBER_0
+				add a, TILE_BOARD_SQUARE_NUMBER_0
 				RequestBoardTileChange hl, a
 			.mine_check_end
 			ProcessBoardTileChangeRequest
@@ -1169,7 +1129,7 @@ Minesweep_Initialize::
 				ld_hli_v8 TILE_WALL_PLAIN
 			endr
 			ld_hli_v8 TILE_WALL_LEFT
-			ld a, TILE_BOARD_HIDDEN
+			ld a, TILE_BOARD_SQUARE_HIDDEN
 			rept BOARD_TILE_NUM_X
 				ld [hli], a
 			endr
