@@ -21,12 +21,14 @@ gfxconv = ../bin/gfxconv
 
 minesweep_source_sub_directory = minesweep
 minesweep_sources = \
+	counter.rgbasm \
+	cursor.rgbasm \
 	data.rgbasm \
 	game.rgbasm \
 	interrupts.rgbasm \
 	main.rgbasm \
 	memory.rgbasm \
-	windows.rgbasm
+	window.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
 
 ####################

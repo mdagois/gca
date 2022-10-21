@@ -1,0 +1,95 @@
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILES_COUNT_UI_X				equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
+TILES_COUNT_UI_Y				equ (OAM_Y_OFS + TILE_SIDE)
+TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; exports
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "counter", rom0
+
+; init the OAMs for the tiles count
+InitTilesCountUi::
+	; set vertical position of all OAMs
+	ld a, TILES_COUNT_UI_Y
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_Y], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_Y], a
+
+	; set horizontal position of all OAMs
+	ld a, TILES_COUNT_UI_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_X], a
+	add a, TILES_COUNT_UI_ADVANCE_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_X], a
+	add a, TILES_COUNT_UI_ADVANCE_X
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_X], a
+
+	; set the tile id to a default value for all OAMs
+	ld a, TILE_UI_NUMBER_0
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+
+	; flags are not used, so set to zero
+	xor a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_FLAGS], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_FLAGS], a
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_FLAGS], a
+
+	ret
+
+; update the UI to display the number in (a)
+Counter_SetCount::
+	; compute the hundreds into (b)
+	; (a) is also updated to remove the hundreds
+	ld b, $FF
+	.hundreds
+		inc b
+		sub a, 100
+	jr nc, .hundreds
+	add a, 100
+
+	; set up the tile id for the hundreds' OAM
+	ld c, a
+	ld a, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a	
+	ld a, c
+	
+	; compute the tens into (b)
+	; (a) is also updated to remove the tens
+	ld b, $FF
+	.tens
+		inc b
+		sub a, 10
+	jr nc, .tens
+	add a, 10
+	
+	; set up the tile id for the tens' OAM
+	ld c, a
+	ld a, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld a, c
+
+	; at that point, (a) contains the units
+	; set up the tile id for the units' OAM
+	ld b, TILE_UI_NUMBER_0
+	add a, b
+	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+
+	ret
+
+; update the tiles count graphics
+; must be used during vblank
+UpdateTilesCountGraphics::
+	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
+	ret
+

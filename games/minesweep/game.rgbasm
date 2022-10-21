@@ -1,7 +1,7 @@
 include "board.rgbinc"
+include "counter.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
-include "ui.rgbinc"
 include "utils.rgbinc"
 include "window.rgbinc"
 
@@ -178,110 +178,6 @@ macro ProcessBoardTileChangeRequest
 		xor a
 		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
 	.no_tile_operation\@
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Cursor
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; hide the cursor
-macro HideCursor
-	ld a, TILE_CURSOR_OFF
-	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
-endm
-
-; show the cursor
-macro ShowCursor
-	ld a, TILE_CURSOR_ON
-	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
-endm
-
-; update the cursor graphics
-; must be used during vblank
-macro UpdateCursorGraphics
-	CopyMemory _OAMRAM, HRAM_CURSOR_OAM, sizeof_OAM_ATTRS
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tiles count UI
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; init the OAMs for the tiles count
-macro InitTilesCountUi
-	; set vertical position of all OAMs
-	ld a, TILES_COUNT_UI_Y
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_Y], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_Y], a
-
-	; set horizontal position of all OAMs
-	ld a, TILES_COUNT_UI_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_X], a
-	add a, TILES_COUNT_UI_ADVANCE_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_X], a
-	add a, TILES_COUNT_UI_ADVANCE_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_X], a
-
-	; set the tile id to a default value for all OAMs
-	ld a, TILE_UI_NUMBER_0
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
-
-	; flags are not used, so set to zero
-	xor a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_FLAGS], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_FLAGS], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_FLAGS], a
-endm
-
-; update the UI to display the number \1
-macro SetTilesCountUi
-	ld a, \1
-
-	; compute the hundreds into (b)
-	; (a) is also updated to remove the hundreds
-	ld b, $FF
-	.hundreds\@
-		inc b
-		sub a, 100
-	jr nc, .hundreds\@
-	add a, 100
-
-	; set up the tile id for the hundreds' OAM
-	ld c, a
-	ld a, TILE_UI_NUMBER_0
-	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a	
-	ld a, c
-	
-	; compute the tens into (b)
-	; (a) is also updated to remove the tens
-	ld b, $FF
-	.tens\@
-		inc b
-		sub a, 10
-	jr nc, .tens\@
-	add a, 10
-	
-	; set up the tile id for the tens' OAM
-	ld c, a
-	ld a, TILE_UI_NUMBER_0
-	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
-	ld a, c
-
-	; at that point, (a) contains the units
-	; set up the tile id for the units' OAM
-	ld b, TILE_UI_NUMBER_0
-	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
-endm
-
-; update the tiles count graphics
-; must be used during vblank
-macro UpdateTilesCountGraphics
-	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -517,7 +413,7 @@ UpdateGame_NewGame:
 	SetGameStateFunc UpdateGame_Play
 
 	halt
-	UpdateTilesCountGraphics
+	call UpdateTilesCountGraphics
 	InitBoardGraphics
 	ret
 
@@ -602,11 +498,11 @@ macro CheckActions
 endm
 
 UpdateGame_Play:
-	ShowCursor
+	call ShowCursor
 	CheckCursorMove
 	CheckActions
 	halt
-	UpdateCursorGraphics
+	call UpdateCursorGraphics
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -691,7 +587,7 @@ macro PushAdjacentIntoUncoverList
 endm
 
 UpdateGame_Uncover:
-	HideCursor
+	call HideCursor
 
 	; pop the coordinate to uncover
 	PopFromUncoverList
@@ -762,9 +658,9 @@ UpdateGame_Uncover:
 
 	.update_graphics
 	halt
-	UpdateCursorGraphics
+	call UpdateCursorGraphics
 	ProcessBoardTileChangeRequest
-	UpdateTilesCountGraphics
+	call UpdateTilesCountGraphics
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -772,12 +668,12 @@ UpdateGame_Uncover:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateGame_Win:
-	HideCursor
+	call HideCursor
 	SetWindowTitle TILE_WINDOW_TITLE_WIN
 	SetGameStateFunc UpdateGame_WaitForNewGame
 	
 	halt
-	UpdateCursorGraphics
+	call UpdateCursorGraphics
 	call ShowWindow
 	ret
 
@@ -793,10 +689,9 @@ sizeof_lose_TEMP				rb 0
 
 	add sp, -sizeof_lose_TEMP
 
-	; hide the cursor
-	HideCursor
+	call HideCursor
 	halt
-	UpdateCursorGraphics
+	call UpdateCursorGraphics
 
 	; uncover all board remaining coordinates
 	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
@@ -864,8 +759,8 @@ Minesweep_Initialize::
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 	
 	call InitWindow
-	InitTilesCountUi
-	UpdateTilesCountGraphics
+	call InitTilesCountUi
+	call UpdateTilesCountGraphics
 
 	; init the tiles map
 	ld hl, _SCRN0

@@ -1,8 +1,8 @@
 if !def(MEMORY_RGBINC)
 MEMORY_RGBINC equ 1
 
+include "counter.rgbinc"
 include "data.rgbinc"
-include "ui.rgbinc"
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
