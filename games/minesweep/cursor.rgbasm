@@ -1,0 +1,22 @@
+include "memory.rgbinc"
+
+section "cursor", rom0
+
+; hide the cursor
+HideCursor::
+	ld a, TILE_CURSOR_OFF
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+	ret
+
+; show the cursor
+ShowCursor::
+	ld a, TILE_CURSOR_ON
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+	ret
+
+; update the cursor graphics
+; must be used during vblank
+UpdateCursorGraphics::
+	CopyMemory _OAMRAM, HRAM_CURSOR_OAM, sizeof_OAM_ATTRS
+	ret
+

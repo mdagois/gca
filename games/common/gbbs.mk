@@ -12,6 +12,9 @@
 # secondary expansion is heavily used in rule generation
 .SECONDEXPANSION:
 
+# suppress messages
+MAKEFLAGS += --silent
+
 ########################################
 # Helper functions
 ########################################
@@ -97,7 +100,7 @@ $(call assert,$(call not,$(filter $(temporary_directory),$(configurations))),'$(
 
 # directory creation rule
 %/:
-	@$(mkdir_command) $(dir $@)
+	$(mkdir_command) $(dir $@)
 
 ################################################################################
 # Build commands
@@ -142,7 +145,7 @@ define solution_specific_template
 .PHONY: all clean
 all:
 clean:
-	@$$(if $$(call not,$$(keep_rules_makefile)),@$$(rmdir_command) $$(build_directory))
+	$$(if $$(call not,$$(keep_rules_makefile)),$$(rmdir_command) $$(build_directory))
 
 
 endef
@@ -165,7 +168,7 @@ $1_targets: ;
 
 .PHONY: $1 clean_$1 $1_targets
 clean_$1:
-	@$$(rmdir_command) $$($1_build_directory)
+	$$(rmdir_command) $$($1_build_directory)
 
 $$(call assert,$$(wildcard $$($1_source_directory)),The 'source_sub_directory' for project '$1' does not exist (current value is '$$($1_source_sub_directory)'))
 
@@ -185,7 +188,7 @@ $1_binary_directory = $(build_directory)/$1
 .PHONY: $1 clean_$1
 clean_$1: $(addsuffix _$1,$(addprefix clean_,$(projects)))
 clean_$1:
-	@$$(rmdir_command) $$($1_binary_directory)
+	$$(rmdir_command) $$($1_binary_directory)
 
 
 endef
@@ -239,18 +242,18 @@ $1_$2: $$($1_$2_binary)
 
 $$($1_$2_binary): | $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
 $$($1_$2_binary): $$($1_$2_objects) | $1_targets 
-	@$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
+	$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
 
 $$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$(@D)/
-	@$(call compile_command,$1,$2,$$@,$$<)
+	$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
-	@$(call launch_command,$1,$2,,$(true))
-	@$(call launch_command,$1,$2,2,$(false))
+	$(call launch_command,$1,$2,,$(true))
+	$(call launch_command,$1,$2,2,$(false))
 
 clean_$1_$2:
-	@$$(rmdir_command) $$($1_$2_build_directory)
-	@$$(rmdir_command) $$($1_$2_binary_directory)
+	$$(rmdir_command) $$($1_$2_build_directory)
+	$$(rmdir_command) $$($1_$2_binary_directory)
 
 
 endef
@@ -264,12 +267,12 @@ rules_makefile := $(build_directory)/$(temporary_directory)/rules.mk
 
 # rule file generation
 $(rules_makefile): $(MAKEFILE_LIST) | $$(@D)/
-	@$(file >$@,$(call rule_file_header_template))
-	@$(file >>$@,$(call solution_specific_template))
-	@$(foreach project,$(projects),$(file >>$@,$(call project_specific_template,$(project))))
-	@$(foreach configuration,$(configurations),$(file >>$@,$(call configuration_specific_template,$(configuration))))
-	@$(foreach project,$(projects),$(foreach configuration,$(configurations),$(file >>$@,$(call target_variable_definitions_template,$(project),$(configuration)))))
-	@$(foreach project,$(projects),$(foreach configuration,$(configurations),$(file >>$@,$(call target_rule_definitions_template,$(project),$(configuration)))))
+	$(file >$@,$(call rule_file_header_template))
+	$(file >>$@,$(call solution_specific_template))
+	$(foreach project,$(projects),$(file >>$@,$(call project_specific_template,$(project))))
+	$(foreach configuration,$(configurations),$(file >>$@,$(call configuration_specific_template,$(configuration))))
+	$(foreach project,$(projects),$(foreach configuration,$(configurations),$(file >>$@,$(call target_variable_definitions_template,$(project),$(configuration)))))
+	$(foreach project,$(projects),$(foreach configuration,$(configurations),$(file >>$@,$(call target_rule_definitions_template,$(project),$(configuration)))))
 
 -include $(rules_makefile)
 
@@ -280,24 +283,24 @@ $(rules_makefile): $(MAKEFILE_LIST) | $$(@D)/
 # rule to display help
 .PHONY: help
 help:
-	@$(info ========== Help ==========)
-	@$(info Projects)
-	@$(foreach project,$(projects),$(info - $(project): $($(project)_description)))
-	@$(info Configurations)
-	@$(foreach configuration,$(configurations),$(info - $(configuration): $($(configuration)_description)))
-	@$(info Build targets)
-	@$(info - all: $(projects))
-	@$(foreach project,$(projects),$(info - $(project): $(addprefix $(project)_,$(configurations))))
-	@$(foreach configuration,$(configurations),$(info - $(configuration): $(addsuffix _$(configuration),$(projects))))
-	@$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - $(target)))
-	@$(info Clean targets)
-	@$(info - clean)
-	@$(foreach project,$(projects),$(info - clean_$(project)))
-	@$(foreach configuration,$(configurations),$(info - clean_$(configuration)))
-	@$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - clean_$(target)))
-	@$(info Launch targets)
-	@$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - launch_$(target)))
-	@$(info ==========================)
+	$(info ========== Help ==========)
+	$(info Projects)
+	$(foreach project,$(projects),$(info - $(project): $($(project)_description)))
+	$(info Configurations)
+	$(foreach configuration,$(configurations),$(info - $(configuration): $($(configuration)_description)))
+	$(info Build targets)
+	$(info - all: $(projects))
+	$(foreach project,$(projects),$(info - $(project): $(addprefix $(project)_,$(configurations))))
+	$(foreach configuration,$(configurations),$(info - $(configuration): $(addsuffix _$(configuration),$(projects))))
+	$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - $(target)))
+	$(info Clean targets)
+	$(info - clean)
+	$(foreach project,$(projects),$(info - clean_$(project)))
+	$(foreach configuration,$(configurations),$(info - clean_$(configuration)))
+	$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - clean_$(target)))
+	$(info Launch targets)
+	$(foreach target,$(foreach project,$(projects),$(addprefix $(project)_,$(configurations))),$(info - launch_$(target)))
+	$(info ==========================)
 
 ################################################################################
 # Debug
@@ -307,7 +310,7 @@ help:
 
 # print all variables (for debugging)
 printvars:
-	@$(foreach variable,$(sort $(.VARIABLES)),\
+	$(foreach variable,$(sort $(.VARIABLES)),\
 		$(if $(filter-out environment% default automatic,$(origin $(variable))),\
 			$(if $(filter-out %_template assert,$(variable)),$(info $(variable) = $($(variable))))\
 		)\
@@ -315,7 +318,7 @@ printvars:
 
 # print information about a single variable (for debugging)
 print-%:
-	@$(info $* = '$($*)')
-	@$(info origin = '$(origin $*)')
-	@$(info value = '$(value $*)')
+	$(info $* = '$($*)')
+	$(info origin = '$(origin $*)')
+	$(info value = '$(value $*)')
 

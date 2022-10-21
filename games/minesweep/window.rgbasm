@@ -1,7 +1,6 @@
 include "board.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
-include "ui.rgbinc"
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,6 +68,8 @@ endm
 ; exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+section "window", rom0
+
 ; init the window
 ; must be called when LCD is off
 InitWindow::
@@ -91,7 +92,7 @@ InitWindow::
 
 		; title line (initialized as empty) + an additional empty line
 		ld c, 2
-		.title\@
+		.title
 			ld_hli_v8 TILE_WINDOW_LEFT
 			rept SCRN_X_B - 2
 				ld_hli_v8 TILE_WINDOW_PLAIN
@@ -101,7 +102,7 @@ InitWindow::
 			add hl, de
 
 			dec c
-			jr nz, .title\@
+			jr nz, .title
 
 		; button descriptions
 		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_A, 1, TILE_WINDOW_FLAG_TILE, 5
