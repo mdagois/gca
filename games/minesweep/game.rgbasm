@@ -171,22 +171,6 @@ print "RAM_BOARD: ${X:RAM_BOARD}\n"
 print "RAM_UNCOVER_LIST: ${X:RAM_UNCOVER_LIST}\n"
 static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
 
-; zero clear the ram
-macro ClearRam
-	ld hl, _RAM
-	.clear_ram\@
-		xor a
-		ld [hli], a
-
-		ld a, low(RAM_END)
-		cp a, l
-		jr nz, .clear_ram\@
-
-		ld a, high(RAM_END)
-		cp a, h
-		jr nz, .clear_ram\@
-endm
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game state function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1175,8 +1159,11 @@ sizeof_lose_TEMP				rb 0
 ; Exported functions (init and update)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-InitGame:
-	ClearRam
+Minesweep_Initialize::
+	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
+	ClearMemory _HRAM, HRAM_USAGE
+	ClearMemory _RAM, RAM_USAGE
+
 	InitPadInput HRAM_INPUT
 	LoadTilesIntoVram _VRAM8000
 	
@@ -1254,21 +1241,24 @@ InitGame:
 	ld [rLCDC], a
 
 	SetGameStateFunc UpdateGame_WaitForNewGame
+
+	; enable interrupts
+	ld a, IEF_VBLANK
+	ld [rIE], a
+	ei
 	ret
 
-UpdateGame:
+Minesweep_Update::
 	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
-
-export InitGame, UpdateGame
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Tile characters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "tiles", rom0[TILES_ROM_ADDRESS_START]
-incbin "res/tiles.chr"
+incbin "res/tiles.chr", 0, TILES_BYTE_SIZE
 rom_end:
 static_assert rom_end == TILES_ROM_ADDRESS_END, "The rom must end at ${X:TILES_ROM_ADDRESS_END}"
 

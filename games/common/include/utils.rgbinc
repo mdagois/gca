@@ -9,7 +9,15 @@ include "hardware.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_SIDE		equ (8)
+TILE_SIDE						equ (8)
+
+rsset $0040
+INTERRUPT_ADDRESS_VBLANK		rb 8
+INTERRUPT_ADDRESS_LCD			rb 8
+INTERRUPT_ADDRESS_TIMER			rb 8
+INTERRUPT_ADDRESS_SERIAL		rb 8
+INTERRUPT_ADDRESS_JOYPAD		rb 8
+INTERRUPT_ADDRESS_END			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions
@@ -77,17 +85,17 @@ endm
 
 ; clear a memory region between two addresses
 ; \1 = start address
-; \2 = end address
+; \2 = size
 macro ClearMemory
-	assert \1 < \2, "Clear memory's end address must be strictly inferior to the start address"
+	assert \2 > 0, "Clear size must be superior to zero"
 	ld hl, \1
 	.clear\@
 		xor a
 		ld [hli], a
-		ld a, low(\2)
+		ld a, low((\1) + (\2))
 		cp a, l
 		jr nz, .clear\@
-		ld a, high(\2)
+		ld a, high((\1) + (\2))
 		cp a, h
 		jr nz, .clear\@
 endm
