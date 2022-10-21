@@ -1,0 +1,17 @@
+if !def(UI_RGBINC)
+UI_RGBINC equ 1
+
+include "board.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; UI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TILES_COUNT_UI_DIGITS_COUNT		equ (3)
+TILES_COUNT_UI_X				equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
+TILES_COUNT_UI_Y				equ (OAM_Y_OFS + TILE_SIDE)
+TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
+
+endc
+

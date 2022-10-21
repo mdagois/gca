@@ -24,7 +24,9 @@ minesweep_sources = \
 	data.rgbasm \
 	game.rgbasm \
 	interrupts.rgbasm \
-	main.rgbasm
+	main.rgbasm \
+	memory.rgbasm \
+	windows.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
 
 ####################

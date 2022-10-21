@@ -1,0 +1,58 @@
+if !def(MEMORY_RGBINC)
+MEMORY_RGBINC equ 1
+
+include "data.rgbinc"
+include "ui.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; HRAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _HRAM
+
+; input
+HRAM_INPUT						rb sizeof_PAD_INPUT
+
+; graphics
+HRAM_CURSOR_OAM					rb sizeof_OAM_ATTRS
+HRAM_BOARD_TILE_REQUEST_ADDRESS	rw 1
+HRAM_BOARD_TILE_REQUEST_VALUE	rb 1
+HRAM_TILES_COUNT_UI_OAMS		rb (sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT)
+HRAM_WINDOW_TITLE_TILE			rb 1
+
+; game state
+HRAM_GAMESTATE_FUNC				rw 1
+HRAM_UNCOVERED_COUNT			rb 1
+HRAM_FLAG_COORDINATE			rw 1
+
+; random
+HRAM_LFSR_VALUE					rb 1
+
+HRAM_END						rb 0
+
+HRAM_USAGE equ (HRAM_END - _HRAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; RAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+; board state
+RAM_BOARD_SAFETY_TOP			rb BOARD_STATE_WIDTH + 1
+RAM_BOARD						rb BOARD_STATE_SIZE
+RAM_BOARD_SAFETY_BOTTOM			rb BOARD_STATE_WIDTH + 1
+
+; list of board coordinates to uncover
+RAM_UNCOVER_LIST_SIZE			rb 1
+RAM_UNCOVER_LIST				rw BOARD_TILES_COUNT
+
+RAM_END							rb 0
+
+RAM_USAGE equ (RAM_END - _RAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+
