@@ -21,6 +21,7 @@ gfxconv = ../bin/gfxconv
 
 minesweep_source_sub_directory = minesweep
 minesweep_sources = \
+	data.rgbasm \
 	game.rgbasm \
 	interrupts.rgbasm \
 	main.rgbasm

@@ -41,27 +41,6 @@ TILE_WINDOW_FLAG_TILE			rb 5
 TILE_WINDOW_UNCOVER_TILE		rb 6
 TILE_WINDOW_NEW_GAME			rb 5
 
-; constants to store the tiles at the end of the rom
-TILES_COUNT						equ (128)
-BYTES_PER_TILE					equ (16)
-TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
-TILES_ROM_ADDRESS_END			equ ($8000)
-TILES_ROM_ADDRESS_START			equ (TILES_ROM_ADDRESS_END - TILES_BYTE_SIZE)
-static_assert low(TILES_ROM_ADDRESS_END) == 0, "End address lower byte must be zero"
-
-; load the tiles data from rom to vram at vram address \1
-macro LoadTilesIntoVram
-	ld de, TILES_ROM_ADDRESS_START
-	ld hl, \1
-	.load_tiles_data\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(TILES_ROM_ADDRESS_END)
-		jr nz, .load_tiles_data\@
-endm
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Board
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1159,7 +1138,7 @@ Minesweep_Initialize::
 	ClearMemory _RAM, RAM_USAGE
 
 	InitPadInput HRAM_INPUT
-	LoadTilesIntoVram _VRAM8000
+	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 	
 	InitWindow
 	InitTilesCountUi
@@ -1246,13 +1225,4 @@ Minesweep_Update::
 	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tile characters
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-section "tiles", rom0[TILES_ROM_ADDRESS_START]
-incbin "res/tiles.chr", 0, TILES_BYTE_SIZE
-rom_end:
-static_assert rom_end == TILES_ROM_ADDRESS_END, "The rom must end at ${X:TILES_ROM_ADDRESS_END}"
 
