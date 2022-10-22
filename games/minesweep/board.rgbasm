@@ -1,0 +1,55 @@
+include "board.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; exports
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "board", rom0
+
+; convert the logical coordinate in (b) into a board state coordinate
+; save the result coordinate into (hl)
+Board_ConvertLogicalToBoardStateCoordinate::
+	; reset (hl)
+	ld hl, $0000
+
+	; add the row contribution
+	ld a, b
+	and a, ~(BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	sla_r16 de
+	add hl, de
+
+	; add the column contribution
+	ld a, b
+	and a, (BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	add hl, de
+
+	ret
+
+; convert the OAM coordinate in (de) into a board state coordinate
+; save the result coordinate into (hl)
+Board_ConvertOamToBoardStateCoordinate::
+	; reset (hl)
+	ld hl, $0000
+
+	; compute the row contribution and put it into (hl)
+	ld a, e
+	add a, -(OAM_Y_OFS + BOARD_TILE_OFFSET_Y * TILE_SIDE)
+	ld_r16_r8 hl, a
+	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
+	sla_r16 hl
+	sla_r16 hl
+
+	; compute the column contribution and add to (hl)
+	ld a, d
+	add a, -(OAM_X_OFS + BOARD_TILE_OFFSET_X * TILE_SIDE)
+	; equivalent to (a / TILE_SIDE)
+	rrca
+	rrca
+	rrca
+	ld_r16_r8 de, a
+	add hl, de
+	
+	ret
+
