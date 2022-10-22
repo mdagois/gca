@@ -1,22 +1,35 @@
+include "data.rgbinc"
 include "memory.rgbinc"
 
 section "cursor", rom0
 
 ; hide the cursor
-HideCursor::
+Cursor_Hide::
 	ld a, TILE_CURSOR_OFF
 	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
 	ret
 
 ; show the cursor
-ShowCursor::
+Cursor_Show::
 	ld a, TILE_CURSOR_ON
 	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
 	ret
 
+; initialize the cursor OAM and place it at an arbitrary place
+Cursor_Reset::
+	ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_Y_OFS
+	ld [HRAM_CURSOR_OAM + OAMA_Y], a
+	ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_X_OFS
+	ld [HRAM_CURSOR_OAM + OAMA_X], a
+	ld a, TILE_CURSOR_ON
+	ld [HRAM_CURSOR_OAM + OAMA_TILEID], a
+	xor a
+	ld [HRAM_CURSOR_OAM + OAMA_FLAGS], a
+	ret
+
 ; update the cursor graphics
 ; must be used during vblank
-UpdateCursorGraphics::
+Cursor_UpdateGraphics::
 	CopyMemory _OAMRAM, HRAM_CURSOR_OAM, sizeof_OAM_ATTRS
 	ret
 
