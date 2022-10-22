@@ -1,0 +1,26 @@
+if !def(CURSOR_RGBINC)
+CURSOR_RGBINC equ 1
+
+; hide the cursor
+macro Cursor_Hide
+	call Cursor_Hide
+endm
+
+; show the cursor
+macro Cursor_Show
+	call _Cursor_Show
+endm
+
+; reset the cursor position
+macro Cursor_Reset
+	call _Cursor_Reset
+endm
+
+; update the cursor graphics
+; must be used during vblank
+macro Cursor_UpdateGraphics
+	call _Cursor_UpdateGraphics
+endm
+
+endc
+

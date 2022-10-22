@@ -1,5 +1,6 @@
 include "board.rgbinc"
 include "counter.rgbinc"
+include "cursor.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
@@ -172,7 +173,7 @@ macro ResetBoardVariables
 	; reset counters
 	ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
 	ld [HRAM_UNCOVERED_COUNT], a
-	Counter_SetCountM a
+	Counter_SetCount a
 
 	; clear the flag coordinate used by the flag toggling mechanics
 	ld de, BOARD_STATE_INVALID_COORDINATE
@@ -234,12 +235,12 @@ UpdateGame_NewGame:
 	ResetBoard
 	GenerateMines BOARD_STATE_MINES_COUNT
 	ComputeMineCounts
-	call Cursor_Reset
+	Cursor_Reset
 	ResetBoardVariables
 	SetGameStateFunc UpdateGame_Play
 
 	halt
-	call Counter_UpdateGraphics
+	Counter_UpdateGraphics
 	InitBoardGraphics
 	ret
 
@@ -324,11 +325,11 @@ macro CheckActions
 endm
 
 UpdateGame_Play:
-	call Cursor_Show
+	Cursor_Show
 	CheckCursorMove
 	CheckActions
 	halt
-	call Cursor_UpdateGraphics
+	Cursor_UpdateGraphics
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -413,7 +414,7 @@ macro PushAdjacentIntoUncoverList
 endm
 
 UpdateGame_Uncover:
-	call Cursor_Hide
+	Cursor_Hide
 
 	; pop the coordinate to uncover
 	Board_PopFromUncoverList
@@ -479,14 +480,13 @@ UpdateGame_Uncover:
 	
 	; update the counter ui
 	ld hl, HRAM_UNCOVERED_COUNT
-	ld a, [hl]
-	Counter_SetCountM a
+	Counter_SetCount [hl]
 
 	.update_graphics
 	halt
-	call Cursor_UpdateGraphics
+	Cursor_UpdateGraphics
 	Board_ProcessBoardTileChangeRequest
-	call Counter_UpdateGraphics
+	Counter_UpdateGraphics
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -494,12 +494,12 @@ UpdateGame_Uncover:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateGame_Win:
-	call Cursor_Hide
+	Cursor_Hide
 	Window_SetTitleM TILE_WINDOW_TITLE_WIN
 	SetGameStateFunc UpdateGame_WaitForNewGame
 	
 	halt
-	call Cursor_UpdateGraphics
+	Cursor_UpdateGraphics
 	call Window_Show
 	ret
 
@@ -515,9 +515,9 @@ sizeof_lose_TEMP				rb 0
 
 	add sp, -sizeof_lose_TEMP
 
-	call Cursor_Hide
+	Cursor_Hide
 	halt
-	call Cursor_UpdateGraphics
+	Cursor_UpdateGraphics
 
 	; uncover all board remaining coordinates
 	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
@@ -585,8 +585,8 @@ Minesweep_Initialize:
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 	
 	call Window_Initialize
-	call Counter_Initialize
-	call Counter_UpdateGraphics
+	Counter_Initialize
+	Counter_UpdateGraphics
 
 	; init the tiles map
 	ld hl, _SCRN0
