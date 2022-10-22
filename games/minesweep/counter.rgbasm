@@ -1,7 +1,5 @@
-include "board.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
-include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants

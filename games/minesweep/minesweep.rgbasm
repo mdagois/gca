@@ -2,7 +2,6 @@ include "board.rgbinc"
 include "counter.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
-include "utils.rgbinc"
 include "window.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -608,7 +607,7 @@ UpdateGame_Uncover:
 
 	; (a) still holds the value at the coordinate
 	; retrieve the number of mines adjacent to the board coordinate
-	and a, MINE_COUNT_MASK
+	and a, ADJACENT_MINES_COUNT_MASK
 
 	; request the tile change, but keep (hl) and (a) unchanged
 	ld_r16_r8 de, a
@@ -714,7 +713,7 @@ sizeof_lose_TEMP				rb 0
 				RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 				jr .mine_check_end
 			.no_mine
-				and a, MINE_COUNT_MASK
+				and a, ADJACENT_MINES_COUNT_MASK
 				add a, TILE_BOARD_SQUARE_NUMBER_0
 				RequestBoardTileChange hl, a
 			.mine_check_end

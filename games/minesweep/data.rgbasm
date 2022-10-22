@@ -1,16 +1,17 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Exports
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "data", rom0
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tile data
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-MAX_TILES_COUNT					equ (384)
-BYTES_PER_TILE					equ (16)
-TILE_DATA_SIZE					equ (MAX_TILES_COUNT * BYTES_PER_TILE)
 
 tile_data_start::
 incbin "res/tiles.chr"
 tile_data_end::
 
+; sanity check
+MAX_TILES_COUNT					equ (384)
+TILE_DATA_SIZE					equ (MAX_TILES_COUNT * BYTES_PER_TILE)
 static_assert tile_data_end - tile_data_start == TILE_DATA_SIZE, "The tile data size is expected to be ${X:TILE_DATA_SIZE}"
 
