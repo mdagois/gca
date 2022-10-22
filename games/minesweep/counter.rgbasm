@@ -1,3 +1,5 @@
+include "board.rgbinc"
+include "data.rgbinc"
 include "memory.rgbinc"
 include "utils.rgbinc"
 
@@ -16,7 +18,7 @@ TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
 section "counter", rom0
 
 ; init the OAMs for the tiles count
-InitTilesCountUi::
+Counter_Initialize::
 	; set vertical position of all OAMs
 	ld a, TILES_COUNT_UI_Y
 	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
@@ -89,7 +91,7 @@ Counter_SetCount::
 
 ; update the tiles count graphics
 ; must be used during vblank
-UpdateTilesCountGraphics::
+Counter_UpdateGraphics::
 	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
 	ret
 

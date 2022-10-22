@@ -1,4 +1,3 @@
-include "board.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
 include "utils.rgbinc"
@@ -72,7 +71,7 @@ section "window", rom0
 
 ; init the window
 ; must be called when LCD is off
-InitWindow::
+Window_Initialize::
 	; position the window
 	ld a, WINDOW_X
 	ld [rWX], a
@@ -124,14 +123,14 @@ InitWindow::
 
 ; hide the window
 ; should be called during vblank or when lcd is off
-HideWindow::
+Window_Hide::
 	ld a, WINDOW_HIDE_Y
 	ld [rWY], a
 	ret
 
 ; show the window and update the title tile
 ; must be called during vblank or when lcd is off
-ShowWindow::
+Window_Show::
 	ld a, WINDOW_SHOW_Y
 	ld [rWY], a
 

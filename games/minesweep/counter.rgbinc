@@ -1,12 +1,10 @@
 if !def(COUNTER_RGBINC)
 COUNTER_RGBINC equ 1
 
-include "board.rgbinc"
-include "utils.rgbinc"
-
 TILES_COUNT_UI_DIGITS_COUNT		equ (3)
 
-macro SetTilesCountUi
+; set the counter to the value of (a)
+macro Counter_SetCountM
 	ld a, \1
 	call Counter_SetCount
 endm
