@@ -15,20 +15,21 @@ section "board", rom0
 ; coordinates
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; convert the logical coordinate in (b) into a board state coordinate
+; convert the logical coordinate in (b) into a state coordinate
 ; save the result coordinate into (hl)
 _Board_ConvertLogicalToBoardStateCoordinate:
-	; reset (hl)
 	ld hl, $0000
 
 	; add the row contribution
+	; (row / BOARD_TILE_NUM_X) * 2
 	ld a, b
 	and a, ~(BOARD_TILE_NUM_X - 1)
 	ld_r16_r8 de, a
-	sla_r16 de
+	add hl, de
 	add hl, de
 
 	; add the column contribution
+	; (row % BOARD_TILE_NUM_X)
 	ld a, b
 	and a, (BOARD_TILE_NUM_X - 1)
 	ld_r16_r8 de, a
@@ -36,7 +37,7 @@ _Board_ConvertLogicalToBoardStateCoordinate:
 
 	ret
 
-; convert the OAM coordinate in (de) into a board state coordinate
+; convert the OAM coordinate in (de) into a state coordinate
 ; save the result coordinate into (hl)
 _Board_ConvertOamToBoardStateCoordinate:
 	; reset (hl)
@@ -47,8 +48,8 @@ _Board_ConvertOamToBoardStateCoordinate:
 	add a, -(OAM_Y_OFS + BOARD_TILE_OFFSET_Y * TILE_SIDE)
 	ld_r16_r8 hl, a
 	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
-	sla_r16 hl
-	sla_r16 hl
+	add hl, hl
+	add hl, hl
 
 	; compute the column contribution and add to (hl)
 	ld a, d
@@ -59,14 +60,16 @@ _Board_ConvertOamToBoardStateCoordinate:
 	rrca
 	ld_r16_r8 de, a
 	add hl, de
-	
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tile graphics change
+; tile graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; request a tile change for board state coordinate (hl) to value (a)
+; request to change the tile at state coordinate (hl) to value (a)
+; the change must be carried out during vblank, so it is only scheduled here
+; _Board_ProcessBoardTileChangeRequest must be used to do the actual change
 _Board_RequestBoardTileChange:
 	; set the tile value
 	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
@@ -78,7 +81,8 @@ _Board_RequestBoardTileChange:
 
 	ret
 
-; perform tile change if requested (high byte is non-zero)
+; perform the tile change if any is requested (high byte is non-zero)
+; must be called during vblank
 _Board_ProcessBoardTileChangeRequest:
 	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
 	ld a, h
@@ -96,15 +100,16 @@ _Board_ProcessBoardTileChangeRequest:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Uncover list
+; uncover list
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; reset the uncover list size to zero
+; reset the uncover list
 _Board_ResetUncoverList:
 	xor a
 	ld [RAM_UNCOVER_LIST_SIZE], a
 	ret
 
+; push state coordinate (bc) into the uncover list
 _Board_PushIntoUncoverList:
 	; get the board state value for the coordinate into (a)
 	ld_r16_r16 hl, bc

@@ -7,12 +7,15 @@ include "utils.rgbinc"
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; 16x16 logical board
+; logical board
+; size is 16x16, top left index is (0, 0)
+; coordinates are 1 byte long
 BOARD_TILE_NUM_X				equ (16)
 BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
 BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
 
 ; board graphics
+; used to place ui elements
 BOARD_TILE_OFFSET_X				equ (1)
 BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
 BOARD_BORDER_TILES_COUNT		equ (2)
@@ -20,18 +23,15 @@ BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILE
 BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
 BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
 
-; 32x16 board state (same coordinates as the vram background)
-BOARD_STATE_EXTRA_WIDTH			equ (SCRN_VX_B - BOARD_TILE_NUM_X)
-BOARD_STATE_WIDTH				equ (BOARD_TILE_NUM_X + BOARD_STATE_EXTRA_WIDTH)
+; board state
+; a size of 32x16 is used to make the coordinates identical to the vram background
+; coordinates are 2 bytes long
+; it does waste space, but make tiles computations easier
+BOARD_STATE_WIDTH				equ (SCRN_VX_B)
 BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
 BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
 
-; constants
-BOARD_STATE_MINES_COUNT			equ (40)
-BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
-static_assert BOARD_STATE_WIDTH == SCRN_VX_B, "Board state width must be a power of two {d:BOARD_STATE_WIDTH}"
-
-ADJACENT_MINES_COUNT_BIT_COUNT	equ (4)
+ADJACENT_MINES_COUNT_BIT_COUNT	equ (4) ; there are up to 8 adjacent mines, so 4 bits are needed
 ADJACENT_MINES_COUNT_MASK		equ ((1 << ADJACENT_MINES_COUNT_BIT_COUNT) - 1)
 
 ; board state flags
@@ -44,62 +44,68 @@ BOARD_BITS_COUNT				rb 0
 static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
 static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
 
+; miscellaneous
+BOARD_STATE_MINES_COUNT			equ (40)
+BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; coordinates
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; convert the logical coordinate \1 into a board state coordinate
+; convert the logical coordinate \1 into a state coordinate
 ; save the result coordinate into (hl)
 macro Board_ConvertLogicalToBoardStateCoordinate
 	ld b, \1
 	call _Board_ConvertLogicalToBoardStateCoordinate
 endm
 
-; convert the OAM struct \1 into a board state coordinate
+; convert the OAM struct \1 into a state coordinate
 ; save the result coordinate into (hl)
 macro Board_ConvertOamToBoardStateCoordinate
-	; get Y into (e)
+	; put OAM Y into (e)
 	ld hl, \1
 	ld e, [hl]
 	inc hl
-	; get X into (e)
+	; put OAM X into (e)
 	ld d, [hl]
 	call _Board_ConvertOamToBoardStateCoordinate
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tile graphics change
+; tile graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; request a tile change for board state coordinate \1 to value \2
+; request to change the tile at state coordinate \1 to value \2
 macro Board_RequestBoardTileChange
 	ld_r16_r16 hl, \1
 	ld a, \2
 	call _Board_RequestBoardTileChange
 endm
 
+; perform the tile change if any is requested
+; must be called during vblank
 macro Board_ProcessBoardTileChangeRequest
 	call _Board_ProcessBoardTileChangeRequest
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Uncover list
+; uncover list
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; reset the uncover list
 macro Board_ResetUncoverList
 	call _Board_ResetUncoverList
 endm
 
-macro Board_PopFromUncoverList
-	call _Board_PopFromUncoverList
+; push state coordinate \1 into the uncover list
+macro Board_PushIntoUncoverList
+	ld_r16_r16 bc, \1
+	call _Board_PushIntoUncoverList
 endm
 
-; push board state coordinate \1 into the uncover list
-macro Board_PushIntoUncoverList
-	; save the coordinate into (bc)
-	ld_r16_r16 bc, \1
-	
-	call _Board_PushIntoUncoverList
+; pop the last uncover element into (hl)
+macro Board_PopFromUncoverList
+	call _Board_PopFromUncoverList
 endm
 
 endc
