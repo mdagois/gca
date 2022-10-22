@@ -24,10 +24,10 @@ minesweep_sources = \
 	counter.rgbasm \
 	cursor.rgbasm \
 	data.rgbasm \
-	game.rgbasm \
 	interrupts.rgbasm \
 	main.rgbasm \
 	memory.rgbasm \
+	minesweep.rgbasm \
 	window.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
 
