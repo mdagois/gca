@@ -5,9 +5,9 @@ include "memory.rgbinc"
 ; exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-export Board_ConvertLogicalToBoardStateCoordinate, Board_ConvertOamToBoardStateCoordinate
-export Board_RequestBoardTileChange, Board_ProcessBoardTileChangeRequest
-export Board_ResetUncoverList, Board_PushIntoUncoverList, Board_PopFromUncoverList
+export Board_ConvertLogicalToBoardStateCoordinateI, Board_ConvertOamToBoardStateCoordinateI
+export Board_RequestBoardTileChangeI, Board_ProcessBoardTileChangeRequestI
+export Board_ResetUncoverListI, Board_PushIntoUncoverListI, Board_PopFromUncoverListI
 
 section "board", rom0
 
@@ -17,7 +17,7 @@ section "board", rom0
 
 ; convert the logical coordinate in (b) into a board state coordinate
 ; save the result coordinate into (hl)
-Board_ConvertLogicalToBoardStateCoordinate:
+Board_ConvertLogicalToBoardStateCoordinateI:
 	; reset (hl)
 	ld hl, $0000
 
@@ -38,7 +38,7 @@ Board_ConvertLogicalToBoardStateCoordinate:
 
 ; convert the OAM coordinate in (de) into a board state coordinate
 ; save the result coordinate into (hl)
-Board_ConvertOamToBoardStateCoordinate:
+Board_ConvertOamToBoardStateCoordinateI:
 	; reset (hl)
 	ld hl, $0000
 
@@ -67,7 +67,7 @@ Board_ConvertOamToBoardStateCoordinate:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; request a tile change for board state coordinate (hl) to value (a)
-Board_RequestBoardTileChange:
+Board_RequestBoardTileChangeI:
 	; set the tile value
 	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
 
@@ -79,7 +79,7 @@ Board_RequestBoardTileChange:
 	ret
 
 ; perform tile change if requested (high byte is non-zero)
-Board_ProcessBoardTileChangeRequest:
+Board_ProcessBoardTileChangeRequestI:
 	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
 	ld a, h
 	or a
@@ -100,12 +100,12 @@ Board_ProcessBoardTileChangeRequest:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; reset the uncover list size to zero
-Board_ResetUncoverList:
+Board_ResetUncoverListI:
 	xor a
 	ld [RAM_UNCOVER_LIST_SIZE], a
 	ret
 
-Board_PushIntoUncoverList:
+Board_PushIntoUncoverListI:
 	; get the board state value for the coordinate into (a)
 	ld_r16_r16 hl, bc
 	ld de, RAM_BOARD
@@ -140,7 +140,7 @@ Board_PushIntoUncoverList:
 	ret
 
 ; pop the last uncover element into (hl)
-Board_PopFromUncoverList:
+Board_PopFromUncoverListI:
 	; sanity check the list size to make sure we do not pop too much
 	ld hl, RAM_UNCOVER_LIST_SIZE
 	ld a, [hl]

@@ -86,7 +86,7 @@ macro GenerateMines
 		.lfsr_not_one\@
 
 		; add the mine flag to the coordinate
-		Board_ConvertLogicalToBoardStateCoordinateM a
+		Board_ConvertLogicalToBoardStateCoordinate a
 		ld de, RAM_BOARD
 		add hl, de
 		ld a, [hl]
@@ -116,7 +116,7 @@ sizeof_mine_compute_TEMP				rb 0
 		ld [hl], 0
 
 		; get a pointer to the board state coordinate that is one row above and one column left from our base coordinate
-		Board_ConvertLogicalToBoardStateCoordinateM a
+		Board_ConvertLogicalToBoardStateCoordinate a
 		ld de, RAM_BOARD - (BOARD_STATE_WIDTH + 1)
 		add hl, de
 
@@ -305,7 +305,7 @@ macro CheckActions
 	; check flag action
 	TestPadInput_Pressed HRAM_INPUT, PADF_A
 	jr nz, .no_flag_action\@
-		Board_ConvertOamToBoardStateCoordinateM HRAM_CURSOR_OAM
+		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
 		store16 HRAM_FLAG_COORDINATE, hl
 		SetGameStateFunc UpdateGame_Flag
 		jr .actions_check_done\@
@@ -314,9 +314,9 @@ macro CheckActions
 	; check uncover action
 	TestPadInput_Pressed HRAM_INPUT, PADF_B
 	jr nz, .no_uncover_action\@
-		call Board_ResetUncoverList
-		Board_ConvertOamToBoardStateCoordinateM HRAM_CURSOR_OAM
-		Board_PushIntoUncoverListM hl
+		Board_ResetUncoverList
+		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
+		Board_PushIntoUncoverList hl
 		SetGameStateFunc UpdateGame_Uncover
 	.no_uncover_action\@
 
@@ -366,22 +366,22 @@ UpdateGame_Flag:
 	jr nz, .has_flag
 		set BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_FLAG
+		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
 		jr .flag_toggle_done
 	.has_flag
 if !def(SHOW_MINES)
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_HIDDEN
+		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 else
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
 		bit BOARD_BIT_MINE, a
 		jr z, .no_mine
-			Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_MINE
+			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
 			jr .mine_check_end
 		.no_mine
-			Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_HIDDEN
+			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 		.mine_check_end
 endc
 	.flag_toggle_done
@@ -393,7 +393,7 @@ endc
 	SetGameStateFunc UpdateGame_Play
 
 	halt
-	call Board_ProcessBoardTileChangeRequest
+	Board_ProcessBoardTileChangeRequest
 
 	ret
 
@@ -408,7 +408,7 @@ macro PushAdjacentIntoUncoverList
 	push hl
 		ld de, \1
 		add hl, de
-		Board_PushIntoUncoverListM hl
+		Board_PushIntoUncoverList hl
 	pop hl
 endm
 
@@ -416,7 +416,7 @@ UpdateGame_Uncover:
 	call Cursor_Hide
 
 	; pop the coordinate to uncover
-	call Board_PopFromUncoverList
+	Board_PopFromUncoverList
 	; (hl) contains the board state coordinate
 	; go back to interactive gameplay if the uncover list is empty
 	ld a, high(BOARD_STATE_INVALID_COORDINATE)
@@ -437,7 +437,7 @@ UpdateGame_Uncover:
 	; check for lose condition (a mine is uncovered)
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
-		Board_RequestBoardTileChangeM hl, TILE_BOARD_SQUARE_MINE
+		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 		SetGameStateFunc UpdateGame_Lose
 		jp .update_graphics
 	.no_lose
@@ -451,7 +451,7 @@ UpdateGame_Uncover:
 	push de
 	push hl
 		add a, TILE_BOARD_SQUARE_NUMBER_0
-		Board_RequestBoardTileChangeM hl, a
+		Board_RequestBoardTileChange hl, a
 	pop hl
 	pop de
 	ld a, e
@@ -485,7 +485,7 @@ UpdateGame_Uncover:
 	.update_graphics
 	halt
 	call Cursor_UpdateGraphics
-	call Board_ProcessBoardTileChangeRequest
+	Board_ProcessBoardTileChangeRequest
 	call Counter_UpdateGraphics
 	ret
 
@@ -533,7 +533,7 @@ sizeof_lose_TEMP				rb 0
 
 		; get the value at the coordinate
 		ld a, [hl]
-		Board_ConvertLogicalToBoardStateCoordinateM a
+		Board_ConvertLogicalToBoardStateCoordinate a
 		ld de, RAM_BOARD
 		add hl, de
 		ld a, [hl]
@@ -547,14 +547,14 @@ sizeof_lose_TEMP				rb 0
 		jr z, .not_hidden
 			bit BOARD_BIT_MINE, a
 			jr z, .no_mine
-				Board_RequestBoardTileChangeM hl, TILE_BOARD_SQUARE_MINE
+				Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 				jr .mine_check_end
 			.no_mine
 				and a, ADJACENT_MINES_COUNT_MASK
 				add a, TILE_BOARD_SQUARE_NUMBER_0
-				Board_RequestBoardTileChangeM hl, a
+				Board_RequestBoardTileChange hl, a
 			.mine_check_end
-			call Board_ProcessBoardTileChangeRequest
+			Board_ProcessBoardTileChangeRequest
 		.not_hidden
 
 		; increment the logical coordinate and put it in (a)
