@@ -1,7 +1,7 @@
 include "data.rgbinc"
 include "window.rgbinc"
 
-export Window_Initialize, Window_Hide, Window_Show
+export _Window_Initialize, _Window_Hide, _Window_Show
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
@@ -70,9 +70,9 @@ endm
 
 section "window", rom0
 
-; init the window
+; initialize the window
 ; must be called when LCD is off
-Window_Initialize:
+_Window_Initialize:
 	; position the window
 	ld a, WINDOW_X
 	ld [rWX], a
@@ -124,14 +124,14 @@ Window_Initialize:
 
 ; hide the window
 ; should be called during vblank or when lcd is off
-Window_Hide:
+_Window_Hide:
 	ld a, WINDOW_HIDE_Y
 	ld [rWY], a
 	ret
 
 ; show the window and update the title tile
 ; must be called during vblank or when lcd is off
-Window_Show:
+_Window_Show:
 	ld a, WINDOW_SHOW_Y
 	ld [rWY], a
 

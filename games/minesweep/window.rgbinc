@@ -3,9 +3,27 @@ WINDOW_RGBINC equ 1
 
 include "memory.rgbinc"
 
+; initialize the window
+; must be called when LCD is off
+macro Window_Initialize
+	call _Window_Initialize
+endm
+
+; hide the window
+; should be called during vblank or when lcd is off
+macro Window_Hide
+	call _Window_Hide
+endm
+
+; show the window and update the title tile
+; must be called during vblank or when lcd is off
+macro Window_Show
+	call _Window_Show
+endm
+
 ; set the window title tile to \1
 ; ShowWindow must be called so that the changes take effect
-macro Window_SetTitleM
+macro Window_SetTitle
 	ld a, \1
 	ld [HRAM_WINDOW_TITLE_TILE], a
 endm

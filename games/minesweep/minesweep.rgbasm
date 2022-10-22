@@ -34,7 +34,7 @@ UpdateGame_WaitForNewGame:
 	jr nz, .start_not_pushed
 		SetGameStateFunc UpdateGame_NewGame
 		halt
-		call Window_Hide
+		Window_Hide
 		ret
 	.start_not_pushed
 
@@ -495,12 +495,12 @@ UpdateGame_Uncover:
 
 UpdateGame_Win:
 	Cursor_Hide
-	Window_SetTitleM TILE_WINDOW_TITLE_WIN
+	Window_SetTitle TILE_WINDOW_TITLE_WIN
 	SetGameStateFunc UpdateGame_WaitForNewGame
 	
 	halt
 	Cursor_UpdateGraphics
-	call Window_Show
+	Window_Show
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -564,12 +564,12 @@ sizeof_lose_TEMP				rb 0
 	jr nz, .uncover_hidden
 
 	; set next state and clean up
-	Window_SetTitleM TILE_WINDOW_TITLE_LOSE
+	Window_SetTitle TILE_WINDOW_TITLE_LOSE
 	SetGameStateFunc UpdateGame_WaitForNewGame
 	add sp, sizeof_lose_TEMP
 
 	halt
-	call Window_Show
+	Window_Show
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -584,7 +584,7 @@ Minesweep_Initialize:
 	InitPadInput HRAM_INPUT
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 	
-	call Window_Initialize
+	Window_Initialize
 	Counter_Initialize
 	Counter_UpdateGraphics
 
@@ -650,8 +650,8 @@ Minesweep_Initialize:
 	ld [rOBP1], a
 
 	; window settings
-	Window_SetTitleM TILE_WINDOW_TITLE_WELCOME
-	call Window_Show
+	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
+	Window_Show
 
 	; turn the lcd on and set parameters
 	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
