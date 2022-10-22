@@ -4,6 +4,8 @@ BOARD_RGBINC equ 1
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; 16x16 logical board
 BOARD_TILE_NUM_X				equ (16)
@@ -41,6 +43,27 @@ BOARD_BIT_HIDDEN				rb 1
 BOARD_BITS_COUNT				rb 0
 static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
 static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; convert the logical coordinate \1 into a board state coordinate
+; save the result coordinate into (hl)
+macro Board_ConvertLogicalToBoardStateCoordinateM
+	ld b, \1
+	call Board_ConvertLogicalToBoardStateCoordinate
+endm
+
+; convert the OAM struct \1 into a board state coordinate
+; save the result coordinate into (hl)
+macro Board_ConvertOamToBoardStateCoordinateM
+	ld hl, \1
+	ld e, [hl]
+	inc hl
+	ld d, [hl]
+	call Board_ConvertOamToBoardStateCoordinate
+endm
 
 endc
 

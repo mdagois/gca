@@ -21,58 +21,6 @@ macro CallGameStateFunc
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Coordinates
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; convert the logical coordinate \1 into a board state coordinate
-; save the result coordinate into (hl)
-macro ConvertLogicalToBoardStateCoordinate
-	; save the parameter into (b)
-	ld b, \1
-
-	; reset (hl)
-	ld hl, $0000
-
-	; add the row contribution
-	ld a, b
-	and a, ~(BOARD_TILE_NUM_X - 1)
-	ld_r16_r8 de, a
-	sla_r16 de
-	add hl, de
-
-	; add the column contribution
-	ld a, b
-	and a, (BOARD_TILE_NUM_X - 1)
-	ld_r16_r8 de, a
-	add hl, de
-endm
-
-; convert the OAM struct \1 into a board state coordinate
-; save the result coordinate into (hl)
-macro ConvertOamToBoardStateCoordinate
-	; reset (hl)
-	ld hl, $0000
-
-	; compute the row contribution and put it into (hl)
-	ld a, [\1 + OAMA_Y]
-	add a, -(OAM_Y_OFS + BOARD_TILE_OFFSET_Y * TILE_SIDE)
-	ld_r16_r8 hl, a
-	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
-	sla_r16 hl
-	sla_r16 hl
-
-	; compute the column contribution and add to (hl)
-	ld a, [\1 + OAMA_X]
-	add a, -(OAM_X_OFS + BOARD_TILE_OFFSET_X * TILE_SIDE)
-	; equivalent to (a / TILE_SIDE)
-	rrca
-	rrca
-	rrca
-	ld_r16_r8 de, a
-	add hl, de
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Uncover list
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -249,7 +197,7 @@ macro GenerateMines
 		.lfsr_not_one\@
 
 		; add the mine flag to the coordinate
-		ConvertLogicalToBoardStateCoordinate a
+		Board_ConvertLogicalToBoardStateCoordinateM a
 		ld de, RAM_BOARD
 		add hl, de
 		ld a, [hl]
@@ -279,7 +227,7 @@ sizeof_mine_compute_TEMP				rb 0
 		ld [hl], 0
 
 		; get a pointer to the board state coordinate that is one row above and one column left from our base coordinate
-		ConvertLogicalToBoardStateCoordinate a
+		Board_ConvertLogicalToBoardStateCoordinateM a
 		ld de, RAM_BOARD - (BOARD_STATE_WIDTH + 1)
 		add hl, de
 
@@ -468,7 +416,7 @@ macro CheckActions
 	; check flag action
 	TestPadInput_Pressed HRAM_INPUT, PADF_A
 	jr nz, .no_flag_action\@
-		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
+		Board_ConvertOamToBoardStateCoordinateM HRAM_CURSOR_OAM
 		store16 HRAM_FLAG_COORDINATE, hl
 		SetGameStateFunc UpdateGame_Flag
 		jr .actions_check_done\@
@@ -478,7 +426,7 @@ macro CheckActions
 	TestPadInput_Pressed HRAM_INPUT, PADF_B
 	jr nz, .no_uncover_action\@
 		InitUncoverList
-		ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
+		Board_ConvertOamToBoardStateCoordinateM HRAM_CURSOR_OAM
 		PushIntoUncoverList hl
 		SetGameStateFunc UpdateGame_Uncover
 	.no_uncover_action\@
@@ -696,7 +644,7 @@ sizeof_lose_TEMP				rb 0
 
 		; get the value at the coordinate
 		ld a, [hl]
-		ConvertLogicalToBoardStateCoordinate a
+		Board_ConvertLogicalToBoardStateCoordinateM a
 		ld de, RAM_BOARD
 		add hl, de
 		ld a, [hl]
