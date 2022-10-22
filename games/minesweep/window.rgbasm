@@ -1,6 +1,5 @@
 include "data.rgbinc"
-include "memory.rgbinc"
-include "utils.rgbinc"
+include "window.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants

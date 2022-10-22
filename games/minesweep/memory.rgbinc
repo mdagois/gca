@@ -3,7 +3,6 @@ MEMORY_RGBINC equ 1
 
 include "board.rgbinc"
 include "counter.rgbinc"
-include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; HRAM

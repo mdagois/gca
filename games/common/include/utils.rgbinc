@@ -10,6 +10,7 @@ include "hardware.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 TILE_SIDE						equ (8)
+BYTES_PER_TILE					equ (16)
 
 rsset $0040
 INTERRUPT_ADDRESS_VBLANK		rb 8

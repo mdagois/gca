@@ -3,7 +3,7 @@ COUNTER_RGBINC equ 1
 
 TILES_COUNT_UI_DIGITS_COUNT		equ (3)
 
-; set the counter to the value of (a)
+; set the counter's value to (a)
 macro Counter_SetCountM
 	ld a, \1
 	call Counter_SetCount
