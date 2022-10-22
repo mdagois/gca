@@ -52,7 +52,7 @@ static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in t
 ; save the result coordinate into (hl)
 macro Board_ConvertLogicalToBoardStateCoordinate
 	ld b, \1
-	call Board_ConvertLogicalToBoardStateCoordinateI
+	call _Board_ConvertLogicalToBoardStateCoordinate
 endm
 
 ; convert the OAM struct \1 into a board state coordinate
@@ -64,7 +64,7 @@ macro Board_ConvertOamToBoardStateCoordinate
 	inc hl
 	; get X into (e)
 	ld d, [hl]
-	call Board_ConvertOamToBoardStateCoordinateI
+	call _Board_ConvertOamToBoardStateCoordinate
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -75,11 +75,11 @@ endm
 macro Board_RequestBoardTileChange
 	ld_r16_r16 hl, \1
 	ld a, \2
-	call Board_RequestBoardTileChangeI
+	call _Board_RequestBoardTileChange
 endm
 
 macro Board_ProcessBoardTileChangeRequest
-	call Board_ProcessBoardTileChangeRequestI
+	call _Board_ProcessBoardTileChangeRequest
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,11 +87,11 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro Board_ResetUncoverList
-	call Board_ResetUncoverListI
+	call _Board_ResetUncoverList
 endm
 
 macro Board_PopFromUncoverList
-	call Board_PopFromUncoverListI
+	call _Board_PopFromUncoverList
 endm
 
 ; push board state coordinate \1 into the uncover list
@@ -99,7 +99,7 @@ macro Board_PushIntoUncoverList
 	; save the coordinate into (bc)
 	ld_r16_r16 bc, \1
 	
-	call Board_PushIntoUncoverListI
+	call _Board_PushIntoUncoverList
 endm
 
 endc
