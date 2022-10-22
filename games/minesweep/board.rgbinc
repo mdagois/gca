@@ -45,41 +45,61 @@ static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
 static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; helpers
+; coordinates
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert the logical coordinate \1 into a board state coordinate
 ; save the result coordinate into (hl)
-macro Board_ConvertLogicalToBoardStateCoordinateM
+macro Board_ConvertLogicalToBoardStateCoordinate
 	ld b, \1
-	call Board_ConvertLogicalToBoardStateCoordinate
+	call Board_ConvertLogicalToBoardStateCoordinateI
 endm
 
 ; convert the OAM struct \1 into a board state coordinate
 ; save the result coordinate into (hl)
-macro Board_ConvertOamToBoardStateCoordinateM
+macro Board_ConvertOamToBoardStateCoordinate
 	; get Y into (e)
 	ld hl, \1
 	ld e, [hl]
 	inc hl
 	; get X into (e)
 	ld d, [hl]
-	call Board_ConvertOamToBoardStateCoordinate
+	call Board_ConvertOamToBoardStateCoordinateI
 endm
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tile graphics change
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; request a tile change for board state coordinate \1 to value \2
-macro Board_RequestBoardTileChangeM
+macro Board_RequestBoardTileChange
 	ld_r16_r16 hl, \1
 	ld a, \2
-	call Board_RequestBoardTileChange
+	call Board_RequestBoardTileChangeI
+endm
+
+macro Board_ProcessBoardTileChangeRequest
+	call Board_ProcessBoardTileChangeRequestI
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Uncover list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro Board_ResetUncoverList
+	call Board_ResetUncoverListI
+endm
+
+macro Board_PopFromUncoverList
+	call Board_PopFromUncoverListI
 endm
 
 ; push board state coordinate \1 into the uncover list
-macro Board_PushIntoUncoverListM
+macro Board_PushIntoUncoverList
 	; save the coordinate into (bc)
 	ld_r16_r16 bc, \1
 	
-	call Board_PushIntoUncoverList
+	call Board_PushIntoUncoverListI
 endm
 
 endc
