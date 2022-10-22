@@ -1,22 +1,16 @@
 include "data.rgbinc"
 include "memory.rgbinc"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; constants
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+export Counter_Initialize, Counter_SetCount, Counter_UpdateGraphics
 
 TILES_COUNT_UI_X				equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
 TILES_COUNT_UI_Y				equ (OAM_Y_OFS + TILE_SIDE)
 TILES_COUNT_UI_ADVANCE_X		equ (TILE_SIDE - 3)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; exports
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 section "counter", rom0
 
 ; init the OAMs for the tiles count
-Counter_Initialize::
+Counter_Initialize:
 	; set vertical position of all OAMs
 	ld a, TILES_COUNT_UI_Y
 	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
@@ -46,7 +40,7 @@ Counter_Initialize::
 	ret
 
 ; update the UI to display the number in (a)
-Counter_SetCount::
+Counter_SetCount:
 	; compute the hundreds into (b)
 	; (a) is also updated to remove the hundreds
 	ld b, $FF
@@ -89,7 +83,7 @@ Counter_SetCount::
 
 ; update the tiles count graphics
 ; must be used during vblank
-Counter_UpdateGraphics::
+Counter_UpdateGraphics:
 	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
 	ret
 

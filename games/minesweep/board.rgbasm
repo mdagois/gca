@@ -4,11 +4,17 @@ include "board.rgbinc"
 ; exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+export Board_ConvertLogicalToBoardStateCoordinate, Board_ConvertOamToBoardStateCoordinate
+
 section "board", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; coordinates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert the logical coordinate in (b) into a board state coordinate
 ; save the result coordinate into (hl)
-Board_ConvertLogicalToBoardStateCoordinate::
+Board_ConvertLogicalToBoardStateCoordinate:
 	; reset (hl)
 	ld hl, $0000
 
@@ -29,7 +35,7 @@ Board_ConvertLogicalToBoardStateCoordinate::
 
 ; convert the OAM coordinate in (de) into a board state coordinate
 ; save the result coordinate into (hl)
-Board_ConvertOamToBoardStateCoordinate::
+Board_ConvertOamToBoardStateCoordinate:
 	; reset (hl)
 	ld hl, $0000
 

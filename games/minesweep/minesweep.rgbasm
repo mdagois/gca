@@ -4,6 +4,8 @@ include "data.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
+export Minesweep_Initialize, Minesweep_Update
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game state function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -687,7 +689,7 @@ sizeof_lose_TEMP				rb 0
 ; Exported functions (init and update)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-Minesweep_Initialize::
+Minesweep_Initialize:
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
@@ -776,7 +778,7 @@ Minesweep_Initialize::
 	ei
 	ret
 
-Minesweep_Update::
+Minesweep_Update:
 	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
