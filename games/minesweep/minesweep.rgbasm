@@ -99,39 +99,6 @@ macro PopFromUncoverList
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Tile change
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; request a tile change for board state coordinate \1 to value \2
-macro RequestBoardTileChange
-	; set the tile value
-	ld a, \2
-	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
-
-	; set the tile address
-	ld_r16_r16 hl, \1
-	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
-	add hl, de
-	store16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
-endm
-
-; perform tile change if requested (high byte is non-zero)
-macro ProcessBoardTileChangeRequest
-	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
-	ld a, h
-	or a
-	jr z, .no_tile_operation\@
-		; set the vram value
-		ld a, [HRAM_BOARD_TILE_REQUEST_VALUE]
-		ld [hl], a
-
-		; reset tile change by zero clearing the high byte
-		xor a
-		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
-	.no_tile_operation\@
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Rom
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -479,22 +446,22 @@ UpdateGame_Flag:
 	jr nz, .has_flag
 		set BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
+		Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_FLAG
 		jr .flag_toggle_done
 	.has_flag
 if !def(SHOW_MINES)
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
-		RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+		Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_HIDDEN
 else
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
 		bit BOARD_BIT_MINE, a
 		jr z, .no_mine
-			RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
+			Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_MINE
 			jr .mine_check_end
 		.no_mine
-			RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+			Board_RequestBoardTileChangeM de, TILE_BOARD_SQUARE_HIDDEN
 		.mine_check_end
 endc
 	.flag_toggle_done
@@ -506,7 +473,7 @@ endc
 	SetGameStateFunc UpdateGame_Play
 
 	halt
-	ProcessBoardTileChangeRequest
+	call Board_ProcessBoardTileChangeRequest
 
 	ret
 
@@ -550,7 +517,7 @@ UpdateGame_Uncover:
 	; check for lose condition (a mine is uncovered)
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
-		RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
+		Board_RequestBoardTileChangeM hl, TILE_BOARD_SQUARE_MINE
 		SetGameStateFunc UpdateGame_Lose
 		jp .update_graphics
 	.no_lose
@@ -564,7 +531,7 @@ UpdateGame_Uncover:
 	push de
 	push hl
 		add a, TILE_BOARD_SQUARE_NUMBER_0
-		RequestBoardTileChange hl, a
+		Board_RequestBoardTileChangeM hl, a
 	pop hl
 	pop de
 	ld a, e
@@ -598,7 +565,7 @@ UpdateGame_Uncover:
 	.update_graphics
 	halt
 	call Cursor_UpdateGraphics
-	ProcessBoardTileChangeRequest
+	call Board_ProcessBoardTileChangeRequest
 	call Counter_UpdateGraphics
 	ret
 
@@ -660,14 +627,14 @@ sizeof_lose_TEMP				rb 0
 		jr z, .not_hidden
 			bit BOARD_BIT_MINE, a
 			jr z, .no_mine
-				RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
+				Board_RequestBoardTileChangeM hl, TILE_BOARD_SQUARE_MINE
 				jr .mine_check_end
 			.no_mine
 				and a, ADJACENT_MINES_COUNT_MASK
 				add a, TILE_BOARD_SQUARE_NUMBER_0
-				RequestBoardTileChange hl, a
+				Board_RequestBoardTileChangeM hl, a
 			.mine_check_end
-			ProcessBoardTileChangeRequest
+			call Board_ProcessBoardTileChangeRequest
 		.not_hidden
 
 		; increment the logical coordinate and put it in (a)
