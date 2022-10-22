@@ -3,10 +3,21 @@ COUNTER_RGBINC equ 1
 
 TILES_COUNT_UI_DIGITS_COUNT		equ (3)
 
-; set the counter's value to (a)
-macro Counter_SetCountM
+; initialize the counter displaying remaining tiles with no mines
+macro Counter_Initialize
+	call _Counter_Initialize
+endm
+
+; set the counter's value to \1
+macro Counter_SetCount
 	ld a, \1
-	call Counter_SetCount
+	call _Counter_SetCount
+endm
+
+; update the tiles count graphics
+; must be used during vblank
+macro Counter_UpdateGraphics
+	call _Counter_UpdateGraphics
 endm
 
 endc

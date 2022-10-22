@@ -1,10 +1,6 @@
 include "board.rgbinc"
 include "memory.rgbinc"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; exports
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 export _Board_ConvertLogicalToBoardStateCoordinate, _Board_ConvertOamToBoardStateCoordinate
 export _Board_RequestBoardTileChange, _Board_ProcessBoardTileChangeRequest
 export _Board_ResetUncoverList, _Board_PushIntoUncoverList, _Board_PopFromUncoverList
