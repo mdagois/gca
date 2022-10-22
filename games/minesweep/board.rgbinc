@@ -31,18 +31,18 @@ BOARD_STATE_MINES_COUNT			equ (40)
 BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
 static_assert BOARD_STATE_WIDTH == SCRN_VX_B, "Board state width must be a power of two {d:BOARD_STATE_WIDTH}"
 
-MINES_COUNT_BIT_COUNT			equ (4)
-MINE_COUNT_MASK					equ ((1 << MINES_COUNT_BIT_COUNT) - 1)
+ADJACENT_MINES_COUNT_BIT_COUNT	equ (4)
+MINE_COUNT_MASK					equ ((1 << ADJACENT_MINES_COUNT_BIT_COUNT) - 1)
 
 ; board state flags
 rsreset
-BOARD_BIT_MINES_COUNT			rb MINES_COUNT_BIT_COUNT
+ADJACENT_BOARD_BIT_MINES_COUNT	rb ADJACENT_MINES_COUNT_BIT_COUNT
 BOARD_BIT_FLAGGED				rb 1
 BOARD_BIT_MINE					rb 1
 BOARD_BIT_HIDDEN				rb 1
 BOARD_BITS_COUNT				rb 0
 static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
-static_assert BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
+static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
 
 endc
 
