@@ -74,5 +74,13 @@ macro Board_RequestBoardTileChangeM
 	call Board_RequestBoardTileChange
 endm
 
+; push board state coordinate \1 into the uncover list
+macro Board_PushIntoUncoverListM
+	; save the coordinate into (bc)
+	ld_r16_r16 bc, \1
+	
+	call Board_PushIntoUncoverList
+endm
+
 endc
 

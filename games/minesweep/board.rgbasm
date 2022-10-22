@@ -7,6 +7,7 @@ include "memory.rgbinc"
 
 export Board_ConvertLogicalToBoardStateCoordinate, Board_ConvertOamToBoardStateCoordinate
 export Board_RequestBoardTileChange, Board_ProcessBoardTileChangeRequest
+export Board_ResetUncoverList, Board_PushIntoUncoverList, Board_PopFromUncoverList
 
 section "board", rom0
 
@@ -91,6 +92,80 @@ Board_ProcessBoardTileChangeRequest:
 		xor a
 		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
 	.no_tile_operation
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Uncover list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; reset the uncover list size to zero
+Board_ResetUncoverList:
+	xor a
+	ld [RAM_UNCOVER_LIST_SIZE], a
+	ret
+
+Board_PushIntoUncoverList:
+	; get the board state value for the coordinate into (a)
+	ld_r16_r16 hl, bc
+	ld de, RAM_BOARD
+	add hl, de
+	ld a, [hl]
+
+	; check if the element was already added to the list previously
+	; if so, skip it as it has already been dealt with
+	bit BOARD_BIT_HIDDEN, a
+	jr z, .already_added_to_list
+		; clear the uncover flag as we are adding the coordinate to the list
+		res BOARD_BIT_HIDDEN, a
+		ld [hl], a
+
+		; get a pointer in (hl) to the next slot in the list
+		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, RAM_UNCOVER_LIST
+		add hl, de
+
+		; store the coordinate in the list
+		ld [hl], c
+		inc hl
+		ld [hl], b
+
+		; update the list size
+		ld hl, RAM_UNCOVER_LIST_SIZE
+		inc [hl]
+	.already_added_to_list
+
+	ret
+
+; pop the last uncover element into (hl)
+Board_PopFromUncoverList:
+	; sanity check the list size to make sure we do not pop too much
+	ld hl, RAM_UNCOVER_LIST_SIZE
+	ld a, [hl]
+	or a
+	jr z, .cannot_pop
+		; decrement list size
+		dec [hl]
+
+		; compute the index of the element
+		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, RAM_UNCOVER_LIST
+		add hl, de
+
+		; fetch the value and put it in (hl)
+		ld c, [hl]
+		inc hl
+		ld b, [hl]
+		ld_r16_r16 hl, bc
+
+		jr .pop_done
+	.cannot_pop
+		ld hl, BOARD_STATE_INVALID_COORDINATE
+	.pop_done
 
 	ret
 

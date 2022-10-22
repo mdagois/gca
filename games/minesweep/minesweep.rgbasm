@@ -22,87 +22,7 @@ macro CallGameStateFunc
 	CallHL
 endm
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Uncover list
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; reset the uncover list size to zero
-macro InitUncoverList
-	xor a
-	ld [RAM_UNCOVER_LIST_SIZE], a
-endm
-
-; push board state coordinate \1 into the uncover list
-macro PushIntoUncoverList
-	; save the coordinate into (bc)
-	ld_r16_r16 bc, \1
-
-	; get the board state value for the coordinate into (a)
-	ld_r16_r16 hl, bc
-	ld de, RAM_BOARD
-	add hl, de
-	ld a, [hl]
-
-	; check if the element was already added to the list previously
-	; if so, skip it as it has already been dealt with
-	bit BOARD_BIT_HIDDEN, a
-	jr z, .already_added_to_list\@
-		; clear the uncover flag as we are adding the coordinate to the list
-		res BOARD_BIT_HIDDEN, a
-		ld [hl], a
-
-		; get a pointer in (hl) to the next slot in the list
-		ld a, [RAM_UNCOVER_LIST_SIZE]
-		ld_r16_r8 de, a
-		sla_r16 de
-		ld hl, RAM_UNCOVER_LIST
-		add hl, de
-
-		; store the coordinate in the list
-		ld [hl], c
-		inc hl
-		ld [hl], b
-
-		; update the list size
-		ld hl, RAM_UNCOVER_LIST_SIZE
-		inc [hl]
-	.already_added_to_list\@
-endm
-
-; pop the last uncover element into (hl)
-macro PopFromUncoverList
-	; sanity check the list size to make sure we do not pop too much
-	ld hl, RAM_UNCOVER_LIST_SIZE
-	ld a, [hl]
-	or a
-	jr z, .cannot_pop\@
-		; decrement list size
-		dec [hl]
-
-		; compute the index of the element
-		ld a, [RAM_UNCOVER_LIST_SIZE]
-		ld_r16_r8 de, a
-		sla_r16 de
-		ld hl, RAM_UNCOVER_LIST
-		add hl, de
-
-		; fetch the value and put it in (hl)
-		ld c, [hl]
-		inc hl
-		ld b, [hl]
-		ld_r16_r16 hl, bc
-
-		jr .pop_done\@
-	.cannot_pop\@
-		ld hl, BOARD_STATE_INVALID_COORDINATE
-	.pop_done\@
-endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Rom
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-section "game", rom0
+section "minesweep", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; State: waiting for a new game to be started 
@@ -394,9 +314,9 @@ macro CheckActions
 	; check uncover action
 	TestPadInput_Pressed HRAM_INPUT, PADF_B
 	jr nz, .no_uncover_action\@
-		InitUncoverList
+		call Board_ResetUncoverList
 		Board_ConvertOamToBoardStateCoordinateM HRAM_CURSOR_OAM
-		PushIntoUncoverList hl
+		Board_PushIntoUncoverListM hl
 		SetGameStateFunc UpdateGame_Uncover
 	.no_uncover_action\@
 
@@ -488,7 +408,7 @@ macro PushAdjacentIntoUncoverList
 	push hl
 		ld de, \1
 		add hl, de
-		PushIntoUncoverList hl
+		Board_PushIntoUncoverListM hl
 	pop hl
 endm
 
@@ -496,7 +416,7 @@ UpdateGame_Uncover:
 	call Cursor_Hide
 
 	; pop the coordinate to uncover
-	PopFromUncoverList
+	call Board_PopFromUncoverList
 	; (hl) contains the board state coordinate
 	; go back to interactive gameplay if the uncover list is empty
 	ld a, high(BOARD_STATE_INVALID_COORDINATE)
