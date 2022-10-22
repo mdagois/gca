@@ -1,10 +1,12 @@
 include "board.rgbinc"
+include "memory.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 export Board_ConvertLogicalToBoardStateCoordinate, Board_ConvertOamToBoardStateCoordinate
+export Board_RequestBoardTileChange, Board_ProcessBoardTileChangeRequest
 
 section "board", rom0
 
@@ -57,5 +59,38 @@ Board_ConvertOamToBoardStateCoordinate:
 	ld_r16_r8 de, a
 	add hl, de
 	
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Tile graphics change
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; request a tile change for board state coordinate (hl) to value (a)
+Board_RequestBoardTileChange:
+	; set the tile value
+	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
+
+	; set the tile address
+	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
+	add hl, de
+	store16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
+
+	ret
+
+; perform tile change if requested (high byte is non-zero)
+Board_ProcessBoardTileChangeRequest:
+	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
+	ld a, h
+	or a
+	jr z, .no_tile_operation
+		; set the vram value
+		ld a, [HRAM_BOARD_TILE_REQUEST_VALUE]
+		ld [hl], a
+
+		; reset tile change by zero clearing the high byte
+		xor a
+		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
+	.no_tile_operation
+
 	ret
 

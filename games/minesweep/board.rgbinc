@@ -58,11 +58,20 @@ endm
 ; convert the OAM struct \1 into a board state coordinate
 ; save the result coordinate into (hl)
 macro Board_ConvertOamToBoardStateCoordinateM
+	; get Y into (e)
 	ld hl, \1
 	ld e, [hl]
 	inc hl
+	; get X into (e)
 	ld d, [hl]
 	call Board_ConvertOamToBoardStateCoordinate
+endm
+
+; request a tile change for board state coordinate \1 to value \2
+macro Board_RequestBoardTileChangeM
+	ld_r16_r16 hl, \1
+	ld a, \2
+	call Board_RequestBoardTileChange
 endm
 
 endc
