@@ -7,8 +7,6 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
-export Initialize, Update
-
 section "minesweep", rom0
 
 Initialize:
