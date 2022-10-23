@@ -37,7 +37,7 @@ Initialize:
 	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
 	Window_Show
 
-	SetGameStateFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
+	GameState_SetFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
 
 	; interrupts
 	ld a, IEF_VBLANK
@@ -51,6 +51,6 @@ Initialize:
 
 Update:
 	PadInput_Update HRAM_INPUT
-	CallGameStateFunc
+	GameState_CallFunc
 	ret
 
