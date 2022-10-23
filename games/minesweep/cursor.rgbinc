@@ -3,7 +3,7 @@ CURSOR_RGBINC equ 1
 
 ; hide the cursor
 macro Cursor_Hide
-	call Cursor_Hide
+	call _Cursor_Hide
 endm
 
 ; show the cursor
