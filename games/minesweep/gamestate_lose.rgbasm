@@ -4,11 +4,11 @@ include "data.rgbinc"
 include "gamestate.rgbinc"
 include "window.rgbinc"
 
-export UpdateGame_Lose, Minesweep_Update
+export GameStateFunc_Lose
 
 section "gamestate_lose", rom0
 
-UpdateGame_Lose:
+GameStateFunc_Lose:
 ; temp variables on the stack
 rsreset
 lose_LOGICAL_BOARD_COORDINATE	rb 1
@@ -66,7 +66,7 @@ sizeof_lose_TEMP				rb 0
 
 	; set next state and clean up
 	Window_SetTitle TILE_WINDOW_TITLE_LOSE
-	SetGameStateFunc UpdateGame_WaitForNewGame
+	SetGameStateFunc GameStateFunc_WaitForNewGame
 	add sp, sizeof_lose_TEMP
 
 	halt

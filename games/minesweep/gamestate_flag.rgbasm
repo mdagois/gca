@@ -2,11 +2,11 @@ include "board.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 
-export UpdateGame_Flag
+export GameStateFunc_Flag
 
 section "gamestate_flag", rom0
 
-UpdateGame_Flag:
+GameStateFunc_Flag:
 	; get the board state coordinate for the flag toggling
 	load16 de, HRAM_FLAG_COORDINATE
 
@@ -14,7 +14,7 @@ UpdateGame_Flag:
 	ld a, d
 	cp a, high(BOARD_STATE_INVALID_COORDINATE)
 	jr nz, .coordinate_is_valid
-		SetGameStateFunc UpdateGame_Play
+		SetGameStateFunc GameStateFunc_Play
 		halt
 		ret
 	.coordinate_is_valid
@@ -27,7 +27,7 @@ UpdateGame_Flag:
 	; return early if the coordinate is not hidden
 	bit BOARD_BIT_HIDDEN, a
 	jr nz, .coordinate_is_hidden
-		SetGameStateFunc UpdateGame_Play
+		SetGameStateFunc GameStateFunc_Play
 		halt
 		ret
 	.coordinate_is_hidden
@@ -61,7 +61,7 @@ endc
 	ld de, BOARD_STATE_INVALID_COORDINATE
 	store16 HRAM_FLAG_COORDINATE, de
 
-	SetGameStateFunc UpdateGame_Play
+	SetGameStateFunc GameStateFunc_Play
 
 	halt
 	Board_ProcessBoardTileChangeRequest

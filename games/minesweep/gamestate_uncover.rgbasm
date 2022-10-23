@@ -4,7 +4,7 @@ include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 
-export UpdateGame_Uncover
+export GameStateFunc_Uncover
 
 section "gamestate_uncover", rom0
 
@@ -19,7 +19,7 @@ macro PushAdjacentIntoUncoverList
 	pop hl
 endm
 
-UpdateGame_Uncover:
+GameStateFunc_Uncover:
 	Cursor_Hide
 
 	; pop the coordinate to uncover
@@ -29,7 +29,7 @@ UpdateGame_Uncover:
 	ld a, high(BOARD_STATE_INVALID_COORDINATE)
 	cp a, h
 	jr nz, .list_not_empty
-		SetGameStateFunc UpdateGame_Play
+		SetGameStateFunc GameStateFunc_Play
 		halt
 		ret
 	.list_not_empty
@@ -45,7 +45,7 @@ UpdateGame_Uncover:
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
 		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
-		SetGameStateFunc UpdateGame_Lose
+		SetGameStateFunc GameStateFunc_Lose
 		jp .update_graphics
 	.no_lose
 
@@ -81,7 +81,7 @@ UpdateGame_Uncover:
 	ld hl, HRAM_UNCOVERED_COUNT
 	dec [hl]
 	jr nz, .no_win
-		SetGameStateFunc UpdateGame_Win
+		SetGameStateFunc GameStateFunc_Win
 	.no_win
 	
 	; update the counter ui

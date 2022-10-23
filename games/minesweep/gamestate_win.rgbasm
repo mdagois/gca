@@ -3,14 +3,14 @@ include "data.rgbinc"
 include "gamestate.rgbinc"
 include "window.rgbinc"
 
-export UpdateGame_Win
+export GameStateFunc_Win
 
 section "gamestate_win", rom0
 
-UpdateGame_Win:
+GameStateFunc_Win:
 	Cursor_Hide
 	Window_SetTitle TILE_WINDOW_TITLE_WIN
-	SetGameStateFunc UpdateGame_WaitForNewGame
+	SetGameStateFunc GameStateFunc_Win
 	
 	halt
 	Cursor_UpdateGraphics

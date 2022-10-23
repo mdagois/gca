@@ -91,7 +91,7 @@ Minesweep_Initialize:
 	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
 	ld [rLCDC], a
 
-	SetGameStateFunc UpdateGame_WaitForNewGame
+	SetGameStateFunc GameStateFunc_WaitForNewGame
 
 	; enable interrupts
 	ld a, IEF_VBLANK
