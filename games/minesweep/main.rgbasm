@@ -26,8 +26,8 @@ section "main", rom0
 main:
 	debug "[INFO] program started"
 	DisableLCD
-	call Minesweep_Initialize
+	call Initialize
 	.game_loop
-		call Minesweep_Update
+		call Update
 		jr .game_loop
 
