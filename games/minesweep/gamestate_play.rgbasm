@@ -10,7 +10,7 @@ section "gamestate_play", rom0
 ; the cursor will wrap around when moved over any side of the board
 macro CheckCursorMove
 	; check dpad left
-	TestPadInput_Pressed HRAM_INPUT, PADF_LEFT
+	PadInput_TestPressed HRAM_INPUT, PADF_LEFT
 	jr nz, .left_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_X]
 		add a, -TILE_SIDE
@@ -22,7 +22,7 @@ macro CheckCursorMove
 	.left_not_pressed\@
 
 	; check dpad right
-	TestPadInput_Pressed HRAM_INPUT, PADF_RIGHT
+	PadInput_TestPressed HRAM_INPUT, PADF_RIGHT
 	jr nz, .right_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_X]
 		add a, TILE_SIDE
@@ -34,7 +34,7 @@ macro CheckCursorMove
 	.right_not_pressed\@
 
 	; check dpad up
-	TestPadInput_Pressed HRAM_INPUT, PADF_UP
+	PadInput_TestPressed HRAM_INPUT, PADF_UP
 	jr nz, .up_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
 		add a, -TILE_SIDE
@@ -46,7 +46,7 @@ macro CheckCursorMove
 	.up_not_pressed\@
 
 	; check dpad down
-	TestPadInput_Pressed HRAM_INPUT, PADF_DOWN
+	PadInput_TestPressed HRAM_INPUT, PADF_DOWN
 	jr nz, .down_not_pressed\@
 		ld a, [HRAM_CURSOR_OAM + OAMA_Y]
 		add a, TILE_SIDE
@@ -62,7 +62,7 @@ endm
 ; only one action can be triggered at the same time as they change the game state
 macro CheckActions
 	; check flag action
-	TestPadInput_Pressed HRAM_INPUT, PADF_A
+	PadInput_TestPressed HRAM_INPUT, PADF_A
 	jr nz, .no_flag_action\@
 		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
 		store16 HRAM_FLAG_COORDINATE, hl
@@ -71,7 +71,7 @@ macro CheckActions
 	.no_flag_action\@
 
 	; check uncover action
-	TestPadInput_Pressed HRAM_INPUT, PADF_B
+	PadInput_TestPressed HRAM_INPUT, PADF_B
 	jr nz, .no_uncover_action\@
 		Board_ResetUncoverList
 		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM

@@ -6,7 +6,7 @@ export GameStateFunc_WaitForNewGame
 section "gamestate_waitfornewgame", rom0
 
 GameStateFunc_WaitForNewGame:
-	TestPadInput_Released HRAM_INPUT, PADF_START
+	PadInput_TestReleased HRAM_INPUT, PADF_START
 	jr nz, .start_not_pushed
 		SetGameStateFunc GAMESTATE_FUNC_NEW_GAME
 		halt
