@@ -33,7 +33,6 @@ minesweep_sources = \
 	gamestate_waitfornewgame.rgbasm \
 	gamestate_win.rgbasm \
 	interrupts.rgbasm \
-	main.rgbasm \
 	memory.rgbasm \
 	minesweep.rgbasm \
 	window.rgbasm

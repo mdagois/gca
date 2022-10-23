@@ -3,6 +3,7 @@ include "counter.rgbinc"
 include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "main.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
