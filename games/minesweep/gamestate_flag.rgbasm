@@ -2,13 +2,13 @@ include "board.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 
-export GameStateFunc_Flag
+export GameStateFunc_PutFlag
 
 section "gamestate_flag", rom0
 
-GameStateFunc_Flag:
-	; get the board state coordinate for the flag toggling
-	load16 de, HRAM_FLAG_COORDINATE
+GameStateFunc_PutFlag:
+	; get the state coordinate for the flag toggling
+	load16 de, vFlagCoordinate
 
 	; return early if the coordinate is not set properly
 	ld a, d
@@ -59,7 +59,7 @@ endc
 
 	; clear the flag coordinate
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16 HRAM_FLAG_COORDINATE, de
+	store16 vFlagCoordinate, de
 
 	GameState_SetFunc GAMESTATE_FUNC_PLAY
 

@@ -39,7 +39,7 @@ sizeof_lose_TEMP				rb 0
 		add hl, de
 		ld a, [hl]
 
-		; get the board state coordinate back into (hl) for tile change requests
+		; get the state coordinate back into (hl) for tile change requests
 		ld de, -RAM_BOARD & $FFFF
 		add hl, de
 

@@ -79,7 +79,7 @@ sizeof_mine_compute_TEMP				rb 0
 		ld hl, sp + mine_compute_COUNT
 		ld [hl], 0
 
-		; get a pointer to the board state coordinate that is one row above and one column left from our base coordinate
+		; get a pointer to the state coordinate that is one row above and one column left from our base coordinate
 		Board_ConvertLogicalToBoardStateCoordinate a
 		ld de, RAM_BOARD - (BOARD_STATE_WIDTH + 1)
 		add hl, de
@@ -135,12 +135,12 @@ endm
 macro ResetBoardVariables
 	; reset counters
 	ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
-	ld [HRAM_UNCOVERED_COUNT], a
+	ld [vUncoveredCount], a
 	Counter_SetCount a
 
 	; clear the flag coordinate used by the flag toggling mechanics
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16 HRAM_FLAG_COORDINATE, de
+	store16 vFlagCoordinate, de
 endm
 
 ; initialize the board graphics

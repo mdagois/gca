@@ -24,7 +24,7 @@ GameStateFunc_Uncover:
 
 	; pop the coordinate to uncover
 	Board_PopFromUncoverList
-	; (hl) contains the board state coordinate
+	; (hl) contains the state coordinate
 	; go back to interactive gameplay if the uncover list is empty
 	ld a, high(BOARD_STATE_INVALID_COORDINATE)
 	cp a, h
@@ -78,14 +78,14 @@ GameStateFunc_Uncover:
 	.sum_not_zero
 
 	; decrement the uncover counter and check for the win condition
-	ld hl, HRAM_UNCOVERED_COUNT
+	ld hl, vUncoveredCount
 	dec [hl]
 	jr nz, .no_win
 		GameState_SetFunc GAMESTATE_FUNC_WIN
 	.no_win
 	
-	; update the counter ui
-	ld hl, HRAM_UNCOVERED_COUNT
+	; update the counter
+	ld hl, vUncoveredCount
 	Counter_SetCount [hl]
 
 	.update_graphics
