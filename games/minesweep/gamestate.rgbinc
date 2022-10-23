@@ -19,12 +19,12 @@ GAMESTATE_FUNCS_COUNT				rb 0
 
 ; set the state function id
 macro GameState_SetFunc
-	copy [HRAM_GAMESTATE_FUNC_ID], \1
+	copy [vGameStateFuncId], \1
 endm
 
 ; call the current state function
 macro GameState_CallFunc
-	CallFunctionFromTable _game_state_functions, [HRAM_GAMESTATE_FUNC_ID]
+	CallFunctionFromTable _game_state_functions, [vGameStateFuncId]
 endm
 
 endc

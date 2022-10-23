@@ -21,9 +21,9 @@ vBoardTileRequestValue			rb 1
 vWindowTitleTile				rb 1
 
 ; game state
-HRAM_GAMESTATE_FUNC_ID			rb 1
-HRAM_UNCOVERED_COUNT			rb 1
-HRAM_FLAG_COORDINATE			rw 1
+vGameStateFuncId				rb 1
+vUncoveredCount					rb 1
+vFlagCoordinate					rw 1
 
 ; random
 vLfsrValue						rb 1

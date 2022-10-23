@@ -8,7 +8,7 @@ _game_state_functions:
 dw GameStateFunc_WaitForNewGame
 dw GameStateFunc_NewGame
 dw GameStateFunc_Play
-dw GameStateFunc_Flag
+dw GameStateFunc_PutFlag
 dw GameStateFunc_Uncover
 dw GameStateFunc_Lose
 dw GameStateFunc_Win

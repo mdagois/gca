@@ -7,6 +7,7 @@ include "memory.rgbinc"
 include "window.rgbinc"
 
 ; TODO rename all WRAM and HRAM variables
+; TODO comment each game state
 ; TODO add delay after lose
 ; TODO add simple sounds
 
