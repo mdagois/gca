@@ -1,0 +1,19 @@
+include "cursor.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+include "window.rgbinc"
+
+export UpdateGame_Win
+
+section "gamestate_win", rom0
+
+UpdateGame_Win:
+	Cursor_Hide
+	Window_SetTitle TILE_WINDOW_TITLE_WIN
+	SetGameStateFunc UpdateGame_WaitForNewGame
+	
+	halt
+	Cursor_UpdateGraphics
+	Window_Show
+	ret
+

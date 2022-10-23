@@ -1,0 +1,19 @@
+include "gamestate.rgbinc"
+include "window.rgbinc"
+
+export UpdateGame_WaitForNewGame
+
+section "gamestate_waitfornewgame", rom0
+
+UpdateGame_WaitForNewGame:
+	TestPadInput_Released HRAM_INPUT, PADF_START
+	jr nz, .start_not_pushed
+		SetGameStateFunc UpdateGame_NewGame
+		halt
+		Window_Hide
+		ret
+	.start_not_pushed
+
+	halt
+	ret
+

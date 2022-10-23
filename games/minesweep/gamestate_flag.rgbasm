@@ -1,0 +1,70 @@
+include "board.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+
+export UpdateGame_Flag
+
+section "gamestate_flag", rom0
+
+UpdateGame_Flag:
+	; get the board state coordinate for the flag toggling
+	load16 de, HRAM_FLAG_COORDINATE
+
+	; return early if the coordinate is not set properly
+	ld a, d
+	cp a, high(BOARD_STATE_INVALID_COORDINATE)
+	jr nz, .coordinate_is_valid
+		SetGameStateFunc UpdateGame_Play
+		halt
+		ret
+	.coordinate_is_valid
+
+	; retrieve the board value into (a)
+	ld hl, RAM_BOARD
+	add hl, de
+	ld a, [hl]
+
+	; return early if the coordinate is not hidden
+	bit BOARD_BIT_HIDDEN, a
+	jr nz, .coordinate_is_hidden
+		SetGameStateFunc UpdateGame_Play
+		halt
+		ret
+	.coordinate_is_hidden
+
+	; toggle the flag based on the value at the coordinate
+	bit BOARD_BIT_FLAGGED, a
+	jr nz, .has_flag
+		set BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
+		jr .flag_toggle_done
+	.has_flag
+if !def(SHOW_MINES)
+		res BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+else
+		res BOARD_BIT_FLAGGED, a
+		ld [hl], a
+		bit BOARD_BIT_MINE, a
+		jr z, .no_mine
+			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
+			jr .mine_check_end
+		.no_mine
+			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+		.mine_check_end
+endc
+	.flag_toggle_done
+
+	; clear the flag coordinate
+	ld de, BOARD_STATE_INVALID_COORDINATE
+	store16 HRAM_FLAG_COORDINATE, de
+
+	SetGameStateFunc UpdateGame_Play
+
+	halt
+	Board_ProcessBoardTileChangeRequest
+
+	ret
+
