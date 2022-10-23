@@ -1,14 +1,14 @@
 include "gamestate.rgbinc"
 include "window.rgbinc"
 
-export UpdateGame_WaitForNewGame
+export GameStateFunc_WaitForNewGame
 
 section "gamestate_waitfornewgame", rom0
 
-UpdateGame_WaitForNewGame:
+GameStateFunc_WaitForNewGame:
 	TestPadInput_Released HRAM_INPUT, PADF_START
 	jr nz, .start_not_pushed
-		SetGameStateFunc UpdateGame_NewGame
+		SetGameStateFunc GameStateFunc_NewGame
 		halt
 		Window_Hide
 		ret

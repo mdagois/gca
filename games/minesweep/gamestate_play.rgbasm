@@ -2,7 +2,7 @@ include "board.rgbinc"
 include "cursor.rgbinc"
 include "gamestate.rgbinc"
 
-export UpdateGame_Play
+export GameStateFunc_Play
 
 section "gamestate_play", rom0
 
@@ -66,7 +66,7 @@ macro CheckActions
 	jr nz, .no_flag_action\@
 		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
 		store16 HRAM_FLAG_COORDINATE, hl
-		SetGameStateFunc UpdateGame_Flag
+		SetGameStateFunc GameStateFunc_Flag
 		jr .actions_check_done\@
 	.no_flag_action\@
 
@@ -76,13 +76,13 @@ macro CheckActions
 		Board_ResetUncoverList
 		Board_ConvertOamToBoardStateCoordinate HRAM_CURSOR_OAM
 		Board_PushIntoUncoverList hl
-		SetGameStateFunc UpdateGame_Uncover
+		SetGameStateFunc GameStateFunc_Uncover
 	.no_uncover_action\@
 
 	.actions_check_done\@
 endm
 
-UpdateGame_Play:
+GameStateFunc_Play:
 	Cursor_Show
 	CheckCursorMove
 	CheckActions

@@ -4,7 +4,7 @@ include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 
-export UpdateGame_NewGame
+export GameStateFunc_NewGame
 
 section "gamestate_newgame", rom0
 
@@ -194,13 +194,13 @@ endc
 		jr nz, .clear_vram_line\@
 endm
 
-UpdateGame_NewGame:
+GameStateFunc_NewGame:
 	ResetBoard
 	GenerateMines BOARD_STATE_MINES_COUNT
 	ComputeMineCounts
 	Cursor_Reset
 	ResetBoardVariables
-	SetGameStateFunc UpdateGame_Play
+	SetGameStateFunc GameStateFunc_Play
 
 	halt
 	Counter_UpdateGraphics
