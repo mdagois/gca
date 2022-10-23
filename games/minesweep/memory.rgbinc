@@ -44,8 +44,8 @@ RAM_BOARD						rb BOARD_STATE_SIZE
 RAM_BOARD_SAFETY_BOTTOM			rb BOARD_STATE_WIDTH + 1
 
 ; list of board coordinates to uncover
-RAM_UNCOVER_LIST_SIZE			rb 1
-RAM_UNCOVER_LIST				rw BOARD_TILES_COUNT
+vUncoverListSize				rb 1
+vUncoverList					rw BOARD_TILES_COUNT
 
 RAM_END							rb 0
 

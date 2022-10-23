@@ -160,7 +160,7 @@ _Board_ProcessBoardTileChangeRequest:
 ; reset the uncover list
 _Board_ResetUncoverList:
 	xor a
-	ld [RAM_UNCOVER_LIST_SIZE], a
+	ld [vUncoverListSize], a
 	ret
 
 ; push state coordinate (bc) into the uncover list
@@ -180,10 +180,10 @@ _Board_PushIntoUncoverList:
 		ld [hl], a
 
 		; get a pointer in (hl) to the next slot in the list
-		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld a, [vUncoverListSize]
 		ld_r16_r8 de, a
 		sla_r16 de
-		ld hl, RAM_UNCOVER_LIST
+		ld hl, vUncoverList
 		add hl, de
 
 		; store the coordinate in the list
@@ -192,7 +192,7 @@ _Board_PushIntoUncoverList:
 		ld [hl], b
 
 		; update the list size
-		ld hl, RAM_UNCOVER_LIST_SIZE
+		ld hl, vUncoverListSize
 		inc [hl]
 	.already_added_to_list
 
@@ -201,7 +201,7 @@ _Board_PushIntoUncoverList:
 ; pop the last uncover element into (hl)
 _Board_PopFromUncoverList:
 	; sanity check the list size to make sure we do not pop too much
-	ld hl, RAM_UNCOVER_LIST_SIZE
+	ld hl, vUncoverListSize
 	ld a, [hl]
 	or a
 	jr z, .cannot_pop
@@ -209,10 +209,10 @@ _Board_PopFromUncoverList:
 		dec [hl]
 
 		; compute the index of the element
-		ld a, [RAM_UNCOVER_LIST_SIZE]
+		ld a, [vUncoverListSize]
 		ld_r16_r8 de, a
 		sla_r16 de
-		ld hl, RAM_UNCOVER_LIST
+		ld hl, vUncoverList
 		add hl, de
 
 		; fetch the value and put it in (hl)
