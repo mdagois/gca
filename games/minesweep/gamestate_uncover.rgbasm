@@ -35,10 +35,10 @@ GameStateFunc_Uncover:
 	.list_not_empty
 
 	; get the board state value, but make sure to keep (hl) unchanged
-	ld de, RAM_BOARD
+	ld de, vBoard
 	add hl, de
 	ld a, [hl]
-	ld de, -RAM_BOARD & $FFFF
+	ld de, -vBoard & $FFFF
 	add hl, de
 
 	; check for lose condition (a mine is uncovered)

@@ -20,7 +20,7 @@ GameStateFunc_PutFlag:
 	.coordinate_is_valid
 
 	; retrieve the board value into (a)
-	ld hl, RAM_BOARD
+	ld hl, vBoard
 	add hl, de
 	ld a, [hl]
 
