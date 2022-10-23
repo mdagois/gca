@@ -6,11 +6,11 @@ include "gamestate.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
-export Minesweep_Initialize, Minesweep_Update
+export Initialize, Update
 
 section "minesweep", rom0
 
-Minesweep_Initialize:
+Initialize:
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
@@ -99,7 +99,7 @@ Minesweep_Initialize:
 	ei
 	ret
 
-Minesweep_Update:
+Update:
 	UpdatePadInput HRAM_INPUT
 	CallGameStateFunc
 	ret
