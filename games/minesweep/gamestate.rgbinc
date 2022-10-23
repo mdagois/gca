@@ -7,16 +7,24 @@ include "memory.rgbinc"
 ; Game state function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; set \1 as the state function
+rsreset
+GAMESTATE_FUNC_WAIT_FOR_NEW_GAME	rb 1
+GAMESTATE_FUNC_NEW_GAME				rb 1
+GAMESTATE_FUNC_PLAY					rb 1
+GAMESTATE_FUNC_FLAG					rb 1
+GAMESTATE_FUNC_UNCOVER				rb 1
+GAMESTATE_FUNC_LOSE					rb 1
+GAMESTATE_FUNC_WIN					rb 1
+GAMESTATE_FUNCS_COUNT				rb 0
+
+; set the state function id
 macro SetGameStateFunc
-	ld hl, \1
-	store16 HRAM_GAMESTATE_FUNC, hl
+	copy [HRAM_GAMESTATE_FUNC_ID], \1
 endm
 
 ; call the current state function
 macro CallGameStateFunc
-	load16 hl, HRAM_GAMESTATE_FUNC
-	CallHL
+	CallFunctionFromTable _game_state_functions, [HRAM_GAMESTATE_FUNC_ID]
 endm
 
 endc

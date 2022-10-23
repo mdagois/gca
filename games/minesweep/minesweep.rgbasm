@@ -11,6 +11,7 @@ include "window.rgbinc"
 ; TODO refactor the game state func call mechanics
 ; TODO add delay after lose
 ; TODO add simple sound
+; TODO move board constants to the .rgbasm file
 
 section "minesweep", rom0
 
@@ -38,7 +39,7 @@ Initialize:
 	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
 	Window_Show
 
-	SetGameStateFunc GameStateFunc_WaitForNewGame
+	SetGameStateFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
 
 	; interrupts
 	ld a, IEF_VBLANK
