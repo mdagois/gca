@@ -9,7 +9,6 @@ include "window.rgbinc"
 ; TODO rename all WRAM and HRAM variables
 ; TODO add delay after lose
 ; TODO add simple sounds
-; TODO move board constants to the .rgbasm file
 
 section "minesweep", rom0
 
@@ -28,7 +27,7 @@ Initialize:
 
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 
-	PadInput_Initialize HRAM_INPUT
+	PadInput_Initialize vPadInput
 	Board_Initialize
 	Counter_Initialize
 	Counter_UpdateGraphics
@@ -50,7 +49,7 @@ Initialize:
 	ret
 
 Update:
-	PadInput_Update HRAM_INPUT
+	PadInput_Update vPadInput
 	GameState_CallFunc
 	ret
 

@@ -11,10 +11,10 @@ include "counter.rgbinc"
 rsset _HRAM
 
 ; input
-HRAM_INPUT						rb sizeof_PAD_INPUT
+vPadInput						rb sizeof_PAD_INPUT
 
 ; graphics
-HRAM_CURSOR_OAM					rb sizeof_OAM_ATTRS
+vCursorOam						rb sizeof_OAM_ATTRS
 HRAM_BOARD_TILE_REQUEST_ADDRESS	rw 1
 HRAM_BOARD_TILE_REQUEST_VALUE	rb 1
 HRAM_TILES_COUNT_UI_OAMS		rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
