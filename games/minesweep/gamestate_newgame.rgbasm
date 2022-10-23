@@ -11,7 +11,7 @@ section "gamestate_newgame", rom0
 ; reset the board (no mines yet)
 macro ResetBoard
 	; go over the board line by line
-	ld hl, RAM_BOARD
+	ld hl, vBoard
 	ld c, BOARD_TILE_NUM_Y
 	.clear_board\@
 		; set all the board coordinates for the line to an initial value
@@ -51,7 +51,7 @@ macro GenerateMines
 
 		; add the mine flag to the coordinate
 		Board_ConvertLogicalToBoardStateCoordinate a
-		ld de, RAM_BOARD
+		ld de, vBoard
 		add hl, de
 		ld a, [hl]
 		or a, (1 << BOARD_BIT_MINE)
@@ -81,7 +81,7 @@ sizeof_mine_compute_TEMP				rb 0
 
 		; get a pointer to the state coordinate that is one row above and one column left from our base coordinate
 		Board_ConvertLogicalToBoardStateCoordinate a
-		ld de, RAM_BOARD - (BOARD_STATE_WIDTH + 1)
+		ld de, vBoard - (BOARD_STATE_WIDTH + 1)
 		add hl, de
 
 		ld b, 3
@@ -165,7 +165,7 @@ else
 				; convert (hl) from a vram pointer to board state pointer
 				ld de, (-(_SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X) & $FFFF)
 				add hl, de
-				ld de, RAM_BOARD
+				ld de, vBoard
 				add hl, de
 
 				; get the board value

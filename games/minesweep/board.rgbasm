@@ -167,7 +167,7 @@ _Board_ResetUncoverList:
 _Board_PushIntoUncoverList:
 	; get the board state value for the coordinate into (a)
 	ld_r16_r16 hl, bc
-	ld de, RAM_BOARD
+	ld de, vBoard
 	add hl, de
 	ld a, [hl]
 

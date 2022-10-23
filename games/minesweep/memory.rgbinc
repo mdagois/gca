@@ -39,9 +39,9 @@ HRAM_USAGE equ (HRAM_END - _HRAM)
 rsset _RAM
 
 ; board state
-RAM_BOARD_SAFETY_TOP			rb BOARD_STATE_WIDTH + 1
-RAM_BOARD						rb BOARD_STATE_SIZE
-RAM_BOARD_SAFETY_BOTTOM			rb BOARD_STATE_WIDTH + 1
+vBoardSafetyTop					rb BOARD_STATE_WIDTH + 1
+vBoard							rb BOARD_STATE_SIZE
+vBoardSafetyBottom				rb BOARD_STATE_WIDTH + 1
 
 ; list of board coordinates to uncover
 vUncoverListSize				rb 1

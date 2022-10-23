@@ -35,12 +35,12 @@ sizeof_lose_TEMP				rb 0
 		; get the value at the coordinate
 		ld a, [hl]
 		Board_ConvertLogicalToBoardStateCoordinate a
-		ld de, RAM_BOARD
+		ld de, vBoard
 		add hl, de
 		ld a, [hl]
 
 		; get the state coordinate back into (hl) for tile change requests
-		ld de, -RAM_BOARD & $FFFF
+		ld de, -vBoard & $FFFF
 		add hl, de
 
 		; uncover the tile (either mine or number)
