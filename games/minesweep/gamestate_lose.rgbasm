@@ -1,0 +1,75 @@
+include "board.rgbinc"
+include "cursor.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+include "window.rgbinc"
+
+export UpdateGame_Lose, Minesweep_Update
+
+section "gamestate_lose", rom0
+
+UpdateGame_Lose:
+; temp variables on the stack
+rsreset
+lose_LOGICAL_BOARD_COORDINATE	rb 1
+sizeof_lose_TEMP				rb 0
+
+	add sp, -sizeof_lose_TEMP
+
+	Cursor_Hide
+	halt
+	Cursor_UpdateGraphics
+
+	; uncover all board remaining coordinates
+	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+	ld [hl], 0
+	ld a, 0
+	; at the start of the loop, (a) must contain the logical coordinate to uncover
+	.uncover_hidden
+		; vsync every 8 coordinates
+		and a, $07
+		jr nz, .no_vsync
+			halt
+		.no_vsync
+
+		; get the value at the coordinate
+		ld a, [hl]
+		Board_ConvertLogicalToBoardStateCoordinate a
+		ld de, RAM_BOARD
+		add hl, de
+		ld a, [hl]
+
+		; get the board state coordinate back into (hl) for tile change requests
+		ld de, -RAM_BOARD & $FFFF
+		add hl, de
+
+		; uncover the tile (either mine or number)
+		bit BOARD_BIT_HIDDEN, a
+		jr z, .not_hidden
+			bit BOARD_BIT_MINE, a
+			jr z, .no_mine
+				Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
+				jr .mine_check_end
+			.no_mine
+				and a, ADJACENT_MINES_COUNT_MASK
+				add a, TILE_BOARD_SQUARE_NUMBER_0
+				Board_RequestBoardTileChange hl, a
+			.mine_check_end
+			Board_ProcessBoardTileChangeRequest
+		.not_hidden
+
+		; increment the logical coordinate and put it in (a)
+		ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+		inc [hl]
+		ld a, [hl]
+	jr nz, .uncover_hidden
+
+	; set next state and clean up
+	Window_SetTitle TILE_WINDOW_TITLE_LOSE
+	SetGameStateFunc UpdateGame_WaitForNewGame
+	add sp, sizeof_lose_TEMP
+
+	halt
+	Window_Show
+	ret
+
