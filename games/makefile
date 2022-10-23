@@ -25,6 +25,7 @@ minesweep_sources = \
 	counter.rgbasm \
 	cursor.rgbasm \
 	data.rgbasm \
+	gamestate.rgbasm \
 	gamestate_flag.rgbasm \
 	gamestate_lose.rgbasm \
 	gamestate_newgame.rgbasm \

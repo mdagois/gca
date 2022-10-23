@@ -66,7 +66,7 @@ sizeof_lose_TEMP				rb 0
 
 	; set next state and clean up
 	Window_SetTitle TILE_WINDOW_TITLE_LOSE
-	SetGameStateFunc GameStateFunc_WaitForNewGame
+	SetGameStateFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
 	add sp, sizeof_lose_TEMP
 
 	halt
