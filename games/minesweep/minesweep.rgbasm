@@ -1,101 +1,53 @@
 include "board.rgbinc"
 include "counter.rgbinc"
-include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
+; TODO rename pad input macro to look like module functions
+; TODO rename all WRAM and HRAM variables
+; TODO refactor the game state func call mechanics
+; TODO add delay after lose
+; TODO add simple sound
+
 section "minesweep", rom0
 
 Initialize:
+	; zero clear used memories
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
 
-	InitPadInput HRAM_INPUT
-	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
-
-	Window_Initialize
-	Counter_Initialize
-	Counter_UpdateGraphics
-
-	; init the tiles map
-	ld hl, _SCRN0
-		; top line
-		rept BOARD_PLAIN_TILES_LEFT_COUNT
-			ld_hli_v8 TILE_WALL_PLAIN
-		endr
-		ld_hli_v8 TILE_WALL_TOP_LEFT
-		ld a, TILE_WALL_TOP
-		rept BOARD_TILE_NUM_X
-			ld [hli], a
-		endr
-		ld_hli_v8 TILE_WALL_TOP_RIGHT
-		rept BOARD_PLAIN_TILES_RIGHT_COUNT
-			ld_hli_v8 TILE_WALL_PLAIN
-		endr
-		ld de, SCRN_VX_B - SCRN_X_B
-		add hl, de
-
-		; middle lines
-		ld c, BOARD_TILE_NUM_X
-		.init_middle_lines
-			rept BOARD_PLAIN_TILES_LEFT_COUNT
-				ld_hli_v8 TILE_WALL_PLAIN
-			endr
-			ld_hli_v8 TILE_WALL_LEFT
-			ld a, TILE_BOARD_SQUARE_HIDDEN
-			rept BOARD_TILE_NUM_X
-				ld [hli], a
-			endr
-			ld_hli_v8 TILE_WALL_RIGHT
-			rept BOARD_PLAIN_TILES_RIGHT_COUNT
-				ld_hli_v8 TILE_WALL_PLAIN
-			endr
-
-			ld de, SCRN_VX_B - SCRN_X_B
-			add hl, de
-
-			dec c
-			jr nz, .init_middle_lines
-
-		; bottom line
-		rept BOARD_PLAIN_TILES_LEFT_COUNT
-			ld_hli_v8 TILE_WALL_PLAIN
-		endr
-		ld_hli_v8 TILE_WALL_BOTTOM_LEFT
-		ld a, TILE_WALL_BOTTOM
-		rept BOARD_TILE_NUM_X
-			ld [hli], a
-		endr
-		ld_hli_v8 TILE_WALL_BOTTOM_RIGHT
-		rept BOARD_PLAIN_TILES_RIGHT_COUNT
-			ld_hli_v8 TILE_WALL_PLAIN
-		endr
-
-	; init the palettes
+	; palettes
 	ld a, %11100100
 	ld [rBGP], a
 	ld [rOBP0], a
 	xor a, $FF
 	ld [rOBP1], a
 
-	; window settings
+	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
+
+	InitPadInput HRAM_INPUT
+	Board_Initialize
+	Counter_Initialize
+	Counter_UpdateGraphics
+
+	Window_Initialize
 	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
 	Window_Show
 
-	; turn the lcd on and set parameters
-	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
-	ld [rLCDC], a
-
 	SetGameStateFunc GameStateFunc_WaitForNewGame
 
-	; enable interrupts
+	; interrupts
 	ld a, IEF_VBLANK
 	ld [rIE], a
 	ei
+
+	; turn the lcd on with desired parameters
+	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
+	ld [rLCDC], a
 	ret
 
 Update:

@@ -1,11 +1,69 @@
 include "board.rgbinc"
+include "data.rgbinc"
 include "memory.rgbinc"
 
+export _Board_Initialize
 export _Board_ConvertLogicalToBoardStateCoordinate, _Board_ConvertOamToBoardStateCoordinate
 export _Board_RequestBoardTileChange, _Board_ProcessBoardTileChangeRequest
 export _Board_ResetUncoverList, _Board_PushIntoUncoverList, _Board_PopFromUncoverList
 
 section "board", rom0
+
+_Board_Initialize:
+	; init the tiles map
+	ld hl, _SCRN0
+		; top line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_TOP_LEFT
+		ld a, TILE_WALL_TOP
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_TOP_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld de, SCRN_VX_B - SCRN_X_B
+		add hl, de
+
+		; middle lines
+		ld c, BOARD_TILE_NUM_X
+		.init_middle_lines
+			rept BOARD_PLAIN_TILES_LEFT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+			ld_hli_v8 TILE_WALL_LEFT
+			ld a, TILE_BOARD_SQUARE_HIDDEN
+			rept BOARD_TILE_NUM_X
+				ld [hli], a
+			endr
+			ld_hli_v8 TILE_WALL_RIGHT
+			rept BOARD_PLAIN_TILES_RIGHT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+
+			ld de, SCRN_VX_B - SCRN_X_B
+			add hl, de
+
+			dec c
+			jr nz, .init_middle_lines
+
+		; bottom line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_LEFT
+		ld a, TILE_WALL_BOTTOM
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; coordinates
