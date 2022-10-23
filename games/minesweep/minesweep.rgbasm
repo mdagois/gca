@@ -2,26 +2,11 @@ include "board.rgbinc"
 include "counter.rgbinc"
 include "cursor.rgbinc"
 include "data.rgbinc"
+include "gamestate.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
 export Minesweep_Initialize, Minesweep_Update
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Game state function
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; set \1 as the state function
-macro SetGameStateFunc
-	ld hl, \1
-	store16 HRAM_GAMESTATE_FUNC, hl
-endm
-
-; update the game state by calling the current state function
-macro CallGameStateFunc
-	load16 hl, HRAM_GAMESTATE_FUNC
-	CallHL
-endm
 
 section "minesweep", rom0
 
