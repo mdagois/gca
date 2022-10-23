@@ -198,9 +198,9 @@ GameStateFunc_NewGame:
 	ResetBoard
 	GenerateMines BOARD_STATE_MINES_COUNT
 	ComputeMineCounts
-	Cursor_Reset
 	ResetBoardVariables
-	SetGameStateFunc GAMESTATE_FUNC_PLAY
+	Cursor_Reset
+	GameState_SetFunc GAMESTATE_FUNC_PLAY
 
 	halt
 	Counter_UpdateGraphics
