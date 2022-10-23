@@ -1,0 +1,23 @@
+if !def(GAME_RGBINC)
+GAME_RGBINC equ 1
+
+include "memory.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Game state function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; set \1 as the state function
+macro SetGameStateFunc
+	ld hl, \1
+	store16 HRAM_GAMESTATE_FUNC, hl
+endm
+
+; call the current state function
+macro CallGameStateFunc
+	load16 hl, HRAM_GAMESTATE_FUNC
+	CallHL
+endm
+
+endc
+
