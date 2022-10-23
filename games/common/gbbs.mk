@@ -120,7 +120,7 @@ fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) --title $1 $3$$($1_$
 
 # launch
 # $1 = project, $2 = configuration, $3 = option list number, $4 = force flag
-launch_command = $$(if $$($1_$2_launch_options_list$3) $4,$$(emulator_command) $$($1_$2_launch_options_list$3) $$($1_$2_binary)$$($1_$2_rom_extension) &,)
+launch_command = $$(if $$($1_$2_launch_options_list$3) $4,$$(emulator_command) $$($1_$2_launch_options_list$3) $$($1_$2_binary)$$($1_$2_rom_extension),)
 
 ########################################
 # Generation templates
