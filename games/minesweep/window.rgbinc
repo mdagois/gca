@@ -25,7 +25,7 @@ endm
 ; ShowWindow must be called so that the changes take effect
 macro Window_SetTitle
 	ld a, \1
-	ld [HRAM_WINDOW_TITLE_TILE], a
+	ld [vWindowTitleTile], a
 endm
 
 endc

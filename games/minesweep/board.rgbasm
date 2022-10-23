@@ -126,29 +126,29 @@ _Board_ConvertOamToBoardStateCoordinate:
 ; _Board_ProcessBoardTileChangeRequest must be used to do the actual change
 _Board_RequestBoardTileChange:
 	; set the tile value
-	ld [HRAM_BOARD_TILE_REQUEST_VALUE], a
+	ld [vBoardTileRequestValue], a
 
 	; set the tile address
 	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
 	add hl, de
-	store16 HRAM_BOARD_TILE_REQUEST_ADDRESS, hl
+	store16 vBoardTileRequestAddress, hl
 
 	ret
 
 ; perform the tile change if any is requested (high byte is non-zero)
 ; must be called during vblank
 _Board_ProcessBoardTileChangeRequest:
-	load16 hl, HRAM_BOARD_TILE_REQUEST_ADDRESS
+	load16 hl, vBoardTileRequestAddress
 	ld a, h
 	or a
 	jr z, .no_tile_operation
 		; set the vram value
-		ld a, [HRAM_BOARD_TILE_REQUEST_VALUE]
+		ld a, [vBoardTileRequestValue]
 		ld [hl], a
 
 		; reset tile change by zero clearing the high byte
 		xor a
-		ld [HRAM_BOARD_TILE_REQUEST_ADDRESS + 1], a
+		ld [vBoardTileRequestAddress + 1], a
 	.no_tile_operation
 
 	ret
