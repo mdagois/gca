@@ -1,7 +1,7 @@
 if !def(COUNTER_RGBINC)
 COUNTER_RGBINC equ 1
 
-TILES_COUNT_UI_DIGITS_COUNT		equ (3)
+COUNTER_DIGITS_COUNT		equ (3)
 
 ; initialize the counter displaying remaining tiles with no mines
 macro Counter_Initialize

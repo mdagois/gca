@@ -84,6 +84,6 @@ _Counter_SetCount:
 ; update the tiles count graphics
 ; must be used during vblank
 _Counter_UpdateGraphics:
-	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * TILES_COUNT_UI_DIGITS_COUNT
+	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
 	ret
 
