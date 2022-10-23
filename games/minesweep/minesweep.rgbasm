@@ -6,11 +6,9 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
-; TODO rename pad input macro to look like module functions
 ; TODO rename all WRAM and HRAM variables
-; TODO refactor the game state func call mechanics
 ; TODO add delay after lose
-; TODO add simple sound
+; TODO add simple sounds
 ; TODO move board constants to the .rgbasm file
 
 section "minesweep", rom0
@@ -30,7 +28,7 @@ Initialize:
 
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 
-	InitPadInput HRAM_INPUT
+	PadInput_Initialize HRAM_INPUT
 	Board_Initialize
 	Counter_Initialize
 	Counter_UpdateGraphics
@@ -52,7 +50,7 @@ Initialize:
 	ret
 
 Update:
-	UpdatePadInput HRAM_INPUT
+	PadInput_Update HRAM_INPUT
 	CallGameStateFunc
 	ret
 
