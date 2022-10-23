@@ -118,7 +118,7 @@ _Window_Initialize:
 
 	; set the default title tile
 	ld a, TILE_WINDOW_TITLE_WELCOME
-	ld [HRAM_WINDOW_TITLE_TILE], a
+	ld [vWindowTitleTile], a
 
 	ret
 
@@ -136,7 +136,7 @@ _Window_Show:
 	ld [rWY], a
 
 	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
-	ld a, [HRAM_WINDOW_TITLE_TILE]
+	ld a, [vWindowTitleTile]
 	ld b, a
 	rept 4
 		ld_hli_v8 b

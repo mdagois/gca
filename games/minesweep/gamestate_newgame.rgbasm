@@ -33,13 +33,13 @@ endm
 ; add \1 mines to the board
 macro GenerateMines
 	LFSR8_PickSeed
-	ld [HRAM_LFSR_VALUE], a
+	ld [vLfsrValue], a
 	ld c, \1
 	.generating_mine\@
 		; load the seed and generate the next lfsr
-		ld a, [HRAM_LFSR_VALUE]
+		ld a, [vLfsrValue]
 		LFSR8_GetNextValue
-		ld [HRAM_LFSR_VALUE], a
+		ld [vLfsrValue], a
 
 		; lfsr can only generate 255 values, but the board has 256 coordinates
 		; when the lfsr result is 1, allow the value to be set to 0 semi-randomly

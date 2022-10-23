@@ -15,10 +15,10 @@ vPadInput						rb sizeof_PAD_INPUT
 
 ; graphics
 vCursorOam						rb sizeof_OAM_ATTRS
-HRAM_BOARD_TILE_REQUEST_ADDRESS	rw 1
-HRAM_BOARD_TILE_REQUEST_VALUE	rb 1
-HRAM_TILES_COUNT_UI_OAMS		rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
-HRAM_WINDOW_TITLE_TILE			rb 1
+vCounterOams					rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
+vBoardTileRequestAddress		rw 1
+vBoardTileRequestValue			rb 1
+vWindowTitleTile				rb 1
 
 ; game state
 HRAM_GAMESTATE_FUNC_ID			rb 1
@@ -26,7 +26,7 @@ HRAM_UNCOVERED_COUNT			rb 1
 HRAM_FLAG_COORDINATE			rw 1
 
 ; random
-HRAM_LFSR_VALUE					rb 1
+vLfsrValue						rb 1
 
 HRAM_END						rb 0
 

@@ -13,29 +13,29 @@ section "counter", rom0
 _Counter_Initialize:
 	; set the vertical position of all OAMs
 	ld a, COUNTER_Y
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_Y], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_Y], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 0) + OAMA_Y], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 1) + OAMA_Y], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 2) + OAMA_Y], a
 
 	; set the horizontal position of all OAMs
 	ld a, COUNTER_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_X], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 0) + OAMA_X], a
 	add a, COUNTER_DIGIT_ADVANCE_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_X], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 1) + OAMA_X], a
 	add a, COUNTER_DIGIT_ADVANCE_X
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_X], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 2) + OAMA_X], a
 
 	; set the tile id to a default value for all OAMs
 	ld a, TILE_UI_NUMBER_0
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
 
 	; OAM flags are not used, so set to zero
 	xor a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_FLAGS], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_FLAGS], a
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_FLAGS], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 0) + OAMA_FLAGS], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 1) + OAMA_FLAGS], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 2) + OAMA_FLAGS], a
 
 	ret
 
@@ -54,7 +54,7 @@ _Counter_SetCount:
 	ld c, a
 	ld a, TILE_UI_NUMBER_0
 	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a	
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 0) + OAMA_TILEID], a	
 	ld a, c
 	
 	; compute the tens into (b)
@@ -70,20 +70,20 @@ _Counter_SetCount:
 	ld c, a
 	ld a, TILE_UI_NUMBER_0
 	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 1) + OAMA_TILEID], a
 	ld a, c
 
 	; at that point, (a) contains the units
 	; set up the tile id for the units' OAM
 	ld b, TILE_UI_NUMBER_0
 	add a, b
-	ld [HRAM_TILES_COUNT_UI_OAMS + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
+	ld [vCounterOams + (sizeof_OAM_ATTRS * 2) + OAMA_TILEID], a
 
 	ret
 
 ; update the tiles count graphics
 ; must be used during vblank
 _Counter_UpdateGraphics:
-	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, HRAM_TILES_COUNT_UI_OAMS, sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
+	CopyMemory _OAMRAM + sizeof_OAM_ATTRS, vCounterOams, sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
 	ret
 
