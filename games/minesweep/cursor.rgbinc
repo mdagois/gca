@@ -1,6 +1,12 @@
 if !def(CURSOR_RGBINC)
 CURSOR_RGBINC equ 1
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Cursor
+; The cursor is the square selector used during interactive gameplay.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; initialize the cursor
 macro Cursor_Initialize
 	call _Cursor_Initialize
 endm
@@ -15,7 +21,7 @@ macro Cursor_Show
 	call _Cursor_Show
 endm
 
-; reset the cursor position
+; reset the cursor to a default position
 macro Cursor_Reset
 	call _Cursor_Reset
 endm

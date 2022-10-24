@@ -9,7 +9,8 @@ COUNTER_DIGIT_ADVANCE_X		equ (TILE_SIDE - 3)
 
 section "counter", rom0
 
-; initialize the OAMs for the tiles count
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Counter_Initialize:
 	; set the vertical position of all OAMs
 	ld a, COUNTER_Y
@@ -39,8 +40,11 @@ _Counter_Initialize:
 
 	ret
 
-; update the UI to display the number in (a)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Counter_SetCount:
+	; (a) must hold the desired value for the counter
+
 	; compute the hundreds into (b)
 	; (a) is also updated to remove the hundreds
 	ld b, $FF
@@ -81,8 +85,8 @@ _Counter_SetCount:
 
 	ret
 
-; update the tiles count graphics
-; must be used during vblank
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Counter_UpdateGraphics:
 	CopyMemory OAM_COUNTER, vCounterOams, sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
 	ret
