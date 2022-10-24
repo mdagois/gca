@@ -1,6 +1,10 @@
 if !def(CURSOR_RGBINC)
 CURSOR_RGBINC equ 1
 
+macro Cursor_Initialize
+	call _Cursor_Initialize
+endm
+
 ; hide the cursor
 macro Cursor_Hide
 	call _Cursor_Hide

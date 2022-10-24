@@ -8,7 +8,7 @@ section "gamestate_waitfornewgame", rom0
 GameStateFunc_WaitForNewGame:
 	PadInput_TestReleased vPadInput, PADF_START
 	jr nz, .start_not_pushed
-		GameState_SetFunc GAMESTATE_FUNC_NEW_GAME
+		GameState_SetFuncId GAMESTATE_FUNC_ID_NEW_GAME
 		halt
 		Window_Hide
 		ret

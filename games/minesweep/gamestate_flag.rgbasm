@@ -14,7 +14,7 @@ GameStateFunc_PutFlag:
 	ld a, d
 	cp a, high(BOARD_STATE_INVALID_COORDINATE)
 	jr nz, .coordinate_is_valid
-		GameState_SetFunc GAMESTATE_FUNC_PLAY
+		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 		halt
 		ret
 	.coordinate_is_valid
@@ -27,7 +27,7 @@ GameStateFunc_PutFlag:
 	; return early if the coordinate is not hidden
 	bit BOARD_BIT_HIDDEN, a
 	jr nz, .coordinate_is_hidden
-		GameState_SetFunc GAMESTATE_FUNC_PLAY
+		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 		halt
 		ret
 	.coordinate_is_hidden
@@ -61,7 +61,7 @@ endc
 	ld de, BOARD_STATE_INVALID_COORDINATE
 	store16 vFlagCoordinate, de
 
-	GameState_SetFunc GAMESTATE_FUNC_PLAY
+	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 
 	halt
 	Board_ProcessBoardTileChangeRequest

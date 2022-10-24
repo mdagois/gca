@@ -14,5 +14,5 @@ dw GameStateFunc_Lose
 dw GameStateFunc_Win
 _game_state_functions_end:
 
-assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNCS_COUNT * 2, "Mismatch between the game state table and game state enum"
+assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS_COUNT * 2, "Mismatch between the game state table and game state enum"
 
