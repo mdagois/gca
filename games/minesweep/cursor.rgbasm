@@ -1,9 +1,12 @@
 include "data.rgbinc"
 include "memory.rgbinc"
 
-export _Cursor_Hide, _Cursor_Show, _Cursor_Reset, _Cursor_UpdateGraphics
+export _Cursor_Initialize, _Cursor_Hide, _Cursor_Show, _Cursor_Reset, _Cursor_UpdateGraphics
 
 section "cursor", rom0
+
+_Cursor_Initialize:
+	jr _Cursor_Hide
 
 ; hide the cursor
 _Cursor_Hide:

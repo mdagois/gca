@@ -1,5 +1,6 @@
 include "board.rgbinc"
 include "counter.rgbinc"
+include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
 include "main.rgbinc"
@@ -13,12 +14,10 @@ include "window.rgbinc"
 section "minesweep", rom0
 
 Initialize:
-	; zero clear used memories
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
 
-	; palettes
 	ld a, %11100100
 	ld [rBGP], a
 	ld [rOBP0], a
@@ -27,25 +26,22 @@ Initialize:
 
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 
-	PadInput_Initialize vPadInput
 	Board_Initialize
 	Counter_Initialize
-	Counter_UpdateGraphics
-
+	Cursor_Initialize
+	PadInput_Initialize vPadInput
 	Window_Initialize
+
+	Counter_UpdateGraphics
+	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
 	Window_Show
 
-	GameState_SetFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
-
-	; interrupts
-	ld a, IEF_VBLANK
-	ld [rIE], a
+	copy [rIE], IEF_VBLANK
 	ei
 
-	; turn the lcd on with desired parameters
-	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
-	ld [rLCDC], a
+	copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
+
 	ret
 
 Update:

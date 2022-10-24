@@ -200,7 +200,7 @@ GameStateFunc_NewGame:
 	ComputeMineCounts
 	ResetBoardVariables
 	Cursor_Reset
-	GameState_SetFunc GAMESTATE_FUNC_PLAY
+	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 
 	halt
 	Counter_UpdateGraphics

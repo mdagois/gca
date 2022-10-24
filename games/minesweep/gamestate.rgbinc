@@ -8,17 +8,17 @@ include "memory.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-GAMESTATE_FUNC_WAIT_FOR_NEW_GAME	rb 1
-GAMESTATE_FUNC_NEW_GAME				rb 1
-GAMESTATE_FUNC_PLAY					rb 1
-GAMESTATE_FUNC_FLAG					rb 1
-GAMESTATE_FUNC_UNCOVER				rb 1
-GAMESTATE_FUNC_LOSE					rb 1
-GAMESTATE_FUNC_WIN					rb 1
-GAMESTATE_FUNCS_COUNT				rb 0
+GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME		rb 1
+GAMESTATE_FUNC_ID_NEW_GAME				rb 1
+GAMESTATE_FUNC_ID_PLAY					rb 1
+GAMESTATE_FUNC_ID_FLAG					rb 1
+GAMESTATE_FUNC_ID_UNCOVER				rb 1
+GAMESTATE_FUNC_ID_LOSE					rb 1
+GAMESTATE_FUNC_ID_WIN					rb 1
+GAMESTATE_FUNC_IDS_COUNT				rb 0
 
 ; set the state function id
-macro GameState_SetFunc
+macro GameState_SetFuncId
 	copy [vGameStateFuncId], \1
 endm
 

@@ -29,7 +29,7 @@ GameStateFunc_Uncover:
 	ld a, high(BOARD_STATE_INVALID_COORDINATE)
 	cp a, h
 	jr nz, .list_not_empty
-		GameState_SetFunc GAMESTATE_FUNC_PLAY
+		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 		halt
 		ret
 	.list_not_empty
@@ -45,7 +45,7 @@ GameStateFunc_Uncover:
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
 		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
-		GameState_SetFunc GAMESTATE_FUNC_LOSE
+		GameState_SetFuncId GAMESTATE_FUNC_ID_LOSE
 		jp .update_graphics
 	.no_lose
 
@@ -81,7 +81,7 @@ GameStateFunc_Uncover:
 	ld hl, vUncoveredCount
 	dec [hl]
 	jr nz, .no_win
-		GameState_SetFunc GAMESTATE_FUNC_WIN
+		GameState_SetFuncId GAMESTATE_FUNC_ID_WIN
 	.no_win
 	
 	; update the counter

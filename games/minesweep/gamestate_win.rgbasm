@@ -10,7 +10,7 @@ section "gamestate_win", rom0
 GameStateFunc_Win:
 	Cursor_Hide
 	Window_SetTitle TILE_WINDOW_TITLE_WIN
-	GameState_SetFunc GAMESTATE_FUNC_WAIT_FOR_NEW_GAME
+	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 	
 	halt
 	Cursor_UpdateGraphics
