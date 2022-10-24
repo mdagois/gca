@@ -6,6 +6,7 @@ include "counter.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; OAM addresses
 rsset _OAMRAM
 OAM_CURSOR				rb sizeof_OAM_ATTRS
 OAM_COUNTER				rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
@@ -21,11 +22,15 @@ rsset _HRAM
 ; input
 vPadInput						rb sizeof_PAD_INPUT
 
-; graphics
+; oam
 vCursorOam						rb sizeof_OAM_ATTRS
-vCounterOams					rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
+vCounterOam						rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
+
+; board
 vBoardTileRequestAddress		rw 1
 vBoardTileRequestValue			rb 1
+
+; window
 vWindowTitleTile				rb 1
 
 ; game state
@@ -33,7 +38,7 @@ vGameStateFuncId				rb 1
 vUncoveredCount					rb 1
 vFlagCoordinate					rw 1
 
-; random
+; rng
 vLfsrValue						rb 1
 
 HRAM_END						rb 0
@@ -45,6 +50,7 @@ HRAM_USAGE equ (HRAM_END - _HRAM)
 rsset _RAM
 
 ; board state
+; two safety rows are used to make the mine counting algorithm easier to implement
 vBoardSafetyTop					rb BOARD_STATE_WIDTH + 1
 vBoard							rb BOARD_STATE_SIZE
 vBoardSafetyBottom				rb BOARD_STATE_WIDTH + 1
