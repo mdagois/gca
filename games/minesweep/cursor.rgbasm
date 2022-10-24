@@ -35,6 +35,6 @@ _Cursor_Reset:
 ; update the cursor graphics
 ; must be used during vblank
 _Cursor_UpdateGraphics:
-	CopyMemory _OAMRAM, vCursorOam, sizeof_OAM_ATTRS
+	CopyMemory OAM_CURSOR, vCursorOam, sizeof_OAM_ATTRS
 	ret
 

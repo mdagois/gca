@@ -32,7 +32,6 @@ Initialize:
 	PadInput_Initialize vPadInput
 	Window_Initialize
 
-	Counter_UpdateGraphics
 	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
 	Window_Show

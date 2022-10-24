@@ -5,7 +5,15 @@ include "board.rgbinc"
 include "counter.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; HRAM
+
+rsset _OAMRAM
+OAM_CURSOR				rb sizeof_OAM_ATTRS
+OAM_COUNTER				rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
+OAM_END					rb 0
+
+OAM_USAGE				equ (OAM_END - _OAMRAM)
+assert OAM_USAGE <= sizeof_OAM_ATTRS * OAM_COUNT, "Too many sprite used"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _HRAM
@@ -32,8 +40,6 @@ HRAM_END						rb 0
 
 HRAM_USAGE equ (HRAM_END - _HRAM)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; RAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
