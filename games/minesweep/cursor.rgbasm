@@ -5,35 +5,38 @@ export _Cursor_Initialize, _Cursor_Hide, _Cursor_Show, _Cursor_Reset, _Cursor_Up
 
 section "cursor", rom0
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Cursor_Initialize:
 	jr _Cursor_Hide
 
-; hide the cursor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Cursor_Hide:
-	ld a, TILE_CURSOR_OFF
-	ld [vCursorOam + OAMA_TILEID], a
+	copy [vCursorOam + OAMA_TILEID], TILE_CURSOR_OFF
 	ret
 
-; show the cursor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Cursor_Show:
-	ld a, TILE_CURSOR_ON
-	ld [vCursorOam + OAMA_TILEID], a
+	copy [vCursorOam + OAMA_TILEID], TILE_CURSOR_ON
 	ret
 
-; initialize the cursor OAM and place it at an arbitrary place
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Cursor_Reset:
-	ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_Y_OFS
-	ld [vCursorOam + OAMA_Y], a
-	ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_X_OFS
-	ld [vCursorOam + OAMA_X], a
-	ld a, TILE_CURSOR_ON
-	ld [vCursorOam + OAMA_TILEID], a
+	; place the cursor roughly in the middle of the board
+	copy [vCursorOam + OAMA_Y], (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y / 2 - 1) * TILE_SIDE + OAM_Y_OFS
+	copy [vCursorOam + OAMA_X], (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X / 2 - 1) * TILE_SIDE + OAM_X_OFS
+
+	; reset the flags as they are not used
 	xor a
 	ld [vCursorOam + OAMA_FLAGS], a
-	ret
 
-; update the cursor graphics
-; must be used during vblank
+	jr _Cursor_Show
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Cursor_UpdateGraphics:
 	CopyMemory OAM_CURSOR, vCursorOam, sizeof_OAM_ATTRS
 	ret

@@ -1,9 +1,16 @@
 if !def(COUNTER_RGBINC)
 COUNTER_RGBINC equ 1
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Counter
+; The counter represents the number of squares left to uncover.
+; Squares with a mine are not part of the count.
+; It is composed of 3 digits located at the top right of the screen.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 COUNTER_DIGITS_COUNT		equ (3)
 
-; initialize the counter displaying remaining tiles with no mines
+; initialize the counter
 macro Counter_Initialize
 	call _Counter_Initialize
 endm
@@ -14,7 +21,7 @@ macro Counter_SetCount
 	call _Counter_SetCount
 endm
 
-; update the tiles count graphics
+; update the counter graphics
 ; must be used during vblank
 macro Counter_UpdateGraphics
 	call _Counter_UpdateGraphics
