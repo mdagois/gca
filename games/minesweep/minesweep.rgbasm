@@ -33,8 +33,7 @@ Initialize:
 	Window_Initialize
 
 	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
-	Window_SetTitle TILE_WINDOW_TITLE_WELCOME
-	Window_Show
+	Window_Show TILE_WINDOW_TITLE_WELCOME
 
 	copy [rIE], IEF_VBLANK
 	ei

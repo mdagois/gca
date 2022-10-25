@@ -70,8 +70,8 @@ endm
 
 section "window", rom0
 
-; initialize the window
-; must be called when LCD is off
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Window_Initialize:
 	; position the window
 	ld a, WINDOW_X
@@ -116,31 +116,29 @@ _Window_Initialize:
 		endr
 		ld_hli_v8 TILE_WINDOW_BOTTOM_RIGHT
 
-	; set the default title tile
-	ld a, TILE_WINDOW_TITLE_WELCOME
-	ld [vWindowTitleTile], a
-
 	ret
 
-; hide the window
-; should be called during vblank or when lcd is off
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Window_Hide:
 	ld a, WINDOW_HIDE_Y
 	ld [rWY], a
 	ret
 
-; show the window and update the title tile
-; must be called during vblank or when lcd is off
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _Window_Show:
+	; (a) must hold the index of the first tile of the window title
+
+	; update the title tiles
+	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
+	rept TILES_PER_WINDOW_TITLE
+		ld [hli], a
+		inc a
+	endr
+
 	ld a, WINDOW_SHOW_Y
 	ld [rWY], a
 
-	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
-	ld a, [vWindowTitleTile]
-	ld b, a
-	rept 4
-		ld_hli_v8 b
-		inc b
-	endr
 	ret
 
