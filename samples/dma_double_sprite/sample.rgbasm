@@ -72,7 +72,7 @@ HRAM_END						rb 0
 
 ; sanity checks
 HRAM_USAGE						equ (HRAM_END - _HRAM)
-print "HRAM usage: {d:HRAM_USAGE} bytes\n"
+println "HRAM usage: {d:HRAM_USAGE} bytes"
 assert HRAM_USAGE <= $40, "Too many bytes used in HRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,7 +100,7 @@ WRAM_END						rb 0
 
 ; sanity checks
 WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 assert low(WRAM_SPRITES_BLOCK_1) == 0, "WRAM_SPRITES_BLOCK_1 ({x:WRAM_SPRITES_BLOCK_1}) must be 256-bytes aligned"
 assert low(WRAM_SPRITES_BLOCK_2) == 0, "WRAM_SPRITES_BLOCK_2 ({x:WRAM_SPRITES_BLOCK_2}) must be 256-bytes aligned"
