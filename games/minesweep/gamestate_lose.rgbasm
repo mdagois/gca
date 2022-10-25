@@ -65,11 +65,10 @@ sizeof_lose_TEMP				rb 0
 	jr nz, .uncover_hidden
 
 	; set next state and clean up
-	Window_SetTitle TILE_WINDOW_TITLE_LOSE
 	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 	add sp, sizeof_lose_TEMP
 
 	halt
-	Window_Show
+	Window_Show TILE_WINDOW_TITLE_LOSE
 	ret
 

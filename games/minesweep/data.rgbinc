@@ -5,6 +5,8 @@ DATA_RGBINC equ 1
 ; tile id (index in vram tileset)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+TILES_PER_WINDOW_TITLE			equ (4)
+
 rsreset
 ; squares
 TILE_BOARD_SQUARE_HIDDEN		rb 1
