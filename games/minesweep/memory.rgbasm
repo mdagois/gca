@@ -4,11 +4,11 @@ include "memory.rgbinc"
 ; sanity checks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-print "HRAM usage: {d:HRAM_USAGE} bytes\n"
+println "HRAM usage: {d:HRAM_USAGE} bytes"
 static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
 
-print "RAM usage: {d:RAM_USAGE} bytes\n"
-print "vBoard: ${X:vBoard}\n"
-print "vUncoverList: ${X:vUncoverList}\n"
+println "RAM usage: {d:RAM_USAGE} bytes"
+println "vBoard: ${X:vBoard}"
+println "vUncoverList: ${X:vUncoverList}"
 static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
 
