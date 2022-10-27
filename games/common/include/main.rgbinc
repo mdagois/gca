@@ -2,8 +2,8 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-CARTRIDGE_HEADER_START			equ ($0100)
-CARTRIDGE_HEADER_END			equ ($0150)
+def CARTRIDGE_HEADER_START			equ ($0100)
+def CARTRIDGE_HEADER_END			equ ($0150)
 
 section "header", rom0[CARTRIDGE_HEADER_START]
 entrypoint:

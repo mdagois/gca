@@ -3,9 +3,9 @@ include "memory.rgbinc"
 
 export _Counter_Initialize, _Counter_SetCount, _Counter_UpdateGraphics
 
-COUNTER_X					equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
-COUNTER_Y					equ (OAM_Y_OFS + TILE_SIDE)
-COUNTER_DIGIT_ADVANCE_X		equ (TILE_SIDE - 3)
+def COUNTER_X					equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
+def COUNTER_Y					equ (OAM_Y_OFS + TILE_SIDE)
+def COUNTER_DIGIT_ADVANCE_X		equ (TILE_SIDE - 3)
 
 section "counter", rom0
 

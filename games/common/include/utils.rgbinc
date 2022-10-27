@@ -1,5 +1,5 @@
 if !def(UTILS_RGBINC)
-UTILS_RGBINC equ 1
+def UTILS_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -9,8 +9,8 @@ include "hardware.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_SIDE						equ (8)
-BYTES_PER_TILE					equ (16)
+def TILE_SIDE						equ (8)
+def BYTES_PER_TILE					equ (16)
 
 rsset $0040
 INTERRUPT_ADDRESS_VBLANK		rb 8
