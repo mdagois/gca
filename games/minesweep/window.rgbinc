@@ -1,5 +1,5 @@
 if !def(WINDOW_RGBINC)
-WINDOW_RGBINC equ 1
+def WINDOW_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Window

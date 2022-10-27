@@ -7,16 +7,16 @@ export _Window_Initialize, _Window_Hide, _Window_Show
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-WINDOW_X						equ (7)
-WINDOW_HIDE_Y					equ (SCRN_Y)
-WINDOW_LINES_COUNT				equ (7)
-WINDOW_SHOW_Y					equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
-WINDOW_TITLE_ROW				equ (1)
-WINDOW_TITLE_TILES_COUNT		equ (4)
-WINDOW_TITLE_COLUMN				equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
+def WINDOW_X						equ (7)
+def WINDOW_HIDE_Y					equ (SCRN_Y)
+def WINDOW_LINES_COUNT				equ (7)
+def WINDOW_SHOW_Y					equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
+def WINDOW_TITLE_ROW				equ (1)
+def WINDOW_TITLE_TILES_COUNT		equ (4)
+def WINDOW_TITLE_COLUMN				equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
 
-WINDOW_DESCRIPTION_MARGIN		equ (3)
-WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
+def WINDOW_DESCRIPTION_MARGIN		equ (3)
+def WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; helpers

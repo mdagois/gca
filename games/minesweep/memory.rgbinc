@@ -1,5 +1,5 @@
 if !def(MEMORY_RGBINC)
-MEMORY_RGBINC equ 1
+def MEMORY_RGBINC equ 1
 
 include "board.rgbinc"
 include "counter.rgbinc"
@@ -12,7 +12,7 @@ OAM_CURSOR				rb sizeof_OAM_ATTRS
 OAM_COUNTER				rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
 OAM_END					rb 0
 
-OAM_USAGE				equ (OAM_END - _OAMRAM)
+def OAM_USAGE				equ (OAM_END - _OAMRAM)
 assert OAM_USAGE <= sizeof_OAM_ATTRS * OAM_COUNT, "Too many sprite used"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +40,7 @@ vLfsrValue						rb 1
 
 HRAM_END						rb 0
 
-HRAM_USAGE equ (HRAM_END - _HRAM)
+def HRAM_USAGE equ (HRAM_END - _HRAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -58,7 +58,7 @@ vUncoverList					rw BOARD_TILES_COUNT
 
 RAM_END							rb 0
 
-RAM_USAGE equ (RAM_END - _RAM)
+def RAM_USAGE equ (RAM_END - _RAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

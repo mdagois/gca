@@ -1,5 +1,5 @@
 if !def(BOARD_RGBINC)
-BOARD_RGBINC equ 1
+def BOARD_RGBINC equ 1
 
 include "utils.rgbinc"
 
@@ -10,29 +10,29 @@ include "utils.rgbinc"
 ; logical board
 ; size is 16x16, top left index is (0, 0)
 ; coordinates are 1 byte long
-BOARD_TILE_NUM_X				equ (16)
-BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
-BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
+def BOARD_TILE_NUM_X				equ (16)
+def BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
+def BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
 
 ; board graphics
 ; used to place ui elements
-BOARD_TILE_OFFSET_X				equ (1)
-BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
-BOARD_BORDER_TILES_COUNT		equ (2)
-BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILES_COUNT)
-BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
-BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
+def BOARD_TILE_OFFSET_X				equ (1)
+def BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
+def BOARD_BORDER_TILES_COUNT		equ (2)
+def BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILES_COUNT)
+def BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
+def BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
 
 ; board state
 ; a size of 32x16 is used to make the coordinates identical to the vram background
 ; coordinates are 2 bytes long
 ; it does waste space, but make tiles computations easier
-BOARD_STATE_WIDTH				equ (SCRN_VX_B)
-BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
-BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
+def BOARD_STATE_WIDTH				equ (SCRN_VX_B)
+def BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
+def BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
 
-ADJACENT_MINES_COUNT_BIT_COUNT	equ (4) ; there are up to 8 adjacent mines, so 4 bits are needed
-ADJACENT_MINES_COUNT_MASK		equ ((1 << ADJACENT_MINES_COUNT_BIT_COUNT) - 1)
+def ADJACENT_MINES_COUNT_BIT_COUNT	equ (4) ; there are up to 8 adjacent mines, so 4 bits are needed
+def ADJACENT_MINES_COUNT_MASK		equ ((1 << ADJACENT_MINES_COUNT_BIT_COUNT) - 1)
 
 ; board state flags
 rsreset
@@ -45,8 +45,8 @@ static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
 static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
 
 ; miscellaneous
-BOARD_STATE_MINES_COUNT			equ (40)
-BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
+def BOARD_STATE_MINES_COUNT			equ (40)
+def BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; general

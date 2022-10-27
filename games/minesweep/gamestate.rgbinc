@@ -1,5 +1,5 @@
 if !def(GAME_RGBINC)
-GAME_RGBINC equ 1
+def GAME_RGBINC equ 1
 
 include "memory.rgbinc"
 

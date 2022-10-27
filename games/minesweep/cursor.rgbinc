@@ -1,5 +1,5 @@
 if !def(CURSOR_RGBINC)
-CURSOR_RGBINC equ 1
+def CURSOR_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Cursor

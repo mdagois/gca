@@ -1,11 +1,11 @@
 if !def(DATA_RGBINC)
-DATA_RGBINC equ 1
+def DATA_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; tile id (index in vram tileset)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILES_PER_WINDOW_TITLE			equ (4)
+def TILES_PER_WINDOW_TITLE			equ (4)
 
 rsreset
 ; squares
