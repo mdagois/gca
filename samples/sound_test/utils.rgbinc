@@ -1,5 +1,5 @@
 if !def(UTILS_RGBINC)
-UTILS_RGBINC equ 1
+def UTILS_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

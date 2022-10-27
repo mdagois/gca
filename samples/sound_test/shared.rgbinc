@@ -1,5 +1,5 @@
 if !def(SHARED_RGBINC)
-SHARED_RGBINC equ 1
+def SHARED_RGBINC equ 1
 
 include "utils.rgbinc"
 
@@ -7,10 +7,10 @@ include "utils.rgbinc"
 ; Graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_INDEX_BLANK				equ (-128)
-TILE_INDEX_CURSOR				equ (-128 + 64)
-TILE_INDEX_SELECTOR_BASE		equ (-128 + 100)
-TILE_INDEX_SAMPLE_BASE			equ (-128 + 75)
+def TILE_INDEX_BLANK				equ (-128)
+def TILE_INDEX_CURSOR				equ (-128 + 64)
+def TILE_INDEX_SELECTOR_BASE		equ (-128 + 100)
+def TILE_INDEX_SAMPLE_BASE			equ (-128 + 75)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Hexadecimal to tile conversion
@@ -42,7 +42,7 @@ endm
 ; VRAM vblank transfer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TRANSFER_LIST_MAX_SIZE			equ (16)
+def TRANSFER_LIST_MAX_SIZE			equ (16)
 assert (TRANSFER_LIST_MAX_SIZE & (TRANSFER_LIST_MAX_SIZE - 1)) == 0, "TRANSFER_LIST_MAX_SIZE should be a power of two"
 
 rsreset
@@ -129,7 +129,7 @@ WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
 WRAM_SHARED_END					rb 0
 
-WRAM_CHANNEL_START				equ (_RAM + WRAM_SHARED_END - _RAM)
+def WRAM_CHANNEL_START				equ (_RAM + WRAM_SHARED_END - _RAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

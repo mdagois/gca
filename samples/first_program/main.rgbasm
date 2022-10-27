@@ -1,5 +1,5 @@
-ROM_HEADER_ADDRESS		equ $0100
-ROM_MAIN_ADDRESS		equ $0150
+def ROM_HEADER_ADDRESS		equ $0100
+def ROM_MAIN_ADDRESS		equ $0150
 
 section "header", rom0[ROM_HEADER_ADDRESS]
 	di

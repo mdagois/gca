@@ -2,21 +2,21 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-OAM_OFFSET_X					equ (8)
-OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X					equ (8)
+def OAM_OFFSET_Y					equ (16)
 
-COIN_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
-COIN_SPRITE_MIN_X				equ (OAM_OFFSET_X + 24)
-COIN_SPRITE_MAX_X				equ (COIN_SPRITE_MIN_X + 24)
+def COIN_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
+def COIN_SPRITE_MIN_X				equ (OAM_OFFSET_X + 24)
+def COIN_SPRITE_MAX_X				equ (COIN_SPRITE_MIN_X + 24)
 
-COIN_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
-COIN_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
+def COIN_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
+def COIN_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
 
-COIN_PALETTE					equ (0)
+def COIN_PALETTE					equ (0)
 
-COIN_ANIM_UPDATE_PERIOD			equ (10)
-COIN_X_UPDATE_PERIOD			equ (5)
-COIN_FRAME_COUNT				equ (6)
+def COIN_ANIM_UPDATE_PERIOD			equ (10)
+def COIN_X_UPDATE_PERIOD			equ (5)
+def COIN_FRAME_COUNT				equ (6)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -33,7 +33,7 @@ WRAM_COIN_MOVE					rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE						equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 

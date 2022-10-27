@@ -55,19 +55,19 @@ joypad_interrupt:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0				equ (80)
 
-TILES_COUNT						equ (384)
-BYTES_PER_TILE					equ (16)
-TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT						equ (384)
+def BYTES_PER_TILE					equ (16)
+def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
 
-TILEMAPS_COUNT					equ (1)
-BYTES_PER_TILEMAP				equ (1024)
-TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT					equ (1)
+def BYTES_PER_TILEMAP				equ (1024)
+def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
@@ -99,7 +99,7 @@ WRAM_P1_BITS					rb 4
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE						equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 

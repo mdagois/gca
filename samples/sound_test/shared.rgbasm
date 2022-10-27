@@ -23,11 +23,11 @@ incbin "ch3_test.tlm"
 TilemapCH4:
 incbin "ch4_test.tlm"
 
-BYTES_PER_TILES			equ (16)
-TILES_COUNT				equ (384)
-TILESET_TOTAL_BYTES		equ (TILES_COUNT * BYTES_PER_TILES)
-INNER_LOOP_SIZE			equ (128)
-OUTER_LOOP_SIZE			equ (TILESET_TOTAL_BYTES / INNER_LOOP_SIZE)
+def BYTES_PER_TILES			equ (16)
+def TILES_COUNT				equ (384)
+def TILESET_TOTAL_BYTES		equ (TILES_COUNT * BYTES_PER_TILES)
+def INNER_LOOP_SIZE			equ (128)
+def OUTER_LOOP_SIZE			equ (TILESET_TOTAL_BYTES / INNER_LOOP_SIZE)
 
 ; load the graphics tileset from ROM to VRAM
 LoadTileset:

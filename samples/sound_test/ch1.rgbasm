@@ -10,9 +10,9 @@ NOTE_FREQUENCY_CH3				rb 2
 NOTE_TILE_INDICES				rb 3
 sizeof_NOTE						rb 0
 
-LENGTH_COUNT					equ 65
-OCTAVE_NOTES_COUNT				equ 12
-NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
+def LENGTH_COUNT					equ 65
+def OCTAVE_NOTES_COUNT				equ 12
+def NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; WRAM
@@ -40,7 +40,7 @@ WRAM_SWEEP_DIR					rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE						equ (WRAM_END - _RAM)
 println "CH1 WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -85,15 +85,15 @@ dw UpdateSweepDir
 UpdateFunc_End:
 
 ; line numbers
-LINE_NOTE						equ (2)
-LINE_DUTY						equ (3)
-LINE_LENGTH						equ (4)
-LINE_ENV_INIT					equ (6)
-LINE_ENV_STEP					equ (7)
-LINE_ENV_DIR					equ (8)
-LINE_SWEEP_STEP					equ (10)
-LINE_SWEEP_SHIFT				equ (11)
-LINE_SWEEP_DIR					equ (12)
+def LINE_NOTE						equ (2)
+def LINE_DUTY						equ (3)
+def LINE_LENGTH						equ (4)
+def LINE_ENV_INIT					equ (6)
+def LINE_ENV_STEP					equ (7)
+def LINE_ENV_DIR					equ (8)
+def LINE_SWEEP_STEP					equ (10)
+def LINE_SWEEP_SHIFT				equ (11)
+def LINE_SWEEP_DIR					equ (12)
 
 ; selection indices
 rsreset
