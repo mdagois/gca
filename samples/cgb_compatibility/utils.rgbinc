@@ -1,5 +1,5 @@
 if !def(UTILS_RGBINC)
-UTILS_RGBINC equ 1
+def UTILS_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -9,11 +9,11 @@ include "hardware.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-HARDWARE_MODEL_REGISTER		equ (_HRAM)
+def HARDWARE_MODEL_REGISTER		equ (_HRAM)
 
-HARDWARE_MODEL_DMG			equ (1)
-HARDWARE_MODEL_CGB			equ (2)
-HARDWARE_MODEL_GBA			equ (3)
+def HARDWARE_MODEL_DMG			equ (1)
+def HARDWARE_MODEL_CGB			equ (2)
+def HARDWARE_MODEL_GBA			equ (3)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions

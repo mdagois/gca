@@ -7,19 +7,19 @@ section "vblank_interrupt", rom0[$0040]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0				equ (80)
 
-TILES_COUNT						equ (384)
-BYTES_PER_TILE					equ (16)
-TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT						equ (384)
+def BYTES_PER_TILE					equ (16)
+def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
 
-TILEMAPS_COUNT					equ (1)
-BYTES_PER_TILEMAP				equ (1024)
-TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT					equ (1)
+def BYTES_PER_TILEMAP				equ (1024)
+def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
@@ -36,11 +36,11 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SPRITE_TILE_ID					equ (16)
-SPRITE_LINES_COUNT				equ (5)
-SPRITE_FIRST_LINE				equ (32)
-ANIM_UPDATE_THRESHOLD			equ (4)
-OAM_BYTES_COUNT					equ (sizeof_OAM_ATTRS * OAM_COUNT)
+def SPRITE_TILE_ID					equ (16)
+def SPRITE_LINES_COUNT				equ (5)
+def SPRITE_FIRST_LINE				equ (32)
+def ANIM_UPDATE_THRESHOLD			equ (4)
+def OAM_BYTES_COUNT					equ (sizeof_OAM_ATTRS * OAM_COUNT)
 
 rsset _RAM
 
@@ -52,8 +52,8 @@ WRAM_LINE_MOVE					rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

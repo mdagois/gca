@@ -4,11 +4,11 @@ include "shared.rgbinc"
 ; Channel data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-LENGTH_COUNT					equ 65
-OCTAVE_NOTES_COUNT				equ 12
-NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
+def LENGTH_COUNT					equ 65
+def OCTAVE_NOTES_COUNT				equ 12
+def NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
 
-CLOCK_SHIFT_MAX					equ (13)
+def CLOCK_SHIFT_MAX					equ (13)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; WRAM
@@ -35,8 +35,8 @@ WRAM_LENGTH_INDEX				rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "CH4 WRAM usage: {d:WRAM_USAGE} bytes\n"
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "CH4 WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,13 +78,13 @@ dw UpdateLength
 UpdateFunc_End:
 
 ; line numbers
-LINE_CLOCK_DIVIDE				equ (2)
-LINE_CLOCK_SHIFT				equ (3)
-LINE_LFSR_BITS_COUNT			equ (4)
-LINE_ENV_INIT					equ (6)
-LINE_ENV_STEP					equ (7)
-LINE_ENV_DIR					equ (8)
-LINE_LENGTH						equ (10)
+def LINE_CLOCK_DIVIDE				equ (2)
+def LINE_CLOCK_SHIFT				equ (3)
+def LINE_LFSR_BITS_COUNT			equ (4)
+def LINE_ENV_INIT					equ (6)
+def LINE_ENV_STEP					equ (7)
+def LINE_ENV_DIR					equ (8)
+def LINE_LENGTH						equ (10)
 
 ; selection indices
 rsreset

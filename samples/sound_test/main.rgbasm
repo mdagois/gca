@@ -53,7 +53,7 @@ dw FinalizeCH4
 dw TilemapCH4
 ChannelDescription_End:
 
-CHANNEL_INDEX_MASK		equ (((ChannelDescription_End - ChannelDescription) / sizeof_CHANNEL) - 1)
+def CHANNEL_INDEX_MASK		equ (((ChannelDescription_End - ChannelDescription) / sizeof_CHANNEL) - 1)
 assert (CHANNEL_INDEX_MASK & (CHANNEL_INDEX_MASK + 1)) == 0, "The channel count must be a power of two"
 
 section "main", rom0

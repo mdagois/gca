@@ -2,24 +2,24 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-OAM_OFFSET_X					equ (8)
-OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X					equ (8)
+def OAM_OFFSET_Y					equ (16)
 
-COINS_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
-COIN_0_SPRITE_X					equ (OAM_OFFSET_X + 24)
-COIN_WIDTH						equ (16)
-COIN_1_SPRITE_X					equ (SCRN_X + OAM_OFFSET_X - 24 - COIN_WIDTH)
+def COINS_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
+def COIN_0_SPRITE_X					equ (OAM_OFFSET_X + 24)
+def COIN_WIDTH						equ (16)
+def COIN_1_SPRITE_X					equ (SCRN_X + OAM_OFFSET_X - 24 - COIN_WIDTH)
 
-COIN_0_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
-COIN_0_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
-COIN_1_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 2)
-COIN_1_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 3)
+def COIN_0_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
+def COIN_0_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
+def COIN_1_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 2)
+def COIN_1_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 3)
 
-COIN_PALETTE_0					equ (0)
-COIN_PALETTE_1					equ (1)
+def COIN_PALETTE_0					equ (0)
+def COIN_PALETTE_1					equ (1)
 
-COIN_ANIM_UPDATE_PERIOD			equ (10)
-COIN_FRAME_COUNT				equ (6)
+def COIN_ANIM_UPDATE_PERIOD			equ (10)
+def COIN_FRAME_COUNT				equ (6)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -31,8 +31,8 @@ WRAM_COIN_FRAME					rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

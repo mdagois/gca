@@ -2,8 +2,8 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-OAM_OFFSET_X					equ (8)
-OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X					equ (8)
+def OAM_OFFSET_Y					equ (16)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -15,8 +15,8 @@ WRAM_IS_VBLANK					rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

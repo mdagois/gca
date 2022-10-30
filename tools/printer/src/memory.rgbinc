@@ -1,5 +1,5 @@
 if !def(MEMORY_RGBINC)
-MEMORY_RGBINC equ 1
+def MEMORY_RGBINC equ 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -11,11 +11,11 @@ include "utils.rgbinc"
 
 ; a chunk is a group of 20x2 tiles
 ; the memory holds up to 9 chunks for a total of 20x18 tiles, a screen worth of tiles
-TILE_BYTE_SIZE							equ (16)
-TILE_ROWS_PER_CHUNK						equ (2)
-CHUNK_BYTE_SIZE							equ (TILE_BYTE_SIZE * SCRN_X_B * TILE_ROWS_PER_CHUNK)
-CHUNKS_MAX_COUNT						equ (9)
-CHUNK_DATA_MAX_SIZE						equ (CHUNK_BYTE_SIZE * CHUNKS_MAX_COUNT)
+def TILE_BYTE_SIZE							equ (16)
+def TILE_ROWS_PER_CHUNK						equ (2)
+def CHUNK_BYTE_SIZE							equ (TILE_BYTE_SIZE * SCRN_X_B * TILE_ROWS_PER_CHUNK)
+def CHUNKS_MAX_COUNT						equ (9)
+def CHUNK_DATA_MAX_SIZE						equ (CHUNK_BYTE_SIZE * CHUNKS_MAX_COUNT)
 
 assert CHUNK_BYTE_SIZE == $0280, "Unexpected chunk size"
 
@@ -24,7 +24,7 @@ CHUNK_PROPERTY_COMPRESSION				rb 1
 CHUNK_PROPERTY_DATA_SIZE				rb 2
 sizeof_CHUNK_PROPERTY					rb 0
 
-CHUNK_PROPERTIES_MAX_SIZE				equ (sizeof_CHUNK_PROPERTY * CHUNKS_MAX_COUNT)
+def CHUNK_PROPERTIES_MAX_SIZE				equ (sizeof_CHUNK_PROPERTY * CHUNKS_MAX_COUNT)
 
 rsreset
 PRINT_PARAMETER_SHEET_COUNT				rb 1

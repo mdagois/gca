@@ -7,19 +7,19 @@ section "vblank_interrupt", rom0[$0040]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0				equ (80)
 
-TILES_COUNT						equ (384)
-BYTES_PER_TILE					equ (16)
-TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT						equ (384)
+def BYTES_PER_TILE					equ (16)
+def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
 
-TILEMAPS_COUNT					equ (1)
-BYTES_PER_TILEMAP				equ (1024)
-TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT					equ (1)
+def BYTES_PER_TILEMAP				equ (1024)
+def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
@@ -44,14 +44,14 @@ WRAM_STOP_COUNTER				rb 1
 WRAM_END						rb 0
 
 ; sanity checks
-WRAM_USAGE						equ (WRAM_END - _RAM)
-print "WRAM usage: {d:WRAM_USAGE} bytes\n"
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-STOP_SOUND_THRESHOLD		equ (60 * 2) ; about 2 seconds
-STOP_SOUND_COUNTER_INIT		equ (255 - STOP_SOUND_THRESHOLD)
+def STOP_SOUND_THRESHOLD		equ (60 * 2) ; about 2 seconds
+def STOP_SOUND_COUNTER_INIT		equ (255 - STOP_SOUND_THRESHOLD)
 
 section "sample", rom0
 
@@ -80,8 +80,8 @@ InitSample:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TILE_INDEX_ZERO				equ (80)
-STEP_LENGTH_TILE_ADDRESS	equ (_SCRN0 + 6 * SCRN_VX_B + 12)
+def TILE_INDEX_ZERO				equ (80)
+def STEP_LENGTH_TILE_ADDRESS	equ (_SCRN0 + 6 * SCRN_VX_B + 12)
 
 UpdateSample:
 	halt
