@@ -9,7 +9,9 @@ compile_options = -Werror -Weverything -Hl -I./common/include
 debug_compile_options = -DBUILD_DEBUG -DSHOW_MINES
 release_compile_options = -DBUILD_RELEASE
 
-fix_options = --pad-value 0 --validate
+link_options = --pad 199
+
+fix_options = --pad-value 199 --validate
 
 launch_options = --watch
 

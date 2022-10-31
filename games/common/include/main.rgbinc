@@ -2,6 +2,15 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+section "catch", rom0[$0000]
+catch:
+	debug "[ERROR] an unused area of the ROM was accessed"
+	breakpoint
+catch_loop:
+	jr catch_loop
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 def CARTRIDGE_HEADER_START			equ ($0100)
 def CARTRIDGE_HEADER_END			equ ($0150)
 
