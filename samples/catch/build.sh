@@ -10,9 +10,9 @@ rgbasm -Werror -Weverything -Hl -o main.o main.rgbasm
 [ $? -eq 0 ] || exit 1
 rgbasm -Werror -Weverything -Hl -o sample.o sample.rgbasm
 [ $? -eq 0 ] || exit 1
-rgblink --pad 199 --dmg --tiny --map $ROM_NAME.map --sym $ROM_NAME.sym -o $ROM_NAME.gb main.o sample.o
+rgblink --pad 0xC7 --dmg --tiny --map $ROM_NAME.map --sym $ROM_NAME.sym -o $ROM_NAME.gb main.o sample.o
 [ $? -eq 0 ] || exit 1
-rgbfix --title game --pad-value 199 --validate $ROM_NAME.gb
+rgbfix --title game --pad-value 0xC7 --validate $ROM_NAME.gb
 [ $? -eq 0 ] || exit 1
 
 popd
