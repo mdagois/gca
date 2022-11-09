@@ -18,43 +18,54 @@ graphics_data_end:
 
 section "sample", rom0
 
-InitSample_DMG:
-	;ld a, %11100100
-	;ld [rBGP], a
+def MODEL_NUMBER_TILE_ADDRESS	equ (_SCRN0 + 3 * SCRN_VX_B + 15)
+def TILE_ZERO_INDEX				equ (80)
 
-	;ld de, _VRAM8000
-	;ld hl, dmg_data
-	;.data_copy
-	;	copy [de], [hli]
-	;	inc de
+; (b) = hardware model
+Initialize:
+	ld a, %11100100
+	ld [rBGP], a
 
-	;	ld a, l
-	;	cp a, low(dmg_data_end)
-	;	jr nz, .data_copy
-	;	ld a, h
-	;	cp a, high(dmg_data_end)
-	;	jr nz, .data_copy
+	ld de, _VRAM8000
+	ld hl, graphics_data
+	.data_copy
+		copy [de], [hli]
+		inc de
 
-	;; set the graphics parameters and turn back LCD on
-	;ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-	;ld [rLCDC], a
+		ld a, l
+		cp a, low(graphics_data_end)
+		jr nz, .data_copy
+		ld a, h
+		cp a, high(graphics_data_end)
+		jr nz, .data_copy
 
-	ret
+	; output the hardware model number to the LCD
+	ld hl, MODEL_NUMBER_TILE_ADDRESS
+	ld a, TILE_ZERO_INDEX
+	add a, b
+	ld [hl], a
 
-InitSample_SGB1:
-	ret
+	; set the graphics parameters and turn back LCD on
+	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
 
-InitSample_SGB2:
 	ret
 
 InitSample:
+	ld b, 0
 	ld a, [HARDWARE_MODEL_REGISTER]
+
+	inc b
 	dec a
-	jp z, InitSample_DMG
+	jp z, Initialize
+
+	inc b
 	dec a
-	jp z, InitSample_SGB1
+	jp z, Initialize
+
+	inc b
 	dec a
-	jp z, InitSample_SGB2
+	jp z, Initialize
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
