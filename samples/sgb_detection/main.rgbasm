@@ -11,23 +11,23 @@ entrypoint:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro DetermineHardwareModel
-	;HARDWARE_MODEL_DMG
-	;HARDWARE_MODEL_SGB1
-	;HARDWARE_MODEL_SGB2
-	;cp a, $11
-	;jr nz, .cgb\@
-	;	bit 0, b
-	;	jr z, .gba\@
-	;		ld a, HARDWARE_MODEL_GBA
-	;		jr .done\@
-	;	.gba\@
-	;	ld a, HARDWARE_MODEL_CGB
-	;	jr .done\@
-	;.cgb\@
-	;	ld a, HARDWARE_MODEL_DMG
-	;.done\@
-	;; save the hardware model
-	;ld [HARDWARE_MODEL_REGISTER], a
+	ld b, a
+	ld a, c
+	cp a, $14
+	jr nz, .sgb\@
+		ld a, b
+		inc a
+		jr nz, .sgb2\@
+			ld a, HARDWARE_MODEL_SGB2
+			jr .done\@
+		.sgb2\@
+		ld a, HARDWARE_MODEL_SGB1
+		jr .done\@
+	.sgb\@
+		ld a, HARDWARE_MODEL_DMG
+	.done\@
+	; save the hardware model
+	ld [HARDWARE_MODEL_REGISTER], a
 endm
 
 macro DisableLCD
