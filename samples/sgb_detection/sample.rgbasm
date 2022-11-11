@@ -55,14 +55,17 @@ InitSample:
 	ld b, 0
 	ld a, [HARDWARE_MODEL_REGISTER]
 
+	; DMG
 	inc b
 	dec a
 	jp z, Initialize
 
+	; SGB1
 	inc b
 	dec a
 	jp z, Initialize
 
+	; SGB2
 	inc b
 	dec a
 	jp z, Initialize
