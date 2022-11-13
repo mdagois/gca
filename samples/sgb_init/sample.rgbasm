@@ -1,0 +1,89 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+graphics_data:
+incbin "tileset.chr"
+incbin "sgb_detection.tlm"
+graphics_data_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+WaitOneSecond:
+	ld c, 8
+	.outer
+		ld de, 32768
+		.inner
+			dec de
+			jr nz, .inner
+		dec c
+		jr nz, .outer
+	ret
+
+InitializeSGB:
+	call WaitOneSecond
+	;MASK_EN
+	;Send initial data
+	;Send default sound data
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample_DMG:
+	ret
+
+InitSample_SGB1:
+	call InitializeSGB
+	ret
+
+InitSample_SGB2:
+	jr InitSample_SGB1
+
+InitSample:
+	copy [rBGP], %11100100
+
+	; copy the tileset and tilemap
+	ld de, _VRAM8000
+	ld hl, graphics_data
+	.data_copy
+		copy [de], [hli]
+		inc de
+
+		ld a, l
+		cp a, low(graphics_data_end)
+		jr nz, .data_copy
+		ld a, h
+		cp a, high(graphics_data_end)
+		jr nz, .data_copy
+
+	; hardware-dependent initialization
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	call z, InitSample_DMG
+	dec a
+	call z, InitSample_SGB1
+	dec a
+	call z, InitSample_SGB2
+
+	; set the graphics parameters and turn back LCD on
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitSample, UpdateSample
+
