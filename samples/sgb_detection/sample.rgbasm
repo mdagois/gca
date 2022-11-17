@@ -37,18 +37,7 @@ InitSample:
 	copy [rBGP], %11100100
 
 	; copy the tileset and tilemap
-	ld de, _VRAM8000
-	ld hl, graphics_data
-	.data_copy
-		copy [de], [hli]
-		inc de
-
-		ld a, l
-		cp a, low(graphics_data_end)
-		jr nz, .data_copy
-		ld a, h
-		cp a, high(graphics_data_end)
-		jr nz, .data_copy
+	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 
 	; hardware-dependent initialization
 	ld a, [HARDWARE_MODEL_REGISTER]
