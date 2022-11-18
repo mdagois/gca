@@ -12,8 +12,7 @@ include "hardware.rgbinc"
 def HARDWARE_MODEL_REGISTER		equ (_HRAM)
 
 def HARDWARE_MODEL_DMG			equ (1)
-def HARDWARE_MODEL_SGB1			equ (2)
-def HARDWARE_MODEL_SGB2			equ (3)
+def HARDWARE_MODEL_SGB			equ (2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions

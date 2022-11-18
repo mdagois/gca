@@ -9,10 +9,10 @@ section "vblank_interrupt", rom0[$0040]
 
 section "graphics", rom0
 
-graphics_data:
+graphics_data_dmg:
 incbin "tileset.chr"
-incbin "sgb_detection.tlm"
-graphics_data_end:
+incbin "sgb_dmg_fallback.tlm"
+graphics_data_dmg_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -42,14 +42,18 @@ def SGB_CORE_INIT_PACKET_COUNT	equ ((SgbCoreInitPackets_End - SgbCoreInitPackets
 def SGB_SOUND_INIT_PACKET_COUNT	equ ((SgbSoundInitPackets_End - SgbSoundInitPackets) / SGB_BYTES_PER_PACKET)
 
 WaitOneSecond:
-	ld c, 8
-	.outer
-		ld de, 32768
-		.inner
-			dec de
-			jr nz, .inner
+	ld c, 4
+	.loop_c
+		ld b, 0
+		.loop_b
+			xor a
+			.loop_a
+				inc a
+				jr nz, .loop_a
+			inc b
+			jr nz, .loop_b
 		dec c
-		jr nz, .outer
+		jr nz, .loop_c
 	ret
 
 InitializeSGB:
@@ -66,44 +70,38 @@ InitializeSGB:
 
 section "sample", rom0
 
-InitSample_DMG:
+InitSample_DMG_Pre:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM8000, graphics_data_dmg, graphics_data_dmg_end - graphics_data_dmg
 	ret
 
-InitSample_SGB1:
+InitSample_DMG_Post:
+	ret
+
+InitSample_SGB_Pre:
+	ret
+
+InitSample_SGB_Post:
 	call InitializeSGB
 	ret
 
-InitSample_SGB2:
-	jr InitSample_SGB1
-
 InitSample:
-	copy [rBGP], %11100100
-
-	; copy the tileset and tilemap
-	ld de, _VRAM8000
-	ld hl, graphics_data
-	.data_copy
-		copy [de], [hli]
-		inc de
-
-		ld a, l
-		cp a, low(graphics_data_end)
-		jr nz, .data_copy
-		ld a, h
-		cp a, high(graphics_data_end)
-		jr nz, .data_copy
-
-	; hardware-dependent initialization
 	ld a, [HARDWARE_MODEL_REGISTER]
 	dec a
-	call z, InitSample_DMG
+	call z, InitSample_DMG_Pre
 	dec a
-	call z, InitSample_SGB1
-	dec a
-	call z, InitSample_SGB2
+	call z, InitSample_SGB_Pre
 
 	; set the graphics parameters and turn back LCD on
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	call z, InitSample_DMG_Post
+	dec a
+	call z, InitSample_SGB_Post
+
+	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

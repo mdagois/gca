@@ -11,17 +11,10 @@ entrypoint:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro DetermineHardwareModel
-	ld b, a
 	ld a, c
 	cp a, $14
 	jr nz, .sgb\@
-		ld a, b
-		inc a
-		jr nz, .sgb2\@
-			ld a, HARDWARE_MODEL_SGB2
-			jr .done\@
-		.sgb2\@
-		ld a, HARDWARE_MODEL_SGB1
+		ld a, HARDWARE_MODEL_SGB
 		jr .done\@
 	.sgb\@
 		ld a, HARDWARE_MODEL_DMG
