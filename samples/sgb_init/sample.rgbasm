@@ -18,7 +18,7 @@ graphics_data_dmg_end:
 
 section "sgb_initialization", rom0
 
-SgbCoreInitPackets:
+SgbPackets_CoreInit:
 db $79, $5D, $08, $00, $0B, $8C, $D0, $F4, $60, $00, $00, $00, $00, $00, $00, $00
 db $79, $52, $08, $00, $0B, $A9, $E7, $9F, $01, $C0, $7E, $E8, $E8, $E8, $E8, $E0
 db $79, $47, $08, $00, $0B, $C4, $D0, $16, $A5, $CB, $C9, $05, $D0, $10, $A2, $28
@@ -27,19 +27,40 @@ db $79, $31, $08, $00, $0B, $0C, $A5, $CA, $C9, $7E, $D0, $06, $A5, $CB, $C9, $7
 db $79, $26, $08, $00, $0B, $39, $CD, $48, $0C, $D0, $34, $A5, $C9, $C9, $80, $D0
 db $79, $1B, $08, $00, $0B, $EA, $EA, $EA, $EA, $EA, $A9, $01, $CD, $4F, $0C, $D0
 db $79, $10, $08, $00, $0B, $4C, $20, $08, $EA, $EA, $EA, $EA, $EA, $60, $EA, $EA
-SgbCoreInitPackets_End:
+SgbPackets_CoreInit_End:
 
-SgbSoundInitPackets:
+SgbPackets_SoundInit:
 db $79, $00, $09, $00, $0B, $AD, $C2, $02, $C9, $09, $D0, $1A, $A9, $01, $8D, $00
 db $79, $0B, $09, $00, $0B, $42, $AF, $DB, $FF, $00, $F0, $05, $20, $73, $C5, $80
 db $79, $16, $09, $00, $0B, $03, $20, $76, $C5, $A9, $31, $8D, $00, $42, $68, $68
 db $79, $21, $09, $00, $01, $60, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 db $79, $00, $08, $00, $03, $4C, $00, $09, $00, $00, $00, $00, $00, $00, $00, $00
-SgbSoundInitPackets_End:
+SgbPackets_SoundInit_End:
+
+; \1 = type
+macro SgbPacket_MaskEn
+db $B9, \1, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+endm
+
+SgbPacket_MaskEn_Cancel:
+	SgbPacket_MaskEn $00
+SgbPacket_MaskEn_Cancel_End:
+
+SgbPacket_MaskEn_Freeze:
+	SgbPacket_MaskEn $01
+SgbPacket_MaskEn_Freeze_End:
+
+SgbPacket_MaskEn_Black:
+	SgbPacket_MaskEn $02
+SgbPacket_MaskEn_Black_End:
+
+SgbPacket_MaskEn_Color0:
+	SgbPacket_MaskEn $03
+SgbPacket_MaskEn_Color0_End:
 
 def SGB_BYTES_PER_PACKET		equ (16)
-def SGB_CORE_INIT_PACKET_COUNT	equ ((SgbCoreInitPackets_End - SgbCoreInitPackets) / SGB_BYTES_PER_PACKET)
-def SGB_SOUND_INIT_PACKET_COUNT	equ ((SgbSoundInitPackets_End - SgbSoundInitPackets) / SGB_BYTES_PER_PACKET)
+def SGB_CORE_INIT_PACKET_COUNT	equ ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
+def SGB_SOUND_INIT_PACKET_COUNT	equ ((SgbPackets_SoundInit_End - SgbPackets_SoundInit) / SGB_BYTES_PER_PACKET)
 
 WaitAtLeastOneSecond:
 	xor a
@@ -59,14 +80,35 @@ WaitAtLeastOneSecond:
 		jr nz, .loop_c
 	ret
 
+macro SendCommand
+	ld hl, \1
+	call _SendCommand
+endm
+
+_SendCommand:
+	ret
+
 InitializeSGB:
 	call WaitAtLeastOneSecond
-	;MASK_EN
-	;Send init data
-	;Send sound init data
+	SendCommand SgbPacket_MaskEn_Color0
+
+COMMAND_INDEX = 0
+rept SGB_CORE_INIT_PACKET_COUNT
+	SendCommand SgbPackets_CoreInit + COMMAND_INDEX
+COMMAND_INDEX += SGB_BYTES_PER_PACKET
+endr
+
+COMMAND_INDEX = 0
+rept SGB_SOUND_INIT_PACKET_COUNT
+	SendCommand SgbPackets_SoundInit + COMMAND_INDEX
+COMMAND_INDEX += SGB_BYTES_PER_PACKET
+endr
+
 	;Custom init
-	;Wait a frame
-	;MASK_EN
+
+	halt
+	SendCommand SgbPacket_MaskEn_Cancel
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
