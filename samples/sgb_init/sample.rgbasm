@@ -58,6 +58,9 @@ SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn $03
 SgbPacket_MaskEn_Color0_End:
 
+SgbPacket_Pal01_Test:
+db $01, $00, $7C, $E0, $03, $1F, $00, $00, $00, $00, $7C, $E0, $03, $1F, $00, $00
+
 def SGB_BYTES_PER_PACKET		equ (16)
 def SGB_CORE_INIT_PACKET_COUNT	equ ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
 def SGB_SOUND_INIT_PACKET_COUNT	equ ((SgbPackets_SoundInit_End - SgbPackets_SoundInit) / SGB_BYTES_PER_PACKET)
@@ -80,17 +83,98 @@ WaitAtLeastOneSecond:
 		jr nz, .loop_c
 	ret
 
+; \1 = number of cycle to skip
+macro SkipCycle
+rept \1
+	nop
+endr
+endm
+
 macro SendCommand
 	ld hl, \1
 	call _SendCommand
 endm
 
+_SendPacket:
+	; packet start marker
+	xor a						;  1
+	ldh [rP1], a				;  3
+	SkipCycle 4					;  4
+	ld a, P1F_GET_NONE			;  2
+	ldh [rP1], a				;  3
+	SkipCycle 4					;  4
+
+	; send all bytes
+	ld b, 16					;  2
+	.send_byte
+		ld e, [hl]				;  2
+		inc hl					;  2
+
+		ld d, 8					;  2
+		.send_bit
+			rrc e				;  2
+			jr c, .pulse		;  3
+				; zero
+				nop
+				ld a, P1F_5		;  2
+				jr .pulse_end	;  3
+			.pulse
+				; one
+				ld a, P1F_4		;  2
+				jr .pulse_end	;  3
+			.pulse_end
+			ldh [rP1], a		;  3
+			SkipCycle 6			;  6
+			ld a, P1F_GET_NONE	;  2
+			ldh [rP1], a		;  3
+			SkipCycle 3			;  3
+
+			dec d				;  1
+			jr nz, .send_bit	;  3
+
+		; no short rest required
+
+		dec b					;  1
+		jr nz, .send_byte		;  3
+
+	SkipCycle 8					;  8
+
+	; sentinel
+	ld a, P1F_5					;  2
+	ldh [rP1], a				;  3
+	SkipCycle 6					;  6
+	ld a, P1F_GET_NONE			;  2
+	ldh [rP1], a				;  3
+
+	; long rest period
+	ld d, 128
+	.outer
+		ld e, 146
+		.inner
+			dec e
+			jr nz, .inner
+		dec d
+		jr nz, .outer
+
+	ret
+
 _SendCommand:
+	; retrieve the number of packets in the command
+	ld a, [hl]
+	and a, $07
+
+	; send all packets
+	ld c, a
+	.send_packet
+		call _SendPacket
+		dec c
+		jr nz, .send_packet
+
 	ret
 
 InitializeSGB:
 	call WaitAtLeastOneSecond
-	SendCommand SgbPacket_MaskEn_Color0
+	SendCommand SgbPacket_MaskEn_Black
 
 COMMAND_INDEX = 0
 rept SGB_CORE_INIT_PACKET_COUNT
@@ -105,6 +189,7 @@ COMMAND_INDEX += SGB_BYTES_PER_PACKET
 endr
 
 	;Custom init
+	SendCommand SgbPacket_Pal01_Test
 
 	halt
 	SendCommand SgbPacket_MaskEn_Cancel
@@ -124,9 +209,14 @@ InitSample_DMG_Post:
 	ret
 
 InitSample_SGB_Pre:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM8000, graphics_data_dmg, graphics_data_dmg_end - graphics_data_dmg
 	ret
 
 InitSample_SGB_Post:
+	; xxx
+	halt
+	halt
 	call InitializeSGB
 	ret
 
@@ -136,6 +226,10 @@ InitSample:
 	call z, InitSample_DMG_Pre
 	dec a
 	call z, InitSample_SGB_Pre
+
+	; vblank interrupt
+	copy [rIE], IEF_VBLANK
+	ei
 
 	; set the graphics parameters and turn back LCD on
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
