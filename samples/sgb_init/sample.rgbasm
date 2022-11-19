@@ -83,13 +83,6 @@ WaitAtLeastOneSecond:
 		jr nz, .loop_c
 	ret
 
-; \1 = number of cycle to skip
-macro SkipCycle
-rept \1
-	nop
-endr
-endm
-
 macro SendCommand
 	ld hl, \1
 	call _SendCommand
@@ -97,54 +90,39 @@ endm
 
 _SendPacket:
 	; packet start marker
-	xor a						;  1
-	ldh [rP1], a				;  3
-	SkipCycle 4					;  4
-	ld a, P1F_GET_NONE			;  2
-	ldh [rP1], a				;  3
-	SkipCycle 4					;  4
+	xor a
+	ldh [rP1], a
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
 
 	; send all bytes
-	ld b, 16					;  2
+	ld b, 16
 	.send_byte
-		ld e, [hl]				;  2
-		inc hl					;  2
+		ld e, [hl]
+		inc hl
 
-		ld d, 8					;  2
+		ld d, 8
 		.send_bit
-			rrc e				;  2
-			jr c, .pulse		;  3
-				; zero
-				nop
-				ld a, P1F_5		;  2
-				jr .pulse_end	;  3
+			rrc e
+			ld a, P1F_4		; one
+			jr c, .pulse
+				ld a, P1F_5	; zero
 			.pulse
-				; one
-				ld a, P1F_4		;  2
-				jr .pulse_end	;  3
-			.pulse_end
-			ldh [rP1], a		;  3
-			SkipCycle 6			;  6
-			ld a, P1F_GET_NONE	;  2
-			ldh [rP1], a		;  3
-			SkipCycle 3			;  3
+			ldh [rP1], a
+			ld a, P1F_GET_NONE
+			ldh [rP1], a
 
-			dec d				;  1
-			jr nz, .send_bit	;  3
+			dec d
+			jr nz, .send_bit
 
-		; no short rest required
-
-		dec b					;  1
-		jr nz, .send_byte		;  3
-
-	SkipCycle 8					;  8
+		dec b
+		jr nz, .send_byte
 
 	; sentinel
-	ld a, P1F_5					;  2
-	ldh [rP1], a				;  3
-	SkipCycle 6					;  6
-	ld a, P1F_GET_NONE			;  2
-	ldh [rP1], a				;  3
+	ld a, P1F_5
+	ldh [rP1], a
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
 
 	; long rest period
 	ld d, 128
