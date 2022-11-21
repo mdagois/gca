@@ -44,6 +44,10 @@ if %errorlevel% neq 0 goto end
 %DMG_CONV% %DMG_TILESET_DIR%sound_test.png %DMG_TILEMAP_DIR%ch1_test.png %DMG_TILEMAP_DIR%ch2_test.png %DMG_TILEMAP_DIR%ch3_test.png %DMG_TILEMAP_DIR%ch4_test.png
 if %errorlevel% neq 0 goto end
 
+:: tech (DMG)
+%DMG_CONV% %DMG_TILESET_DIR%tech_dmg.png %DMG_TILEMAP_DIR%tech_dmg.png
+if %errorlevel% neq 0 goto end
+
 del /f /s /q %DMG_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %DMG_CHR_DIR% 2> nul
 mkdir %DMG_CHR_DIR% 2> nul
@@ -79,6 +83,10 @@ if %errorlevel% neq 0 goto end
 %CGB_CONV% %CGB_ASSETS_DIR%print_data.png
 if %errorlevel% neq 0 goto end
 %PKT_CONV% %CGB_ASSETS_DIR%print_data.chr
+if %errorlevel% neq 0 goto end
+
+:: tech (SGB)
+%CGB_CONV% -mp %CGB_ASSETS_DIR%tech_sgb.png %CGB_ASSETS_DIR%tech_sgb.png
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %CGB_CHR_DIR% 2> nul 1> nul
