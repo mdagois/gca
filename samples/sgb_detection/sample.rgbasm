@@ -22,36 +22,34 @@ def MODEL_NUMBER_TILE_ADDRESS	equ (_SCRN0 + 3 * SCRN_VX_B + 15)
 def TILE_ZERO_INDEX				equ (80)
 
 InitSample_DMG:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 0
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
 InitSample_SGB1:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 1
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
 InitSample_SGB2:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 2
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
 InitSample:
-	copy [rBGP], %11100100
-
-	; copy the tileset and tilemap
-	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
-
-	; hardware-dependent initialization
 	ld a, [HARDWARE_MODEL_REGISTER]
 	dec a
-	call z, InitSample_DMG
+	jr z, InitSample_DMG
 	dec a
-	call z, InitSample_SGB1
+	jr z, InitSample_SGB1
 	dec a
-	call z, InitSample_SGB2
-
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-
-	ret
+	jr z, InitSample_SGB2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
