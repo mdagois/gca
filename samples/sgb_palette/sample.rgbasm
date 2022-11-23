@@ -10,8 +10,8 @@ section "vblank_interrupt", rom0[$0040]
 section "graphics", rom0
 
 graphics_data:
-incbin "tileset.chr"
-incbin "sgb_detection.tlm"
+incbin "tech_dmg_tileset.chr"
+incbin "tech_dmg.tlm"
 graphics_data_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,6 +137,22 @@ SgbPacket_MaskEn_Black_End:
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn $03
 SgbPacket_MaskEn_Color0_End:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Palette packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_Palette01:
+db PAL01
+incbin "tech_sgb.pal", 0, 8
+incbin "tech_sgb.pal", 10, 6
+db $00
+
+SgbPacket_Palette23:
+db PAL23
+incbin "tech_sgb.pal", 16, 8
+incbin "tech_sgb.pal", 26, 6
+db $00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -270,6 +286,8 @@ _SendCommand:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PerformCustomInitialization:
+	SendCommand SgbPacket_Palette01
+	SendCommand SgbPacket_Palette23
 	ret
 
 InitializeSgbDevice:
