@@ -19,11 +19,9 @@ enum : uint32_t
 {
 	kTileSize = 8,
 	kColorsPerPalette = 4,
-	kPaletteMaxCount = 8,
-	kVramBankCount = 2,
-	kTilesPerVramBank = 256,
-	kTilesMaxCount = kTilesPerVramBank * kVramBankCount,
-	kTilemapIndexMaxCount = 1024,
+	kPaletteMaxCount = 4,
+	kTilesMaxCount = 256,
+	kTilemapIndexMaxCount = 20 * 18,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
 	kPaletteIndex_Invalid = 0xFFFFFFFFU,
@@ -32,17 +30,6 @@ enum : uint32_t
 enum : uint16_t
 {
 	kBGR555_Invalid = 0x8000U,
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Export parameters
-////////////////////////////////////////////////////////////////////////////////
-
-struct ExportParameters
-{
-	bool export_palettes;
-	bool optimize_tileset;
-	bool generate_tilemaps;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -262,7 +249,7 @@ struct PaletteSet
 	Palette palettes[kPaletteMaxCount];
 };
 
-static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch)
+static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixels, uint32_t row_pitch, const ColorBGR555 color0)
 {
 	set<ColorBGR555> colors;
 	for(uint32_t j = 0; j < kTileSize; ++j)
@@ -270,27 +257,46 @@ static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixel
 		const ColorRGBA* row_pixels = pixels + (j * row_pitch);
 		for(uint32_t i = 0; i < kTileSize; ++i)
 		{
-			colors.insert(convertColor(row_pixels[i]));
+			const ColorBGR555 c = convertColor(row_pixels[i]);
+			if(c != color0)
+			{
+				colors.insert(c);
+			}
 		}
 	}
-	if(colors.size() > kColorsPerPalette)
+
+	uint32_t color_offset = 0;
+	if(color0 == kBGR555_Invalid)
 	{
-		cout << "Too many colors (" << colors.size() << ") in tile" << endl;
-		return false;
+		if(colors.size() > kColorsPerPalette)
+		{
+			cout << "Too many colors (" << colors.size() << ") in tile" << endl;
+			return false;
+		}
+	}
+	else
+	{
+		out_tile_palette.colors[0] = color0;
+		color_offset = 1;
+		if(colors.size() > kColorsPerPalette - 1)
+		{
+			cout << "Too many colors (" << colors.size() + 1 << ") in tile" << endl;
+			return false;
+		}
 	}
 
-	uint32_t c = 0;
+	uint32_t c = color_offset;
 	for(ColorBGR555 color : colors)
 	{
 		out_tile_palette.colors[c] = color;
 		++c;
 	}
-	sortColors(out_tile_palette.colors, c);
+	sortColors(out_tile_palette.colors + color_offset, c - color_offset);
 
 	return true;
 }
 
-static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette rhs)
+static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette rhs, ColorBGR555 color0)
 {
 	set<ColorBGR555> colors;
 	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
@@ -298,6 +304,10 @@ static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette
 		if(lhs.colors[i] == kBGR555_Invalid)
 		{
 			break;
+		}
+		if(lhs.colors[i] == color0)
+		{
+			continue;
 		}
 		colors.insert(lhs.colors[i]);
 	}
@@ -307,21 +317,32 @@ static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette
 		{
 			break;
 		}
+		if(rhs.colors[i] == color0)
+		{
+			continue;
+		}
 		colors.insert(rhs.colors[i]);
 	}
 
-	if(colors.size() > kColorsPerPalette)
+	uint32_t color_offset = 0;
+	if(color0 != kBGR555_Invalid)
+	{
+		color_offset = 1;
+		out_palette.colors[0] = color0;
+	}
+
+	if(colors.size() > kColorsPerPalette - color_offset)
 	{
 		return false;
 	}
 
-	uint32_t c = 0;
+	uint32_t c = color_offset;
 	for(ColorBGR555 color : colors)
 	{
 		out_palette.colors[c] = color;
 		++c;
 	}
-	sortColors(out_palette.colors, c);
+	sortColors(out_palette.colors + color_offset, c - color_offset);
 	return true;
 }
 
@@ -330,7 +351,7 @@ static bool mergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palet
 	for(uint32_t p = 0; p < kPaletteMaxCount; ++p)
 	{
 		Palette& set_palette = out_palette_set.palettes[p];
-		if(mergePalettes(set_palette, palette, set_palette))
+		if(mergePalettes(set_palette, palette, set_palette, set_palette.colors[0]))
 		{
 			return true;
 		}
@@ -339,14 +360,86 @@ static bool mergePaletteIntoSet(PaletteSet& out_palette_set, const Palette palet
 	return false;
 }
 
+static bool setColor0(PaletteSet& out_palette_set, const Image& image)
+{
+	map<ColorBGR555, uint32_t> colors;
+	if(!iterateImageTiles(
+		image,
+		[&image, &colors](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		{
+			Palette tile_palette;
+			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth(), kBGR555_Invalid))
+			{
+				cout << "Could not extract tile palette for tile (" << tile_column << "," << tile_row << ")" << endl;
+				return false;
+			}
+			uint32_t palette_size = 0;
+			for(uint32_t i = 0; i < kColorsPerPalette; ++i)
+			{
+				const ColorBGR555 color = tile_palette.colors[i];
+				if(color == kBGR555_Invalid)
+				{
+					break;
+				}
+				++palette_size;
+			}
+			for(uint32_t i = 0; i < kColorsPerPalette; ++i)
+			{
+				const ColorBGR555 color = tile_palette.colors[i];
+				if(color == kBGR555_Invalid)
+				{
+					break;
+				}
+				auto colorIt = colors.find(color);
+				if(colorIt == colors.end())
+				{
+					colors.insert(pair<ColorBGR555, uint32_t>(color, 1));
+				}
+				else
+				{
+					colorIt->second += palette_size;
+				}
+			}
+			return true;
+		}))
+	{
+		return false;
+	}
+	assert(colors.size() > 0);
+
+	auto it = colors.begin();
+	auto most_used_it = it;
+	++it;
+	for(; it != colors.end(); ++it)
+	{
+		if( (it->second > most_used_it->second) ||
+			(it->second == most_used_it->second && getLuminance(it->first) < getLuminance(most_used_it->first)))
+		{
+			most_used_it = it;
+		}
+	}
+	const ColorBGR555 most_used_color = most_used_it->first;
+	assert(most_used_color != kBGR555_Invalid);
+
+	for(uint32_t i = 0; i < kPaletteMaxCount; ++i)
+	{
+		out_palette_set.palettes[i].colors[0] = most_used_color;
+	}
+	return true;
+}
+
 static bool extractPalettes(PaletteSet& out_palette_set, const Image& image)
 {
+	if(!setColor0(out_palette_set, image))
+	{
+		return false;
+	}
 	return iterateImageTiles(
 		image,
 		[&image, &out_palette_set](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
 			Palette tile_palette;
-			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth()))
+			if(!extractTilePalette(tile_palette, tile_pixels, image.getWidth(), out_palette_set.palettes[0].colors[0]))
 			{
 				cout << "Could not extract tile palette for tile (" << tile_column << "," << tile_row << ")" << endl;
 				return false;
@@ -379,86 +472,16 @@ static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
 // Tile
 ////////////////////////////////////////////////////////////////////////////////
 
-enum TileFlipType : uint32_t
-{
-	kTileFlipType_None,
-	kTileFlipType_Horizontal,
-	kTileFlipType_Vertical,
-	kTileFlipType_Both,
-	kTileFlipType_Count,
-};
-
-struct TileFlip
-{
-	union
-	{
-		uint16_t rows[kTileSize];
-		uint64_t values[kTileSize * sizeof(uint16_t) / sizeof(uint64_t)];
-	};
-
-	bool operator<(const TileFlip& other) const
-	{
-		return tie(values[0], values[1]) < tie(other.values[0], other.values[1]);
-	}
-};
-
 struct Tile
 {
-	TileFlip flips[kTileFlipType_Count];
+	uint16_t rows[kTileSize];
 	uint32_t palette_index;
-};
-
-struct TileFlipIndex
-{
-	size_t index;
-	TileFlipType flip_type;
 };
 
 struct Tileset
 {
 	vector<Tile> tiles;
-	map<TileFlip, TileFlipIndex> flipToIndex;
 };
-
-static void generateTileFlips(Tile& out_tile)
-{
-	const TileFlip& none = out_tile.flips[kTileFlipType_None];
-	{
-		TileFlip& horizontal = out_tile.flips[kTileFlipType_Horizontal];
-		for(uint32_t i = 0; i < kTileSize; ++i)
-		{
-			const uint8_t* src_bytes = reinterpret_cast<const uint8_t*>(none.rows + i);
-			uint8_t* dst_bytes = reinterpret_cast<uint8_t*>(horizontal.rows + i);
-			for(uint32_t b = 0; b < 2; ++b)
-			{
-				dst_bytes[b] =
-					((src_bytes[b] & 0x01) << 7) |
-					((src_bytes[b] & 0x02) << 5) |
-					((src_bytes[b] & 0x04) << 3) |
-					((src_bytes[b] & 0x08) << 1) |
-					((src_bytes[b] & 0x10) >> 1) |
-					((src_bytes[b] & 0x20) >> 3) |
-					((src_bytes[b] & 0x40) >> 5) |
-					((src_bytes[b] & 0x80) >> 7);
-			}
-		}
-	}
-	{
-		TileFlip& vertical = out_tile.flips[kTileFlipType_Vertical];
-		for(uint32_t i = 0; i < kTileSize; ++i)
-		{
-			vertical.rows[(kTileSize - 1) - i] = none.rows[i];
-		}
-	}
-	{
-		TileFlip& both = out_tile.flips[kTileFlipType_Both];
-		const TileFlip& horizontal = out_tile.flips[kTileFlipType_Horizontal];
-		for(uint32_t i = 0; i < kTileSize; ++i)
-		{
-			both.rows[(kTileSize - 1) - i] = horizontal.rows[i];
-		}
-	}
-}
 
 static bool isSuperPalette(const Palette& super_palette, const Palette& sub_palette)
 {
@@ -504,7 +527,7 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 	Palette tile_palette;
 	{
 		Palette palette;
-		if(!extractTilePalette(palette, pixels, row_pitch))
+		if(!extractTilePalette(palette, pixels, row_pitch, palette_set.palettes[0].colors[0]))
 		{
 			cout << "Could not extract tile color" << endl;
 			return false;
@@ -531,10 +554,9 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 		return static_cast<uint32_t>(kColorIndex_Invalid);
 	};
 
-	TileFlip& none = out_tile.flips[kTileFlipType_None];
 	for(uint32_t j = 0; j < kTileSize; ++j)
 	{
-		uint16_t& row_value = none.rows[j];
+		uint16_t& row_value = out_tile.rows[j];
 		row_value = 0;
 		uint8_t* bytes = reinterpret_cast<uint8_t*>(&row_value);
 
@@ -555,15 +577,14 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 		}
 	}
 
-	generateTileFlips(out_tile);
 	return true;
 }
 
-static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image, bool optimize_tileset)
+static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image)
 {
 	const bool success = iterateImageTiles(
 		image,
-		[&image, &palette_set, optimize_tileset, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		[&image, &palette_set, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
 			Tile tile;
 			if(!extractTile(tile, palette_set, tile_pixels, image.getWidth()))
@@ -571,19 +592,15 @@ static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, 
 				cout << "Could not extract tile (" << tile_column << "," << tile_row << ")" << endl;
 				return false;
 			}
-			if(optimize_tileset && out_tileset.flipToIndex.find(tile.flips[kTileFlipType_None]) != out_tileset.flipToIndex.end())
+
+			for(uint32_t i = 0; i < out_tileset.tiles.size(); ++i)
 			{
-				return true;
+				if(memcmp(&tile, &out_tileset.tiles[i], sizeof(Tile)) == 0)
+				{
+					return true;
+				}
 			}
 
-			const size_t tile_index = out_tileset.tiles.size();
-			for(uint32_t i = 0; i < kTileFlipType_Count; ++i)
-			{
-				TileFlipIndex flip_index = {};
-				flip_index.index = tile_index;
-				flip_index.flip_type = static_cast<TileFlipType>(i);
-				out_tileset.flipToIndex.insert(pair<TileFlip, TileFlipIndex>(tile.flips[i], flip_index));
-			}
 			out_tileset.tiles.push_back(tile);
 			return true;
 		});
@@ -608,22 +625,10 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 		cout << "Could not open file [" << filename << "]" << endl;
 		return false;
 	}
-	bool success = true;
-	const vector<Tile>& tiles = tileset.tiles;
-	for(size_t i = 0; i < tiles.size(); ++i)
-	{
-		const Tile& tile = tiles[i];
-		const size_t written = fwrite(&tile.flips[kTileFlipType_None], sizeof(TileFlip), 1, file);
-		if(written != 1)
-		{
-			cout << "Could not write tile [" << i << "]" << endl;
-			success = false;
-			break;
-		}
-	}
 
+	const size_t written = fwrite(tileset.tiles.data(), sizeof(Tile), tileset.tiles.size(), file);
 	fclose(file);
-	return success;
+	return written == tileset.tiles.size();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -633,13 +638,13 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 struct Tilemap
 {
 	vector<uint8_t> indices;
-	vector<uint8_t> parameters;
+	vector<uint8_t> attributes;
 };
 
 static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const PaletteSet& palette_set, const Image& image)
 {
 	out_tilemap.indices.clear();
-	out_tilemap.parameters.clear();
+	out_tilemap.attributes.clear();
 
 	const bool success = iterateImageTiles(
 		image,
@@ -652,27 +657,25 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 				return false;
 			}
 
-			const auto index_it = tileset.flipToIndex.find(tile.flips[kTileFlipType_None]);
-			if(index_it == tileset.flipToIndex.end())
+			bool found = false;
+			uint8_t tile_index = 0;
+			for(uint32_t i = 0; i < tileset.tiles.size(); ++i)
+			{
+				if(memcmp(&tile, &tileset.tiles[i], sizeof(Tile)) == 0)
+				{
+					tile_index = i;
+					found = true;
+					break;
+				}
+			}
+			if(!found)
 			{
 				cout << "Could not find a corresponding tile in the tileset" << endl;
 				return false;
 			}
 
-			const TileFlipIndex tile_flip_index = index_it->second;
-			const size_t index = tile_flip_index.index;
-			const uint8_t tile_index = index % kTilesPerVramBank;
 			out_tilemap.indices.push_back(tile_index);
-
-			const uint8_t palette_number = tile.palette_index & 0x7;
-			const uint8_t vram_bank = (index / kTilesPerVramBank) & 0x1;
-			const uint8_t flip_type = tile_flip_index.flip_type;
-
-			const uint8_t parameters =
-				palette_number |
-				(vram_bank << 3) |
-				(flip_type << 5);
-			out_tilemap.parameters.push_back(parameters);
+			out_tilemap.attributes.push_back(tile.palette_index & 0x3);
 			return true;
 		});
 	if(!success)
@@ -680,7 +683,7 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 		return false;
 	}
 	const size_t index_count = out_tilemap.indices.size();
-	assert(index_count == out_tilemap.parameters.size());
+	assert(index_count == out_tilemap.attributes.size());
 	if(index_count > kTilemapIndexMaxCount)
 	{
 		cout << "Too many indices in the tilemap (" << index_count << " > " << kTilemapIndexMaxCount << ")" << endl;
@@ -689,7 +692,7 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 	return true;
 }
 
-static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* parameter_filename)
+static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* attribute_filename)
 {
 	auto writeData = [](const uint8_t* data, size_t data_size, const char* filename)
 	{
@@ -706,18 +709,6 @@ static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, con
 			fclose(file);
 			return false;
 		}
-		const size_t padding_size = kTilemapIndexMaxCount - data_size;
-		for(uint32_t i = 0; i < padding_size; ++i)
-		{
-			const uint8_t padding = 0;
-			const size_t written = fwrite(&padding, sizeof(padding), 1, file);
-			if(written != 1)
-			{
-				cout << "Could not write the padding to file [" << filename << "]" << endl;
-				fclose(file);
-				return false;
-			}
-		}
 		fclose(file);
 		return true;
 	};
@@ -728,9 +719,21 @@ static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, con
 		cout << "Could not write the index file [" << index_filename << "]" << endl;
 		return false;
 	}
-	if(!writeData(tilemap.parameters.data(), index_count * sizeof(tilemap.parameters[0]), parameter_filename))
+
+	assert(tilemap.attributes.size() % 4 == 0);
+	vector<uint8_t> attributes;
+	for(uint32_t i = 0; i < tilemap.attributes.size(); i += 4)
 	{
-		cout << "Could not write the parameter file [" << parameter_filename << "]" << endl;
+		attributes.push_back(
+			(tilemap.attributes[i + 0] << 0) |
+			(tilemap.attributes[i + 1] << 2) |
+			(tilemap.attributes[i + 2] << 4) |
+			(tilemap.attributes[i + 3] << 6));
+	}
+	size_t test = attributes.size() * sizeof(attributes[0]);
+	if(!writeData(attributes.data(), attributes.size() * sizeof(attributes[0]), attribute_filename))
+	{
+		cout << "Could not write the parameter file [" << attribute_filename << "]" << endl;
 		return false;
 	}
 	return true;
@@ -746,57 +749,16 @@ int main(int argc, const char** argv)
 	{
 		cout
 			<< "USAGE" << endl
-			<< argv[0] << " [-mpt] <tileset_png_filename> [tilemap_png ...]" << endl
-			<< "Options" << endl
-			<< "\tm\tGenerate tilemaps" << endl
-			<< "\tp\tOutput a palette file" << endl
-			<< "\tt\tOptimize the tileset" << endl;
+			<< argv[0] << " <tileset_png_filename> [tilemap_png ...]" << endl;
 		return 0;
-	}
-
-	ExportParameters parameters = {};
-
-	int32_t first_filename = 1;
-	if(argv[1][0] == '-')
-	{
-		const char* options = argv[1];
-		const size_t option_len = strlen(options);
-		for(size_t i = 1; i < option_len; ++i)
-		{
-			const char o = options[i];
-			switch(o)
-			{
-				case 'm':
-				{
-					parameters.generate_tilemaps = true;
-					break;
-				}
-				case 'p':
-				{
-					parameters.export_palettes = true;
-					break;
-				}
-				case 't':
-				{
-					parameters.optimize_tileset = true;
-					break;
-				}
-				default:
-				{
-					cout << "Unknown option: [" << o << "]" << endl;
-					break;
-				}
-			}
-		}
-		first_filename = 2;
 	}
 
 	ImageList images;
 	{
-		images.resize(argc - first_filename);
+		images.resize(argc - 1);
 		for(int32_t i = 0; i < images.size(); ++i)
 		{
-			const char* filename = argv[i + first_filename];
+			const char* filename = argv[i + 1];
 			Image& image = images[i];
 			if(!image.read(filename))
 			{
@@ -820,7 +782,7 @@ int main(int argc, const char** argv)
 			cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
 			return 1;
 		}
-		if(parameters.export_palettes && !writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+		if(!writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
 		{
 			cout << "Could not write the palette file" << endl;
 			return 1;
@@ -829,7 +791,7 @@ int main(int argc, const char** argv)
 
 	Tileset tileset;
 	{
-		if(!extractTileset(tileset, palette_set, images[0], parameters.optimize_tileset))
+		if(!extractTileset(tileset, palette_set, images[0]))
 		{
 			cout << "Could not extract the tiles for file [" << images[0].getFilename() << "]" << endl;
 			return 1;
@@ -841,21 +803,18 @@ int main(int argc, const char** argv)
 		}
 	}
 
-	if(parameters.generate_tilemaps)
+	for(uint32_t i = 1; i < images.size(); ++i)
 	{
-		for(uint32_t i = 1; i < images.size(); ++i)
+		Tilemap tilemap;
+		if(!extractTilemaps(tilemap, tileset, palette_set, images[i]))
 		{
-			Tilemap tilemap;
-			if(!extractTilemaps(tilemap, tileset, palette_set, images[i]))
-			{
-				cout << "Could not extract the tiles for file [" << images[i].getFilename() << "]" << endl;
-				return 1;
-			}
-			if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".idx").c_str(), getOutputFilename(images[i].getFilename(), ".prm").c_str()))
-			{
-				cout << "Could not write the tilemap files for file [" << images[i].getFilename() << "]" << endl;
-				return 1;
-			}
+			cout << "Could not extract the tiles for file [" << images[i].getFilename() << "]" << endl;
+			return 1;
+		}
+		if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".tlm").c_str(), getOutputFilename(images[i].getFilename(), ".atr").c_str()))
+		{
+			cout << "Could not write the tilemap files for file [" << images[i].getFilename() << "]" << endl;
+			return 1;
 		}
 	}
 
