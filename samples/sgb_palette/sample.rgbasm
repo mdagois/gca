@@ -162,6 +162,17 @@ incbin "tech_sgb.pal", 16, 8
 incbin "tech_sgb.pal", 26, 6
 db $00
 
+SgbPacket_AttrChr:
+db ATTR_CHR_6
+db $00, $00
+db $68, $01
+db $00
+ROW_BYTE_OFFSET = 0
+rept 18
+incbin "tech_sgb.atr", ROW_BYTE_OFFSET, 5
+ROW_BYTE_OFFSET += 8
+endr
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -296,6 +307,7 @@ _SendCommand:
 PerformCustomInitialization:
 	SendCommand SgbPacket_Palette01
 	SendCommand SgbPacket_Palette23
+	SendCommand SgbPacket_AttrChr
 	ret
 
 InitializeSgbDevice:
