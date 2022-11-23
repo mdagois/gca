@@ -24,7 +24,6 @@ enum : uint32_t
 	kTilemapIndexMaxCount = 20 * 18,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
-	kPaletteIndex_Invalid = 0xFFFFFFFFU,
 };
 
 enum : uint16_t
@@ -301,41 +300,26 @@ static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette
 	set<ColorBGR555> colors;
 	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
 	{
-		if(lhs.colors[i] == kBGR555_Invalid)
+		if(lhs.colors[i] != kBGR555_Invalid && lhs.colors[i] != color0)
 		{
-			break;
+			colors.insert(lhs.colors[i]);
 		}
-		if(lhs.colors[i] == color0)
+		if(rhs.colors[i] != kBGR555_Invalid && rhs.colors[i] != color0)
 		{
-			continue;
+			colors.insert(rhs.colors[i]);
 		}
-		colors.insert(lhs.colors[i]);
-	}
-	for(uint32_t i = 0; i < kColorsPerPalette; ++i)
-	{
-		if(rhs.colors[i] == kBGR555_Invalid)
-		{
-			break;
-		}
-		if(rhs.colors[i] == color0)
-		{
-			continue;
-		}
-		colors.insert(rhs.colors[i]);
 	}
 
-	uint32_t color_offset = 0;
-	if(color0 != kBGR555_Invalid)
-	{
-		color_offset = 1;
-		out_palette.colors[0] = color0;
-	}
-
+	const uint32_t color_offset = (color0 == kBGR555_Invalid) ? 0 : 1;
 	if(colors.size() > kColorsPerPalette - color_offset)
 	{
 		return false;
 	}
 
+	if(color0 != kBGR555_Invalid)
+	{
+		out_palette.colors[0] = color0;
+	}
 	uint32_t c = color_offset;
 	for(ColorBGR555 color : colors)
 	{
@@ -393,7 +377,7 @@ static bool setColor0(PaletteSet& out_palette_set, const Image& image)
 				auto colorIt = colors.find(color);
 				if(colorIt == colors.end())
 				{
-					colors.insert(pair<ColorBGR555, uint32_t>(color, 1));
+					colors.insert(pair<ColorBGR555, uint32_t>(color, palette_size));
 				}
 				else
 				{
