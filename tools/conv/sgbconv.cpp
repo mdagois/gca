@@ -722,10 +722,10 @@ static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, con
 	for(uint32_t i = 0; i < tilemap.attributes.size(); i += 4)
 	{
 		attributes.push_back(
-			(tilemap.attributes[i + 0] << 0) |
-			(tilemap.attributes[i + 1] << 2) |
-			(tilemap.attributes[i + 2] << 4) |
-			(tilemap.attributes[i + 3] << 6));
+			(tilemap.attributes[i + 0] << 6) |
+			(tilemap.attributes[i + 1] << 4) |
+			(tilemap.attributes[i + 2] << 2) |
+			(tilemap.attributes[i + 3] << 0));
 	}
 	size_t test = attributes.size() * sizeof(attributes[0]);
 	if(!writeData(attributes.data(), attributes.size() * sizeof(attributes[0]), attribute_filename))
