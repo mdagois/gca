@@ -21,7 +21,7 @@ enum : uint32_t
 	kColorsPerPalette = 4,
 	kPaletteMaxCount = 4,
 	kTilesMaxCount = 256,
-	kTilemapIndexMaxCount = 20 * 18,
+	kTilemapIndexMaxCount = 1024,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
 };
@@ -610,9 +610,22 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 		return false;
 	}
 
-	const size_t written = fwrite(tileset.tiles.data(), sizeof(Tile), tileset.tiles.size(), file);
+	bool success = true;
+	const vector<Tile>& tiles = tileset.tiles;
+	for (size_t i = 0; i < tiles.size(); ++i)
+	{
+		const Tile& tile = tiles[i];
+		const size_t written = fwrite(&tile.rows, sizeof(uint16_t) * kTileSize, 1, file);
+		if (written != 1)
+		{
+			cout << "Could not write tile [" << i << "]" << endl;
+			success = false;
+			break;
+		}
+	}
+
 	fclose(file);
-	return written == tileset.tiles.size();
+	return success;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
