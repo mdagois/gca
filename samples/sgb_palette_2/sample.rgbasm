@@ -24,6 +24,19 @@ graphics_tilemap_sgb_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+rsset _RAM
+
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+
+WRAM_END						rb 0
+
+; sanity checks
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 section "sgb_initialization", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,6 +185,35 @@ rept 18
 incbin "tech_sgb.atr", ROW_BYTE_OFFSET, 5
 ROW_BYTE_OFFSET += 8
 endr
+
+SgbPacket_AttrLin:
+db ATTR_LIN_2
+db 18
+ATTR_LINE_NUM = 0
+rept 4
+db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
+db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
+db (1 << 7) | (2 << 5) | ATTR_LINE_NUM + 2
+db (1 << 7) | (3 << 5) | ATTR_LINE_NUM + 3
+ATTR_LINE_NUM += 4
+endr
+db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
+db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
+db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+SgbPacket_AttrDiv:
+db ATTR_DIV
+db (1 << 4) | (2 << 2) | 3
+db 14
+db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+SgbPacket_AttrBlk:
+db ATTR_BLK_1
+db 1
+db $07
+db (1 << 4) | (2 << 2) | 3
+db 1, 1, 18, 16
+db $00, $00, $00, $00, $00, $00, $00, $00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -354,6 +396,8 @@ InitSample_SGB:
 	ret
 
 InitSample:
+	InitPadInput WRAM_PAD_INPUT
+
 	ld a, [HARDWARE_MODEL_REGISTER]
 	dec a
 	jr z, InitSample_DMG
@@ -364,6 +408,41 @@ InitSample:
 
 UpdateSample:
 	halt
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	ld a, [HARDWARE_MODEL_REGISTER]
+	cp a, HARDWARE_MODEL_DMG
+	ret z
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
+	jr nz, .up
+		SendCommand SgbPacket_MaskEn_Freeze
+		SendCommand SgbPacket_AttrChr
+		SendCommand SgbPacket_MaskEn_Cancel
+	.up
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
+	jr nz, .down
+		SendCommand SgbPacket_MaskEn_Freeze
+		SendCommand SgbPacket_AttrLin
+		SendCommand SgbPacket_MaskEn_Cancel
+	.down
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		SendCommand SgbPacket_MaskEn_Freeze
+		SendCommand SgbPacket_AttrDiv
+		SendCommand SgbPacket_MaskEn_Cancel
+	.left
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		SendCommand SgbPacket_MaskEn_Freeze
+		SendCommand SgbPacket_AttrBlk
+		SendCommand SgbPacket_MaskEn_Cancel
+	.right
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
