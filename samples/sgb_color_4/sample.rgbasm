@@ -364,19 +364,12 @@ InitSample_SGB:
 	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_sgb_attr_chr, graphics_sgb_attr_chr_end - graphics_sgb_attr_chr
 	xor a
 	ld hl, _SCRN1
-	ld de, 12
-	ld c, 5
-	.scrn1_line
-		ld b, 20
-		.scrn1_line_byte
-			ld [hli], a
-			inc a
-			dec b
-			jr nz, .scrn1_line_byte
-		add hl, de
-		add a, e
+	ld c, 6
+	.scrn1_tilemap
+		ld [hli], a
+		inc a
 		dec c
-		jr nz, .scrn1_line
+		jr nz, .scrn1_tilemap
 
 	copy [rIE], IEF_VBLANK
 	ei
