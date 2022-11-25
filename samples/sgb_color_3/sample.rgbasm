@@ -15,23 +15,12 @@ incbin "tech_dmg.tlm"
 graphics_data_dmg_end:
 
 graphics_tileset_sgb:
-rept 8
-db $FF, $00
-endr
+incbin "tech_sgb.chr"
 graphics_tileset_sgb_end:
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-rsset _RAM
-
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-
-WRAM_END						rb 0
-
-; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
-println "WRAM usage: {d:WRAM_USAGE} bytes"
-assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+graphics_tilemap_sgb:
+incbin "tech_sgb.tlm"
+graphics_tilemap_sgb_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -163,14 +152,14 @@ SgbPacket_MaskEn_Color0_End:
 
 SgbPacket_Palette01:
 db PAL01
-dw $0000, $FF7F, $0000, $0000
-dw        $007C, $0000, $0000
+incbin "tech_sgb.pal", 0, 8
+incbin "tech_sgb.pal", 10, 6
 db $00
 
 SgbPacket_Palette23:
 db PAL23
-dw $0000, $1F00, $0000, $0000
-dw        $E003, $0000, $0000
+incbin "tech_sgb.pal", 16, 8
+incbin "tech_sgb.pal", 26, 6
 db $00
 
 SgbPacket_AttrChr:
@@ -180,38 +169,9 @@ db $68, $01
 db $00
 ROW_BYTE_OFFSET = 0
 rept 18
-db $00, $00, $00, $00, $00
+incbin "tech_sgb.atr", ROW_BYTE_OFFSET, 5
 ROW_BYTE_OFFSET += 8
 endr
-
-SgbPacket_AttrLin:
-db ATTR_LIN_2
-db 18
-ATTR_LINE_NUM = 0
-rept 4
-db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
-db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
-db (1 << 7) | (2 << 5) | ATTR_LINE_NUM + 2
-db (1 << 7) | (3 << 5) | ATTR_LINE_NUM + 3
-ATTR_LINE_NUM += 4
-endr
-db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
-db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
-db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-SgbPacket_AttrDiv:
-db ATTR_DIV
-db (2 << 4) | (1 << 2) | 3
-db 14
-db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-SgbPacket_AttrBlk:
-db ATTR_BLK_1
-db 1
-db $07
-db (1 << 4) | (2 << 2) | 3
-db 2, 2, 17, 10
-db $00, $00, $00, $00, $00, $00, $00, $00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -383,7 +343,7 @@ InitSample_DMG:
 InitSample_SGB:
 	copy [rBGP], %11100100
 	CopyMemory _VRAM, graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
-	ClearMemory _SCRN0, SCRN_VX_B * SCRN_Y_B
+	CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
 
 	copy [rIE], IEF_VBLANK
 	ei
@@ -394,8 +354,6 @@ InitSample_SGB:
 	ret
 
 InitSample:
-	InitPadInput WRAM_PAD_INPUT
-
 	ld a, [HARDWARE_MODEL_REGISTER]
 	dec a
 	jr z, InitSample_DMG
@@ -406,41 +364,6 @@ InitSample:
 
 UpdateSample:
 	halt
-
-	UpdatePadInput WRAM_PAD_INPUT
-
-	ld a, [HARDWARE_MODEL_REGISTER]
-	cp a, HARDWARE_MODEL_DMG
-	ret z
-
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
-	jr nz, .up
-		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrChr
-		SendCommand SgbPacket_MaskEn_Cancel
-	.up
-
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
-	jr nz, .down
-		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrLin
-		SendCommand SgbPacket_MaskEn_Cancel
-	.down
-
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .left
-		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrDiv
-		SendCommand SgbPacket_MaskEn_Cancel
-	.left
-
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .right
-		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrBlk
-		SendCommand SgbPacket_MaskEn_Cancel
-	.right
-
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
