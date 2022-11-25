@@ -119,7 +119,8 @@ SgbPackets_CoreInit_End:
 
 ; \1 = mask type
 macro SgbPacket_MaskEn
-db MASK_EN, \1, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+db MASK_EN, \1
+ds 14, $00
 endm
 
 SgbPacket_MaskEn_Cancel:
