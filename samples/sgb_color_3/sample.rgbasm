@@ -22,6 +22,10 @@ graphics_tilemap_sgb:
 incbin "tech_sgb.tlm"
 graphics_tilemap_sgb_end:
 
+palettes_sgb:
+incbin "tech_sgb.pal"
+palettes_sgb_end:
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sgb_initialization", rom0
@@ -150,18 +154,6 @@ SgbPacket_MaskEn_Color0_End:
 ; Color packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SgbPacket_Palette01:
-db PAL01
-incbin "tech_sgb.pal", 0, 8
-incbin "tech_sgb.pal", 10, 6
-db $00
-
-SgbPacket_Palette23:
-db PAL23
-incbin "tech_sgb.pal", 16, 8
-incbin "tech_sgb.pal", 26, 6
-db $00
-
 SgbPacket_AttrChr:
 db ATTR_CHR_6
 db $00, $00
@@ -172,6 +164,19 @@ rept 18
 incbin "tech_sgb.atr", ROW_BYTE_OFFSET, 5
 ROW_BYTE_OFFSET += 8
 endr
+
+SgbPacket_PalTrn:
+db PAL_TRN
+db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+SgbPacket_PalSet:
+db PAL_SET
+db $00, $00
+db $01, $00
+db $02, $00
+db $03, $00
+db $00
+db $00, $00, $00, $00, $00, $00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -305,8 +310,15 @@ _SendCommand:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PerformCustomInitialization:
-	SendCommand SgbPacket_Palette01
-	SendCommand SgbPacket_Palette23
+	ld hl, rLCDC
+	set LCDCB_BG9C00, [hl]
+	res LCDCB_BG8000, [hl]
+	SendCommand SgbPacket_PalTrn
+	ld hl, rLCDC
+	res LCDCB_BG9C00, [hl]
+	set LCDCB_BG8000, [hl]
+
+	SendCommand SgbPacket_PalSet
 	SendCommand SgbPacket_AttrChr
 	ret
 
@@ -344,6 +356,12 @@ InitSample_SGB:
 	copy [rBGP], %11100100
 	CopyMemory _VRAM, graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
 	CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
+
+	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), palettes_sgb, palettes_sgb_end - palettes_sgb
+	ld hl, _SCRN1
+	ld [hl], 0
+	inc hl
+	ld [hl], 1
 
 	copy [rIE], IEF_VBLANK
 	ei
