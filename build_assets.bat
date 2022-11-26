@@ -121,6 +121,10 @@ if %errorlevel% neq 0 goto end
 %SGB_CONV% %SGB_ASSETS_DIR%tech_sgb.png %SGB_ASSETS_DIR%tech_sgb.png
 if %errorlevel% neq 0 goto end
 
+:: sound test
+%DMG_CONV% %SGB_ASSETS_DIR%sound_test.png %SGB_ASSETS_DIR%sgb_sound.png
+if %errorlevel% neq 0 goto end
+
 del /f /s /q %SGB_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %SGB_CHR_DIR% 2> nul
 mkdir %SGB_CHR_DIR% 2> nul
