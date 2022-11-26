@@ -41,74 +41,124 @@ section "sgb_initialization", rom0
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SGB_BYTES_PER_PACKET	equ (16)
+def SGB_BYTES_PER_PACKET			equ (16)
 
-def COMMAND_PAL01			equ ($00)
-def COMMAND_PAL23			equ ($01)
-def COMMAND_PAL03			equ ($02)
-def COMMAND_PAL12			equ ($03)
-def COMMAND_ATTR_BLK		equ ($04)
-def COMMAND_ATTR_LIN		equ ($05)
-def COMMAND_ATTR_DIV		equ ($06)
-def COMMAND_ATTR_CHR		equ ($07)
-def COMMAND_SOUND			equ ($08)
-def COMMAND_SOU_TRN			equ ($09)
-def COMMAND_PAL_SET			equ ($0A)
-def COMMAND_PAL_TRN			equ ($0B)
-def COMMAND_ATRC_EN			equ ($0C)
-def COMMAND_ICON_EN			equ ($0E)
-def COMMAND_DATA_SND		equ ($0F)
-def COMMAND_DATA_TRN		equ ($10)
-def COMMAND_MLT_REQ			equ ($11)
-def COMMAND_JUMP			equ ($12)
-def COMMAND_CHR_TRN			equ ($13)
-def COMMAND_PCT_TRN			equ ($14)
-def COMMAND_ATTR_TRN		equ ($15)
-def COMMAND_ATTR_SET		equ ($16)
-def COMMAND_MASK_EN			equ ($17)
-def COMMAND_PAL_PRI			equ ($19)
+def COMMAND_PAL01					equ ($00)
+def COMMAND_PAL23					equ ($01)
+def COMMAND_PAL03					equ ($02)
+def COMMAND_PAL12					equ ($03)
+def COMMAND_ATTR_BLK				equ ($04)
+def COMMAND_ATTR_LIN				equ ($05)
+def COMMAND_ATTR_DIV				equ ($06)
+def COMMAND_ATTR_CHR				equ ($07)
+def COMMAND_SOUND					equ ($08)
+def COMMAND_SOU_TRN					equ ($09)
+def COMMAND_PAL_SET					equ ($0A)
+def COMMAND_PAL_TRN					equ ($0B)
+def COMMAND_ATRC_EN					equ ($0C)
+def COMMAND_ICON_EN					equ ($0E)
+def COMMAND_DATA_SND				equ ($0F)
+def COMMAND_DATA_TRN				equ ($10)
+def COMMAND_MLT_REQ					equ ($11)
+def COMMAND_JUMP					equ ($12)
+def COMMAND_CHR_TRN					equ ($13)
+def COMMAND_PCT_TRN					equ ($14)
+def COMMAND_ATTR_TRN				equ ($15)
+def COMMAND_ATTR_SET				equ ($16)
+def COMMAND_MASK_EN					equ ($17)
+def COMMAND_PAL_PRI					equ ($19)
 
-def PAL01					equ ((COMMAND_PAL01 << 3) | 1)
-def PAL23					equ ((COMMAND_PAL23 << 3) | 1)
-def PAL03					equ ((COMMAND_PAL03 << 3) | 1)
-def PAL12					equ ((COMMAND_PAL12 << 3) | 1)
-def ATTR_BLK_1				equ ((COMMAND_ATTR_BLK << 3) | 1)
-def ATTR_BLK_2				equ ((COMMAND_ATTR_BLK << 3) | 2)
-def ATTR_BLK_3				equ ((COMMAND_ATTR_BLK << 3) | 3)
-def ATTR_BLK_4				equ ((COMMAND_ATTR_BLK << 3) | 4)
-def ATTR_BLK_5				equ ((COMMAND_ATTR_BLK << 3) | 5)
-def ATTR_BLK_6				equ ((COMMAND_ATTR_BLK << 3) | 6)
-def ATTR_BLK_7				equ ((COMMAND_ATTR_BLK << 3) | 7)
-def ATTR_LIN_1				equ ((COMMAND_ATTR_LIN << 3) | 1)
-def ATTR_LIN_2				equ ((COMMAND_ATTR_LIN << 3) | 2)
-def ATTR_LIN_3				equ ((COMMAND_ATTR_LIN << 3) | 3)
-def ATTR_LIN_4				equ ((COMMAND_ATTR_LIN << 3) | 4)
-def ATTR_LIN_5				equ ((COMMAND_ATTR_LIN << 3) | 5)
-def ATTR_LIN_6				equ ((COMMAND_ATTR_LIN << 3) | 6)
-def ATTR_LIN_7				equ ((COMMAND_ATTR_LIN << 3) | 7)
-def ATTR_DIV				equ ((COMMAND_ATTR_DIV << 3) | 1)
-def ATTR_CHR_1				equ ((COMMAND_ATTR_CHR << 3) | 1)
-def ATTR_CHR_2				equ ((COMMAND_ATTR_CHR << 3) | 2)
-def ATTR_CHR_3				equ ((COMMAND_ATTR_CHR << 3) | 3)
-def ATTR_CHR_4				equ ((COMMAND_ATTR_CHR << 3) | 4)
-def ATTR_CHR_5				equ ((COMMAND_ATTR_CHR << 3) | 5)
-def ATTR_CHR_6				equ ((COMMAND_ATTR_CHR << 3) | 6)
-def SOUND					equ ((COMMAND_SOUND << 3) | 1)
-def SOU_TRN					equ ((COMMAND_SOU_TRN << 3) | 1)
-def PAL_SET					equ ((COMMAND_PAL_SET << 3) | 1)
-def PAL_TRN					equ ((COMMAND_PAL_TRN << 3) | 1)
-def ATRC_EN					equ ((COMMAND_ATRC_EN << 3) | 1)
-def ICON_EN					equ ((COMMAND_ICON_EN << 3) | 1)
-def DATA_SND				equ ((COMMAND_DATA_SND << 3) | 1)
-def DATA_TRN				equ ((COMMAND_DATA_TRN << 3) | 1)
-def MLT_REQ					equ ((COMMAND_MLT_REQ << 3) | 1)
-def JUMP					equ ((COMMAND_JUMP << 3) | 1)
-def CHR_TRN					equ ((COMMAND_CHR_TRN << 3) | 1)
-def PCT_TRN					equ ((COMMAND_PCT_TRN << 3) | 1)
-def ATTR_TRN				equ ((COMMAND_ATTR_TRN << 3) | 1)
-def ATTR_SET				equ ((COMMAND_ATTR_SET << 3) | 1)
-def MASK_EN					equ ((COMMAND_MASK_EN << 3) | 1)
-def PAL_PRI					equ ((COMMAND_PAL_PRI << 3) | 1)
+def PAL01							equ ((COMMAND_PAL01 << 3) | 1)
+def PAL23							equ ((COMMAND_PAL23 << 3) | 1)
+def PAL03							equ ((COMMAND_PAL03 << 3) | 1)
+def PAL12							equ ((COMMAND_PAL12 << 3) | 1)
+def ATTR_BLK_1						equ ((COMMAND_ATTR_BLK << 3) | 1)
+def ATTR_BLK_2						equ ((COMMAND_ATTR_BLK << 3) | 2)
+def ATTR_BLK_3						equ ((COMMAND_ATTR_BLK << 3) | 3)
+def ATTR_BLK_4						equ ((COMMAND_ATTR_BLK << 3) | 4)
+def ATTR_BLK_5						equ ((COMMAND_ATTR_BLK << 3) | 5)
+def ATTR_BLK_6						equ ((COMMAND_ATTR_BLK << 3) | 6)
+def ATTR_BLK_7						equ ((COMMAND_ATTR_BLK << 3) | 7)
+def ATTR_LIN_1						equ ((COMMAND_ATTR_LIN << 3) | 1)
+def ATTR_LIN_2						equ ((COMMAND_ATTR_LIN << 3) | 2)
+def ATTR_LIN_3						equ ((COMMAND_ATTR_LIN << 3) | 3)
+def ATTR_LIN_4						equ ((COMMAND_ATTR_LIN << 3) | 4)
+def ATTR_LIN_5						equ ((COMMAND_ATTR_LIN << 3) | 5)
+def ATTR_LIN_6						equ ((COMMAND_ATTR_LIN << 3) | 6)
+def ATTR_LIN_7						equ ((COMMAND_ATTR_LIN << 3) | 7)
+def ATTR_DIV						equ ((COMMAND_ATTR_DIV << 3) | 1)
+def ATTR_CHR_1						equ ((COMMAND_ATTR_CHR << 3) | 1)
+def ATTR_CHR_2						equ ((COMMAND_ATTR_CHR << 3) | 2)
+def ATTR_CHR_3						equ ((COMMAND_ATTR_CHR << 3) | 3)
+def ATTR_CHR_4						equ ((COMMAND_ATTR_CHR << 3) | 4)
+def ATTR_CHR_5						equ ((COMMAND_ATTR_CHR << 3) | 5)
+def ATTR_CHR_6						equ ((COMMAND_ATTR_CHR << 3) | 6)
+def SOUND							equ ((COMMAND_SOUND << 3) | 1)
+def SOU_TRN							equ ((COMMAND_SOU_TRN << 3) | 1)
+def PAL_SET							equ ((COMMAND_PAL_SET << 3) | 1)
+def PAL_TRN							equ ((COMMAND_PAL_TRN << 3) | 1)
+def ATRC_EN							equ ((COMMAND_ATRC_EN << 3) | 1)
+def ICON_EN							equ ((COMMAND_ICON_EN << 3) | 1)
+def DATA_SND						equ ((COMMAND_DATA_SND << 3) | 1)
+def DATA_TRN						equ ((COMMAND_DATA_TRN << 3) | 1)
+def MLT_REQ							equ ((COMMAND_MLT_REQ << 3) | 1)
+def JUMP							equ ((COMMAND_JUMP << 3) | 1)
+def CHR_TRN							equ ((COMMAND_CHR_TRN << 3) | 1)
+def PCT_TRN							equ ((COMMAND_PCT_TRN << 3) | 1)
+def ATTR_TRN						equ ((COMMAND_ATTR_TRN << 3) | 1)
+def ATTR_SET						equ ((COMMAND_ATTR_SET << 3) | 1)
+def MASK_EN							equ ((COMMAND_MASK_EN << 3) | 1)
+def PAL_PRI							equ ((COMMAND_PAL_PRI << 3) | 1)
+
+def PADDING							equ ($00)
+
+def MASK_EN_CANCEL					equ ($00)
+def MASK_EN_FREEZE					equ ($01)
+def MASK_EN_BLACK					equ ($02)
+def MASK_EN_COLOR0					equ ($03)
+
+def ATTR_BLK_CONTROL_NONE			equ ($00)
+def ATTR_BLK_CONTROL_INSIDE			equ ($01)
+def ATTR_BLK_CONTROL_BORDER			equ ($02)
+def ATTR_BLK_CONTROL_OUTSIDE		equ ($04)
+def ATTR_BLK_CONTROL_ALL			equ (ATTR_BLK_CONTROL_INSIDE | ATTR_BLK_CONTROL_BORDER | ATTR_BLK_CONTROL_OUTSIDE)
+def ATTR_BLK_OUTSIDE_PALETTE_0		equ (0 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_1		equ (1 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_2		equ (2 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_3		equ (3 << 4)
+def ATTR_BLK_BORDER_PALETTE_0		equ (0 << 2)
+def ATTR_BLK_BORDER_PALETTE_1		equ (1 << 2)
+def ATTR_BLK_BORDER_PALETTE_2		equ (2 << 2)
+def ATTR_BLK_BORDER_PALETTE_3		equ (3 << 2)
+def ATTR_BLK_INSIDE_PALETTE_0		equ (0 << 0)
+def ATTR_BLK_INSIDE_PALETTE_1		equ (1 << 0)
+def ATTR_BLK_INSIDE_PALETTE_2		equ (2 << 0)
+def ATTR_BLK_INSIDE_PALETTE_3		equ (3 << 0)
+
+def ATTR_CHR_WRITE_HORIZONTAL		equ ($00)
+def ATTR_CHR_WRITE_VERTICAL			equ ($01)
+
+def ATTR_LIN_VERTICAL				equ ($00)
+def ATTR_LIN_HORIZONTAL				equ ($80)
+def ATTR_LIN_PALETTE_0				equ (0 << 5)
+def ATTR_LIN_PALETTE_1				equ (1 << 5)
+def ATTR_LIN_PALETTE_2				equ (2 << 5)
+def ATTR_LIN_PALETTE_3				equ (3 << 5)
+
+def ATTR_DIV_HORIZONTAL				equ ($01)
+def ATTR_DIV_VERTICAL				equ ($00)
+def ATTR_DIV_BORDER_PALETTE_0		equ (0 << 4)
+def ATTR_DIV_BORDER_PALETTE_1		equ (1 << 4)
+def ATTR_DIV_BORDER_PALETTE_2		equ (2 << 4)
+def ATTR_DIV_BORDER_PALETTE_3		equ (3 << 4)
+def ATTR_DIV_TOP_LEFT_PALETTE_0		equ (0 << 2)
+def ATTR_DIV_TOP_LEFT_PALETTE_1		equ (1 << 2)
+def ATTR_DIV_TOP_LEFT_PALETTE_2		equ (2 << 2)
+def ATTR_DIV_TOP_LEFT_PALETTE_3		equ (3 << 2)
+def ATTR_DIV_BOTTOM_RIGHT_PALETTE_0	equ (0 << 0)
+def ATTR_DIV_BOTTOM_RIGHT_PALETTE_1	equ (1 << 0)
+def ATTR_DIV_BOTTOM_RIGHT_PALETTE_2	equ (2 << 0)
+def ATTR_DIV_BOTTOM_RIGHT_PALETTE_3	equ (3 << 0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
@@ -139,23 +189,23 @@ SgbPackets_CoreInit_End:
 ; \1 = mask type
 macro SgbPacket_MaskEn
 db MASK_EN, \1
-ds 14, $00
+ds 14, PADDING
 endm
 
 SgbPacket_MaskEn_Cancel:
-	SgbPacket_MaskEn $00
+	SgbPacket_MaskEn MASK_EN_CANCEL
 SgbPacket_MaskEn_Cancel_End:
 
 SgbPacket_MaskEn_Freeze:
-	SgbPacket_MaskEn $01
+	SgbPacket_MaskEn MASK_EN_FREEZE
 SgbPacket_MaskEn_Freeze_End:
 
 SgbPacket_MaskEn_Black:
-	SgbPacket_MaskEn $02
+	SgbPacket_MaskEn MASK_EN_BLACK
 SgbPacket_MaskEn_Black_End:
 
 SgbPacket_MaskEn_Color0:
-	SgbPacket_MaskEn $03
+	SgbPacket_MaskEn MASK_EN_COLOR0
 SgbPacket_MaskEn_Color0_End:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -166,19 +216,20 @@ SgbPacket_Palette01:
 db PAL01
 dw $0000, $FF7F, $0000, $0000
 dw        $007C, $0000, $0000
-db $00
+db PADDING
 
 SgbPacket_Palette23:
 db PAL23
 dw $0000, $1F00, $0000, $0000
 dw        $E003, $0000, $0000
-db $00
+db PADDING
 
 SgbPacket_AttrChr:
 db ATTR_CHR_6
-db $00, $00
-db $68, $01
-db $00
+db $00, $00	; coordinates
+dw $0168 ; number of indices
+db ATTR_CHR_WRITE_HORIZONTAL
+; indices
 ROW_BYTE_OFFSET = 0
 rept 18
 ds 5, $00
@@ -187,32 +238,33 @@ endr
 
 SgbPacket_AttrLin:
 db ATTR_LIN_2
-db 18
+db 18 ; number of lines
+; lines data
 ATTR_LINE_NUM = 0
 rept 4
-db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
-db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
-db (1 << 7) | (2 << 5) | ATTR_LINE_NUM + 2
-db (1 << 7) | (3 << 5) | ATTR_LINE_NUM + 3
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_0 | ATTR_LINE_NUM + 0
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_1 | ATTR_LINE_NUM + 1
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_2 | ATTR_LINE_NUM + 2
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_3 | ATTR_LINE_NUM + 3
 ATTR_LINE_NUM += 4
 endr
-db (1 << 7) | (0 << 5) | ATTR_LINE_NUM + 0
-db (1 << 7) | (1 << 5) | ATTR_LINE_NUM + 1
-ds 12, $00
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_0 | ATTR_LINE_NUM + 0
+db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_1 | ATTR_LINE_NUM + 1
+ds 12, PADDING
 
 SgbPacket_AttrDiv:
 db ATTR_DIV
-db (2 << 4) | (1 << 2) | 3
-db 14
-ds 13, $00
+db ATTR_DIV_VERTICAL | ATTR_DIV_TOP_LEFT_PALETTE_1 | ATTR_DIV_BORDER_PALETTE_2 | ATTR_DIV_BOTTOM_RIGHT_PALETTE_3
+db 14 ; dividing column
+ds 13, PADDING
 
 SgbPacket_AttrBlk:
 db ATTR_BLK_1
-db 1
-db $07
-db (1 << 4) | (2 << 2) | 3
-db 2, 2, 17, 10
-ds 8, $00
+db 1 ; number of square
+db ATTR_BLK_CONTROL_ALL
+db ATTR_BLK_OUTSIDE_PALETTE_1 | ATTR_BLK_BORDER_PALETTE_2 | ATTR_BLK_INSIDE_PALETTE_3
+db 2, 2, 17, 10 ; square coordinates
+ds 8, PADDING
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
