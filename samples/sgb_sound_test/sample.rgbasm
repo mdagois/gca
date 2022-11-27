@@ -865,6 +865,10 @@ UpdateSample:
 	; logic
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+	ld a, [HARDWARE_MODEL_REGISTER]
+	cp a, HARDWARE_MODEL_DMG
+	ret z
+
 	UpdatePadInput WRAM_PAD_INPUT
 
 	; call the proper menu update function
