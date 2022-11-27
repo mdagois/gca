@@ -122,7 +122,7 @@ if %errorlevel% neq 0 goto end
 if %errorlevel% neq 0 goto end
 
 :: sound test
-%DMG_CONV% %SGB_ASSETS_DIR%sound_test.png %SGB_ASSETS_DIR%sgb_sound.png
+%DMG_CONV% %SGB_ASSETS_DIR%sound_test.png %SGB_ASSETS_DIR%sgb_sound_test.png
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %SGB_CHR_DIR% 2> nul 1> nul
