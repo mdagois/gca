@@ -787,7 +787,6 @@ InitSample_DMG:
 	ret
 
 InitSample_SGB:
-	; xxx try without this
 	copy [rNR52], AUDENA_ON
 	copy [rNR50], $77
 	copy [rNR51], $FF
