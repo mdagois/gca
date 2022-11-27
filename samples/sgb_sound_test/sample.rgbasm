@@ -775,45 +775,25 @@ UpdateVolumeB:
 
 section "sample", rom0
 
-InitSample_DMG:
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
-
-	copy [rIE], IEF_VBLANK
-	ei
-
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-
-	ret
-
-InitSample_SGB:
-	copy [rNR52], AUDENA_ON
-	copy [rNR50], $77
-	copy [rNR51], $FF
-
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
-
-	copy [rIE], IEF_VBLANK
-	ei
-
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-
-	call InitializeSgbDevice
-
-	ret
-
 InitSample:
 	ClearMemory _RAM, WRAM_USAGE
 	InitPadInput WRAM_PAD_INPUT
 	ResetTransferList
 	PushTransfer _SCRN0 + SCRN_VX_B * 2, TILE_INDEX_CURSOR
 
+	copy [rBGP], %11100100
+	LoadGraphicsDataIntoVRAM
+
+	copy [rIE], IEF_VBLANK
+	ei
+
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
 	ld a, [HARDWARE_MODEL_REGISTER]
-	dec a
-	jp z, InitSample_DMG
-	dec a
-	jp z, InitSample_SGB
+	cp a, HARDWARE_MODEL_SGB
+	call z, InitializeSgbDevice
+
+	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
