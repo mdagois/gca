@@ -32,7 +32,7 @@ graphics_sgb_attr_chr_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-section "sgb_initialization", rom0
+section "sgb", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
@@ -359,8 +359,8 @@ _SendCommand:
 	ret
 
 	.4KB_command
-	; wait for completion of 4KB commands
-	WaitFrames 5
+	; wait extra frames for completion of 4KB commands
+	WaitFrames 2
 
 	ret
 
