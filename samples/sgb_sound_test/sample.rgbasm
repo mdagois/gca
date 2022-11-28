@@ -816,14 +816,14 @@ PlaySound:
 	or a, b
 	ld b, a
 
-	ld a, [WRAM_EFFECT_B_VOLUME]
+	ld a, [WRAM_EFFECT_A_VOLUME]
 	and a, $03
 	sla a
 	sla a
 	or a, b
 	ld b, a
 
-	ld a, [WRAM_EFFECT_B_PITCH]
+	ld a, [WRAM_EFFECT_A_PITCH]
 	and a, $03
 	or a, b
 	ld [hli], a
