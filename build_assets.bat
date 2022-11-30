@@ -115,6 +115,10 @@ set SGB_PAL_DIR=%SGB_GENERATED_DIR%%PAL_EXTENSION%\
 set SGB_TLM_DIR=%SGB_GENERATED_DIR%%TLM_EXTENSION%\
 set SGB_ATR_DIR=%SGB_GENERATED_DIR%%ATR_EXTENSION%\
 
+:: multi
+%DMG_CONV% %SGB_ASSETS_DIR%tileset.png %SGB_ASSETS_DIR%sgb_multi.png
+if %errorlevel% neq 0 goto end
+
 :: tech
 %DMG_CONV% %SGB_ASSETS_DIR%tech_dmg_tileset.png %SGB_ASSETS_DIR%tech_dmg.png
 if %errorlevel% neq 0 goto end
