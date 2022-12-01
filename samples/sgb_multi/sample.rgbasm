@@ -133,7 +133,8 @@ macro ProcessTransferList
 		ld d, a
 		ld a, [hli]
 		push hl
-		ld_r16_r16 hl, de
+		ld h, d
+		ld l, e
 		ld [hl], a
 		pop hl
 
@@ -230,6 +231,10 @@ def MASK_EN_FREEZE					equ ($01)
 def MASK_EN_BLACK					equ ($02)
 def MASK_EN_COLOR0					equ ($03)
 
+def MLT_REQ_ONE_PLAYER				equ ($00)
+def MLT_REQ_TWO_PLAYERS				equ ($01)
+def MLT_REQ_FOUR_PLAYERS			equ ($03)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -277,6 +282,28 @@ SgbPacket_MaskEn_Black_End:
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn MASK_EN_COLOR0
 SgbPacket_MaskEn_Color0_End:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MLT_REQ packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; \1 = player count type
+macro SgbPacket_MltReq
+db MLT_REQ, \1
+ds 14, PADDING
+endm
+
+SgbPacket_OnePlayer:
+	SgbPacket_MltReq MLT_REQ_ONE_PLAYER
+SgbPacket_OnePlayer_End:
+
+SgbPacket_TwoPlayers:
+	SgbPacket_MltReq MLT_REQ_TWO_PLAYERS
+SgbPacket_TwoPlayers_End:
+
+SgbPacket_FourPlayers:
+	SgbPacket_MltReq MLT_REQ_FOUR_PLAYERS
+SgbPacket_FourPlayers_End:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -439,6 +466,8 @@ WRAM_PAD_INPUT_1				rb sizeof_PAD_INPUT
 WRAM_PAD_INPUT_2				rb sizeof_PAD_INPUT
 WRAM_PAD_INPUT_3				rb sizeof_PAD_INPUT
 
+WRAM_PLAYERS_COUNT				rb 1
+
 WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
 
 WRAM_END						rb 0
@@ -447,6 +476,40 @@ WRAM_END						rb 0
 def WRAM_USAGE						equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Hexadecimal to tile conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "hexadecimal", rom0
+
+HexToTileTable:
+db $50, $51, $52, $53
+db $54, $55, $56, $57
+db $58, $59, $61, $62
+db $63, $64, $65, $66
+
+; convert (a) from hexadecimal to a tile index
+macro HexToTileA
+	ld h, 0
+	ld l, a
+	ld de, HexToTileTable
+	add hl, de
+	ld a, [hl]
+endm
+
+; \1 = line, \2 = column
+macro DisplayRegisterA
+	push af
+	swap a
+	and a, $0F
+	HexToTileA
+	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2, a
+	pop af
+	and a, $0F
+	HexToTileA
+	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2 + 1, a
+endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Sample
@@ -460,6 +523,7 @@ InitSample:
 	InitPadInput WRAM_PAD_INPUT_1
 	InitPadInput WRAM_PAD_INPUT_2
 	InitPadInput WRAM_PAD_INPUT_3
+	copy [WRAM_PLAYERS_COUNT], 1
 	ResetTransferList
 
 	copy [rBGP], %11100100
@@ -478,6 +542,130 @@ InitSample:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+UpdatePad_0:
+	UpdatePadInput WRAM_PAD_INPUT_0
+	ret
+
+UpdatePad_1:
+	UpdatePadInput WRAM_PAD_INPUT_1
+	ret
+
+UpdatePad_2:
+	UpdatePadInput WRAM_PAD_INPUT_2
+	ret
+
+UpdatePad_3:
+	UpdatePadInput WRAM_PAD_INPUT_3
+	ret
+
+UpdatePad_All:
+	ld a, [WRAM_PLAYERS_COUNT]
+	cp a, 1
+	jr z, .one_player
+
+	ld c, a
+	.update_pad
+		ld a, [rP1]
+		and a, $0F
+
+		cp a, $0F
+		jr nz, .update_pad_0
+			push bc
+			call UpdatePad_0
+			pop bc
+			jr .next
+		.update_pad_0
+
+		cp a, $0E
+		jr nz, .update_pad_1
+			push bc
+			call UpdatePad_1
+			pop bc
+			jr .next
+		.update_pad_1
+ 
+		cp a, $0D
+		jr nz, .update_pad_2
+			push bc
+			call UpdatePad_2
+			pop bc
+			jr .next
+		.update_pad_2
+
+		cp a, $0C
+		push bc
+		call z, UpdatePad_3
+		pop bc
+
+		.next
+		dec c
+		jr nz, .update_pad
+	ret
+
+	.one_player
+	call UpdatePad_0
+	ret
+
+UpdateDisplay:
+	; player 1
+	ld a, [WRAM_PAD_INPUT_0 + PAD_INPUT_CURRENT]
+	DisplayRegisterA 3, 7
+	ld a, [WRAM_PLAYERS_COUNT]
+	dec a
+	jp z, .reset_3_players
+
+	; player 2
+	ld a, [WRAM_PAD_INPUT_1 + PAD_INPUT_CURRENT]
+	DisplayRegisterA 5, 7
+	ld a, [WRAM_PLAYERS_COUNT]
+	cp a, 2
+	jp z, .reset_2_players
+
+	; players 3 and 4
+	ld a, [WRAM_PAD_INPUT_2 + PAD_INPUT_CURRENT]
+	DisplayRegisterA 7, 7
+	ld a, [WRAM_PAD_INPUT_3 + PAD_INPUT_CURRENT]
+	DisplayRegisterA 9, 7
+	jp .display_done
+
+	.reset_3_players
+	xor a
+	DisplayRegisterA 5, 7
+
+	.reset_2_players
+	xor a
+	DisplayRegisterA 7, 7
+	xor a
+	DisplayRegisterA 9, 7
+
+	.display_done
+	ret
+
+SwitchPlayersCount:
+	ld a, [WRAM_PLAYERS_COUNT]
+
+	cp a, 1
+	jr nz, .switch_to_2_players
+		copy [WRAM_PLAYERS_COUNT], 2
+		SendCommand SgbPacket_TwoPlayers
+		jr .done
+	.switch_to_2_players
+
+	cp a, 2
+	jr nz, .switch_to_4_players
+		copy [WRAM_PLAYERS_COUNT], 4
+		SendCommand SgbPacket_FourPlayers
+		jr .done
+	.switch_to_4_players
+
+	copy [WRAM_PLAYERS_COUNT], 1
+	SendCommand SgbPacket_OnePlayer
+
+	.done
+	copy [rP1], P1F_GET_BTN
+	copy [rP1], P1F_GET_NONE
+	ret
+
 UpdateSample:
 	halt
 
@@ -495,10 +683,11 @@ UpdateSample:
 	cp a, HARDWARE_MODEL_DMG
 	ret z
 
-	UpdatePadInput WRAM_PAD_INPUT_0
-	UpdatePadInput WRAM_PAD_INPUT_1
-	UpdatePadInput WRAM_PAD_INPUT_2
-	UpdatePadInput WRAM_PAD_INPUT_3
+	call UpdatePad_All
+	call UpdateDisplay
+
+	TestPadInput_Pressed WRAM_PAD_INPUT_0, PADF_SELECT
+	call z, SwitchPlayersCount
 
 	ret
 

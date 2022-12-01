@@ -28,34 +28,6 @@ macro copy
 	ld \1, a
 endm
 
-; load 16-bit register \2 into 16-bit register \1
-macro ld_r16_r16
-	ld high(\1), high(\2)
-	ld low(\1), low(\2)
-endm
-
-; load 8-bit register \2 into 16-bit register \1
-macro ld_r16_r8
-	ld high(\1), 0
-	ld low(\1), \2
-endm
-
-; store 16-bit register \2 into location \1
-macro ld_n16_r16
-	ld a, low(\2)
-	ld [\1], a
-	ld a, high(\2)
-	ld [\1 + 1], a
-endm
-
-; load data in location \2 into 16-bit register \1 
-macro ld_r16_n16
-	ld a, [\2]
-	ld low(\1), a
-	ld a, [\2 + 1]
-	ld high(\1), a
-endm
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Utility
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -183,41 +155,17 @@ macro TestPadInput_HeldAll
 	and a, \2
 endm
 
-; raise the zero flag if none of the keys in \2 are held in the pad input struct \1
-; example: TestPadInput_HeldAll _RAM + 8, PADF_A | PADF_B
-macro TestPadInput_HeldAny
-	ld a, [\1 + PAD_INPUT_CURRENT]
-	cpl
-	and a, \2
-endm
-
-; raise the zero flag if all input \2 is pressed in the pad input struct \1
-; example: TestPadInput_PressedAll _HRAM + 12, PADF_LEFT
-macro TestPadInput_PressedAll
+; raise the zero flag if input \2 is pressed in the pad input struct \1
+; example: TestPadInput_Pressed _HRAM + 12, PADF_LEFT
+macro TestPadInput_Pressed
 	ld a, [\1 + PAD_INPUT_PRESSED]
 	and a, \2
 endm
 
-; raise the zero flag if none of input \2 is pressed in the pad input struct \1
-; example: TestPadInput_PressedAny _HRAM + 12, PADF_LEFT
-macro TestPadInput_PressedAny
-	ld a, [\1 + PAD_INPUT_PRESSED]
-	cpl
-	and a, \2
-endm
-
-; raise the zero flag if all input \2 is released in the pad input struct \1
+; raise the zero flag if input \2 is released in the pad input struct \1
 ; example: TestPadInput_Released _RAM + 24, PADF_A
 macro TestPadInput_Released
 	ld a, [\1 + PAD_INPUT_RELEASED]
-	and a, \2
-endm
-
-; raise the zero flag if none of input \2 is released in the pad input struct \1
-; example: TestPadInput_ReleasedAny _RAM + 24, PADF_A
-macro TestPadInput_ReleasedAny
-	ld a, [\1 + PAD_INPUT_RELEASED]
-	cpl
 	and a, \2
 endm
 
