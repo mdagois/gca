@@ -116,7 +116,7 @@ set SGB_TLM_DIR=%SGB_GENERATED_DIR%%TLM_EXTENSION%\
 set SGB_ATR_DIR=%SGB_GENERATED_DIR%%ATR_EXTENSION%\
 
 :: multi
-%DMG_CONV% %SGB_ASSETS_DIR%tileset.png %SGB_ASSETS_DIR%sgb_multi.png
+%DMG_CONV% %SGB_ASSETS_DIR%tileset.png %SGB_ASSETS_DIR%sgb_multi.png %SGB_ASSETS_DIR%sgb_settings.png
 if %errorlevel% neq 0 goto end
 
 :: tech
