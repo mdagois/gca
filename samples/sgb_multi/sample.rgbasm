@@ -561,49 +561,65 @@ UpdatePad_3:
 UpdatePad_All:
 	ld a, [WRAM_PLAYERS_COUNT]
 	cp a, 1
-	jr z, .one_player
+	jp z, .one_player
+	cp a, 2
+	jp z, .two_players
 
+	call UpdatePad_0
+	call UpdatePad_1
+	call UpdatePad_2
+	call UpdatePad_3
+	ret
+
+	.two_players
+	call UpdatePad_0
+	call UpdatePad_1
+	ret
+
+	.one_player
+	call UpdatePad_0
+	ret
+
+UpdatePad_All_Safe:
+	ld a, [WRAM_PLAYERS_COUNT]
 	ld c, a
+
 	.update_pad
 		ld a, [rP1]
 		and a, $0F
 
-		cp a, $0F
-		jr nz, .update_pad_0
-			push bc
-			call UpdatePad_0
-			pop bc
-			jr .next
-		.update_pad_0
-
 		cp a, $0E
-		jr nz, .update_pad_1
+		jr nz, .pad_1
 			push bc
 			call UpdatePad_1
 			pop bc
 			jr .next
-		.update_pad_1
+		.pad_1
  
 		cp a, $0D
-		jr nz, .update_pad_2
+		jr nz, .pad_2
 			push bc
 			call UpdatePad_2
 			pop bc
 			jr .next
-		.update_pad_2
+		.pad_2
 
 		cp a, $0C
+		jr nz, .pad_3
+			push bc
+			call UpdatePad_3
+			pop bc
+			jr .next
+		.pad_3
+
 		push bc
-		call z, UpdatePad_3
+		call UpdatePad_0
 		pop bc
 
 		.next
 		dec c
 		jr nz, .update_pad
-	ret
 
-	.one_player
-	call UpdatePad_0
 	ret
 
 UpdateDisplay:
@@ -648,22 +664,18 @@ SwitchPlayersCount:
 	jr nz, .switch_to_2_players
 		copy [WRAM_PLAYERS_COUNT], 2
 		SendCommand SgbPacket_TwoPlayers
-		jr .done
+		ret
 	.switch_to_2_players
 
 	cp a, 2
 	jr nz, .switch_to_4_players
 		copy [WRAM_PLAYERS_COUNT], 4
 		SendCommand SgbPacket_FourPlayers
-		jr .done
+		ret
 	.switch_to_4_players
 
 	copy [WRAM_PLAYERS_COUNT], 1
 	SendCommand SgbPacket_OnePlayer
-
-	.done
-	copy [rP1], P1F_GET_BTN
-	copy [rP1], P1F_GET_NONE
 	ret
 
 UpdateSample:
