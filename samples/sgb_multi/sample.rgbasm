@@ -561,9 +561,9 @@ UpdatePad_3:
 UpdatePad_All:
 	ld a, [WRAM_PLAYERS_COUNT]
 	cp a, 1
-	jp z, .one_player
+	jr z, .one_player
 	cp a, 2
-	jp z, .two_players
+	jr z, .two_players
 
 	call UpdatePad_0
 	call UpdatePad_1
@@ -578,48 +578,6 @@ UpdatePad_All:
 
 	.one_player
 	call UpdatePad_0
-	ret
-
-UpdatePad_All_Safe:
-	ld a, [WRAM_PLAYERS_COUNT]
-	ld c, a
-
-	.update_pad
-		ld a, [rP1]
-		and a, $0F
-
-		cp a, $0E
-		jr nz, .pad_1
-			push bc
-			call UpdatePad_1
-			pop bc
-			jr .next
-		.pad_1
- 
-		cp a, $0D
-		jr nz, .pad_2
-			push bc
-			call UpdatePad_2
-			pop bc
-			jr .next
-		.pad_2
-
-		cp a, $0C
-		jr nz, .pad_3
-			push bc
-			call UpdatePad_3
-			pop bc
-			jr .next
-		.pad_3
-
-		push bc
-		call UpdatePad_0
-		pop bc
-
-		.next
-		dec c
-		jr nz, .update_pad
-
 	ret
 
 UpdateDisplay:
