@@ -265,19 +265,15 @@ endm
 
 SgbPacket_MaskEn_Cancel:
 	SgbPacket_MaskEn MASK_EN_CANCEL
-SgbPacket_MaskEn_Cancel_End:
 
 SgbPacket_MaskEn_Freeze:
 	SgbPacket_MaskEn MASK_EN_FREEZE
-SgbPacket_MaskEn_Freeze_End:
 
 SgbPacket_MaskEn_Black:
 	SgbPacket_MaskEn MASK_EN_BLACK
-SgbPacket_MaskEn_Black_End:
 
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn MASK_EN_COLOR0
-SgbPacket_MaskEn_Color0_End:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -433,11 +429,24 @@ endr
 ; WRAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def ICON_EN_MASK_PALETTE		equ ($01)
+def ICON_EN_MASK_CONTROLLER		equ ($02)
+def ICON_EN_MASK_COMMAND		equ ($04)
+
 rsset _RAM
 
 WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 
+WRAM_SELECTION_INDEX			rb 1
 WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
+
+WRAM_ATRC_EN_PACKET				rb SGB_BYTES_PER_PACKET
+WRAM_ICON_EN_PACKET				rb SGB_BYTES_PER_PACKET
+WRAM_PAL_PRI_PACKET				rb SGB_BYTES_PER_PACKET
+
+WRAM_ATRC_EN_FLAG				rb 1
+WRAM_ICON_EN_FLAG				rb 1
+WRAM_PAL_PRI_FLAG				rb 1
 
 WRAM_END						rb 0
 
@@ -481,6 +490,185 @@ macro DisplayRegisterA
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Update functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def TILE_INDEX_BLANK		equ ($40)
+def TILE_INDEX_CURSOR		equ ($4A)
+def TILE_INDEX_ZERO			equ ($50)
+
+; update functions table
+UpdateFunc:
+dw UpdateAtrcEn
+dw UpdateIconEnPalette
+dw UpdateIconEnController
+dw UpdateIconEnCommand
+dw UpdatePalPri
+UpdateFunc_End:
+
+; line numbers
+def LINE_ATRC_EN					equ (3)
+def LINE_ICON_EN_PALETTE			equ (5)
+def LINE_ICON_EN_CONTROLLER			equ (6)
+def LINE_ICON_EN_COMMAND			equ (7)
+def LINE_PAL_PRI					equ (9)
+
+; selection indices
+rsreset
+SELECTION_ATRC_EN					rb 1
+SELECTION_ICON_EN_PALETTE			rb 1
+SELECTION_ICON_EN_CONTROLLER		rb 1
+SELECTION_ICON_EN_COMMAND			rb 1
+SELECTION_PAL_PRI					rb 1
+SELECTIONS_COUNT					rb 0
+assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
+
+section "update", rom0
+
+; macro to handle the menu navigation
+; \1 = previous line, \2 = current line, \3 = next line
+; \4 = previous index, \5 = next index
+macro ProcessSelection
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
+	jr nz, .down\@
+		PushTransfer _SCRN0 + SCRN_VX_B * \2 + 1, TILE_INDEX_BLANK
+		PushTransfer _SCRN0 + SCRN_VX_B * \3 + 1, TILE_INDEX_CURSOR
+		ld hl, WRAM_SELECTION_INDEX
+		ld [hl], \5
+	.down\@
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
+	jr nz, .up\@
+		PushTransfer _SCRN0 + SCRN_VX_B * \2 + 1, TILE_INDEX_BLANK
+		PushTransfer _SCRN0 + SCRN_VX_B * \1 + 1, TILE_INDEX_CURSOR
+		ld hl, WRAM_SELECTION_INDEX
+		ld [hl], \4
+	.up\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateAtrcEn:
+	ProcessSelection LINE_PAL_PRI, LINE_ATRC_EN, LINE_ICON_EN_PALETTE, SELECTION_PAL_PRI, SELECTION_ICON_EN_PALETTE
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .toggle
+		ld a, [WRAM_ATRC_EN_FLAG]
+		xor a, $01
+		ld [WRAM_ATRC_EN_FLAG], a
+		jr .update_ui
+	.toggle
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ATRC_EN_FLAG]
+		add a, TILE_INDEX_ZERO
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ATRC_EN + 17, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateIconEnPalette:
+	ProcessSelection LINE_ATRC_EN, LINE_ICON_EN_PALETTE, LINE_ICON_EN_CONTROLLER, SELECTION_ATRC_EN, SELECTION_ICON_EN_CONTROLLER
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .toggle
+		ld a, [WRAM_ICON_EN_FLAG]
+		xor a, ICON_EN_MASK_PALETTE
+		ld [WRAM_ICON_EN_FLAG], a
+		jr .update_ui
+	.toggle
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ICON_EN_FLAG]
+		and a, ICON_EN_MASK_PALETTE
+		jr z, .zero
+			ld a, 1
+		.zero
+		add a, TILE_INDEX_ZERO
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ICON_EN_PALETTE + 17, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateIconEnController:
+	ProcessSelection LINE_ICON_EN_PALETTE, LINE_ICON_EN_CONTROLLER, LINE_ICON_EN_COMMAND, SELECTION_ICON_EN_PALETTE, SELECTION_ICON_EN_COMMAND
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .toggle
+		ld a, [WRAM_ICON_EN_FLAG]
+		xor a, ICON_EN_MASK_CONTROLLER
+		ld [WRAM_ICON_EN_FLAG], a
+		jr .update_ui
+	.toggle
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ICON_EN_FLAG]
+		and a, ICON_EN_MASK_CONTROLLER
+		jr z, .zero
+			ld a, 1
+		.zero
+		add a, TILE_INDEX_ZERO
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ICON_EN_CONTROLLER + 17, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateIconEnCommand:
+	ProcessSelection LINE_ICON_EN_CONTROLLER, LINE_ICON_EN_COMMAND, LINE_PAL_PRI, SELECTION_ICON_EN_CONTROLLER, SELECTION_PAL_PRI
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .toggle
+		ld a, [WRAM_ICON_EN_FLAG]
+		xor a, ICON_EN_MASK_COMMAND
+		ld [WRAM_ICON_EN_FLAG], a
+		jr .update_ui
+	.toggle
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_ICON_EN_FLAG]
+		and a, ICON_EN_MASK_COMMAND
+		jr z, .zero
+			ld a, 1
+		.zero
+		add a, TILE_INDEX_ZERO
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_ICON_EN_COMMAND + 17, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdatePalPri:
+	ProcessSelection LINE_ICON_EN_COMMAND, LINE_PAL_PRI, LINE_ATRC_EN, SELECTION_ICON_EN_COMMAND, SELECTION_ATRC_EN
+
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+	jr z, .toggle
+		ld a, [WRAM_PAL_PRI_FLAG]
+		xor a, $01
+		ld [WRAM_PAL_PRI_FLAG], a
+		jr .update_ui
+	.toggle
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_PAL_PRI_FLAG]
+		add a, TILE_INDEX_ZERO
+		PushTransfer _SCRN0 + SCRN_VX_B * LINE_PAL_PRI + 17, a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Sample
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -490,6 +678,11 @@ InitSample:
 	ClearMemory _RAM, WRAM_USAGE
 	InitPadInput WRAM_PAD_INPUT
 	ResetTransferList
+	PushTransfer _SCRN0 + SCRN_VX_B * 3 + 1, TILE_INDEX_CURSOR
+
+	copy [WRAM_ATRC_EN_PACKET], ATRC_EN
+	copy [WRAM_ICON_EN_PACKET], ICON_EN
+	copy [WRAM_PAL_PRI_PACKET], PAL_PRI
 
 	copy [rBGP], %11100100
 	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
@@ -506,6 +699,21 @@ InitSample:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SendAtrcEnCommand:
+	copy [WRAM_ATRC_EN_PACKET + 1], [WRAM_ATRC_EN_FLAG]
+	SendCommand WRAM_ATRC_EN_PACKET
+	ret
+
+SendIconEnCommand:
+	copy [WRAM_ICON_EN_PACKET + 1], [WRAM_ICON_EN_FLAG]
+	SendCommand WRAM_ICON_EN_PACKET
+	ret
+
+SendPalPriCommand:
+	copy [WRAM_PAL_PRI_PACKET + 1], [WRAM_PAL_PRI_FLAG]
+	SendCommand WRAM_PAL_PRI_PACKET
+	ret
 
 UpdateSample:
 	halt
@@ -525,6 +733,21 @@ UpdateSample:
 	ret z
 
 	UpdatePadInput WRAM_PAD_INPUT
+
+	; call the proper menu update function
+	ld a, [WRAM_SELECTION_INDEX]
+	sla a
+	ld h, 0
+	ld l, a
+	ld de, UpdateFunc
+	add hl, de
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	ld de, .call_return_address
+	push de
+	jp hl
+	.call_return_address
 
 	ret
 

@@ -162,6 +162,14 @@ macro TestPadInput_Pressed
 	and a, \2
 endm
 
+; raise the zero flag if none of input \2 is pressed in the pad input struct \1
+; example: TestPadInput_PressedAny _HRAM + 12, PADF_LEFT
+macro TestPadInput_PressedAny
+	ld a, [\1 + PAD_INPUT_PRESSED]
+	cpl
+	and a, \2
+endm
+
 ; raise the zero flag if input \2 is released in the pad input struct \1
 ; example: TestPadInput_Released _RAM + 24, PADF_A
 macro TestPadInput_Released
