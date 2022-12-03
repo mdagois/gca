@@ -556,6 +556,7 @@ UpdateAtrcEn:
 		ld a, [WRAM_ATRC_EN_FLAG]
 		xor a, $01
 		ld [WRAM_ATRC_EN_FLAG], a
+		call SendAtrcEnCommand
 		jr .update_ui
 	.toggle
 
@@ -578,6 +579,7 @@ UpdateIconEnPalette:
 		ld a, [WRAM_ICON_EN_FLAG]
 		xor a, ICON_EN_MASK_PALETTE
 		ld [WRAM_ICON_EN_FLAG], a
+		call SendIconEnCommand
 		jr .update_ui
 	.toggle
 
@@ -604,6 +606,7 @@ UpdateIconEnController:
 		ld a, [WRAM_ICON_EN_FLAG]
 		xor a, ICON_EN_MASK_CONTROLLER
 		ld [WRAM_ICON_EN_FLAG], a
+		call SendIconEnCommand
 		jr .update_ui
 	.toggle
 
@@ -630,6 +633,7 @@ UpdateIconEnCommand:
 		ld a, [WRAM_ICON_EN_FLAG]
 		xor a, ICON_EN_MASK_COMMAND
 		ld [WRAM_ICON_EN_FLAG], a
+		call SendIconEnCommand
 		jr .update_ui
 	.toggle
 
@@ -656,6 +660,7 @@ UpdatePalPri:
 		ld a, [WRAM_PAL_PRI_FLAG]
 		xor a, $01
 		ld [WRAM_PAL_PRI_FLAG], a
+		call SendPalPriCommand
 		jr .update_ui
 	.toggle
 
