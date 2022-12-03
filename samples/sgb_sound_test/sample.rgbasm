@@ -289,19 +289,15 @@ endm
 
 SgbPacket_MaskEn_Cancel:
 	SgbPacket_MaskEn MASK_EN_CANCEL
-SgbPacket_MaskEn_Cancel_End:
 
 SgbPacket_MaskEn_Freeze:
 	SgbPacket_MaskEn MASK_EN_FREEZE
-SgbPacket_MaskEn_Freeze_End:
 
 SgbPacket_MaskEn_Black:
 	SgbPacket_MaskEn MASK_EN_BLACK
-SgbPacket_MaskEn_Black_End:
 
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn MASK_EN_COLOR0
-SgbPacket_MaskEn_Color0_End:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
