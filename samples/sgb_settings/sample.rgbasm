@@ -231,6 +231,24 @@ def MASK_EN_FREEZE					equ ($01)
 def MASK_EN_BLACK					equ ($02)
 def MASK_EN_COLOR0					equ ($03)
 
+def ATTR_BLK_CONTROL_NONE			equ ($00)
+def ATTR_BLK_CONTROL_INSIDE			equ ($01)
+def ATTR_BLK_CONTROL_BORDER			equ ($02)
+def ATTR_BLK_CONTROL_OUTSIDE		equ ($04)
+def ATTR_BLK_CONTROL_ALL			equ (ATTR_BLK_CONTROL_INSIDE | ATTR_BLK_CONTROL_BORDER | ATTR_BLK_CONTROL_OUTSIDE)
+def ATTR_BLK_OUTSIDE_PALETTE_0		equ (0 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_1		equ (1 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_2		equ (2 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_3		equ (3 << 4)
+def ATTR_BLK_BORDER_PALETTE_0		equ (0 << 2)
+def ATTR_BLK_BORDER_PALETTE_1		equ (1 << 2)
+def ATTR_BLK_BORDER_PALETTE_2		equ (2 << 2)
+def ATTR_BLK_BORDER_PALETTE_3		equ (3 << 2)
+def ATTR_BLK_INSIDE_PALETTE_0		equ (0 << 0)
+def ATTR_BLK_INSIDE_PALETTE_1		equ (1 << 0)
+def ATTR_BLK_INSIDE_PALETTE_2		equ (2 << 0)
+def ATTR_BLK_INSIDE_PALETTE_3		equ (3 << 0)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -274,6 +292,24 @@ SgbPacket_MaskEn_Black:
 
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn MASK_EN_COLOR0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Color packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_Palette01:
+db PAL01
+dw $7BDE, $56B5, $2D6B, $0421
+dw        $03EF, $0200, $1D66
+db PADDING
+
+SgbPacket_AttrBlk:
+db ATTR_BLK_1
+db 1 ; number of square
+db ATTR_BLK_CONTROL_ALL
+db ATTR_BLK_OUTSIDE_PALETTE_0 | ATTR_BLK_BORDER_PALETTE_1 | ATTR_BLK_INSIDE_PALETTE_1
+db 9, 13, 10, 16 ; square coordinates
+ds 8, PADDING
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -407,6 +443,8 @@ _SendCommand:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PerformCustomInitialization:
+	SendCommand SgbPacket_Palette01
+	SendCommand SgbPacket_AttrBlk
 	ret
 
 InitializeSgbDevice:
