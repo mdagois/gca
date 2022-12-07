@@ -236,11 +236,7 @@ struct Palette
 		}
 	}
 
-	union
-	{
-		ColorBGR555 colors[kColorsPerPalette];
-		uint64_t value;
-	};
+	ColorBGR555 colors[kColorsPerPalette];
 };
 
 struct PaletteSet
@@ -355,7 +351,6 @@ static bool writePaletteSet(const PaletteSet& palette_set, const char* filename)
 		return false;
 	}
 
-	assert(sizeof(Palette) == 8);
 	const size_t written = fwrite(palette_set.palettes, sizeof(Palette), kPaletteMaxCount, file);
 	fclose(file);
 	return written == kPaletteMaxCount;
@@ -760,7 +755,7 @@ int main(int argc, const char** argv)
 		cout << "Could not extract the tiles for file [" << image.getFilename() << "]" << endl;
 		return 1;
 	}
-	if(!writeTilemap(tilemap, getOutputFilename(image.getFilename(), ".prm").c_str()))
+	if(!writeTilemap(tilemap, getOutputFilename(image.getFilename(), ".tlm").c_str()))
 	{
 		cout << "Could not write the tilemap files for file [" << image.getFilename() << "]" << endl;
 		return 1;
