@@ -22,6 +22,7 @@ set PKT_CONV=%BIN_DIR%packetize.exe
 set DMG_CONV=%BIN_DIR%gfxconv.exe
 set CGB_CONV=%BIN_DIR%cgbconv.exe
 set SGB_CONV=%BIN_DIR%sgbconv.exe
+set SFC_CONV=%BIN_DIR%sfcconv.exe
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: DMG
@@ -128,6 +129,9 @@ if %errorlevel% neq 0 goto end
 :: sound test
 %DMG_CONV% %SGB_ASSETS_DIR%sound_test.png %SGB_ASSETS_DIR%sgb_sound_test.png
 if %errorlevel% neq 0 goto end
+
+:: border
+%SFC_CONV% %SGB_ASSETS_DIR%sgb_border.png
 
 del /f /s /q %SGB_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %SGB_CHR_DIR% 2> nul

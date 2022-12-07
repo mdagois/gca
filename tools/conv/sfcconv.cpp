@@ -18,12 +18,9 @@ using namespace std;
 enum : uint32_t
 {
 	kTileSize = 8,
-	kColorsPerPalette = 4,
-	kPaletteMaxCount = 8,
-	kVramBankCount = 2,
-	kTilesPerVramBank = 256,
-	kTilesMaxCount = kTilesPerVramBank * kVramBankCount,
-	kTilemapIndexMaxCount = 1024,
+	kColorsPerPalette = 16,
+	kPaletteMaxCount = 4,
+	kTilesMaxCount = 256,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
 	kPaletteIndex_Invalid = 0xFFFFFFFFU,
@@ -32,17 +29,6 @@ enum : uint32_t
 enum : uint16_t
 {
 	kBGR555_Invalid = 0x8000U,
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Export parameters
-////////////////////////////////////////////////////////////////////////////////
-
-struct ExportParameters
-{
-	bool export_palettes;
-	bool optimize_tileset;
-	bool generate_tilemaps;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -392,13 +378,13 @@ struct TileFlip
 {
 	union
 	{
-		uint16_t rows[kTileSize];
-		uint64_t values[kTileSize * sizeof(uint16_t) / sizeof(uint64_t)];
+		uint32_t rows[kTileSize];
+		uint64_t values[kTileSize * sizeof(uint32_t) / sizeof(uint64_t)];
 	};
 
 	bool operator<(const TileFlip& other) const
 	{
-		return tie(values[0], values[1]) < tie(other.values[0], other.values[1]);
+		return tie(values[0], values[1], values[2], values[3]) < tie(other.values[0], other.values[1], other.values[2], other.values[3]);
 	}
 };
 
@@ -429,7 +415,7 @@ static void generateTileFlips(Tile& out_tile)
 		{
 			const uint8_t* src_bytes = reinterpret_cast<const uint8_t*>(none.rows + i);
 			uint8_t* dst_bytes = reinterpret_cast<uint8_t*>(horizontal.rows + i);
-			for(uint32_t b = 0; b < 2; ++b)
+			for(uint32_t b = 0; b < 4; ++b)
 			{
 				dst_bytes[b] =
 					((src_bytes[b] & 0x01) << 7) |
@@ -534,7 +520,7 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 	TileFlip& none = out_tile.flips[kTileFlipType_None];
 	for(uint32_t j = 0; j < kTileSize; ++j)
 	{
-		uint16_t& row_value = none.rows[j];
+		uint32_t& row_value = none.rows[j];
 		row_value = 0;
 		uint8_t* bytes = reinterpret_cast<uint8_t*>(&row_value);
 
@@ -550,8 +536,10 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 			}
 			assert(color_index < kColorsPerPalette);
 			const uint32_t shift = (kTileSize - 1) - i;
-			bytes[0] |= (color_index & 0x1) << shift;
+			bytes[0] |= ((color_index >> 0) & 0x1) << shift;
 			bytes[1] |= ((color_index >> 1) & 0x1) << shift;
+			bytes[2] |= ((color_index >> 2) & 0x1) << shift;
+			bytes[3] |= ((color_index >> 3) & 0x1) << shift;
 		}
 	}
 
@@ -559,11 +547,11 @@ static bool extractTile(Tile& out_tile, const PaletteSet& palette_set, const Col
 	return true;
 }
 
-static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image, bool optimize_tileset)
+static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, const Image& image)
 {
 	const bool success = iterateImageTiles(
 		image,
-		[&image, &palette_set, optimize_tileset, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
+		[&image, &palette_set, &out_tileset](const ColorRGBA* tile_pixels, uint32_t tile_column, uint32_t tile_row)
 		{
 			Tile tile;
 			if(!extractTile(tile, palette_set, tile_pixels, image.getWidth()))
@@ -571,7 +559,7 @@ static bool extractTileset(Tileset& out_tileset, const PaletteSet& palette_set, 
 				cout << "Could not extract tile (" << tile_column << "," << tile_row << ")" << endl;
 				return false;
 			}
-			if(optimize_tileset && out_tileset.flipToIndex.find(tile.flips[kTileFlipType_None]) != out_tileset.flipToIndex.end())
+			if(out_tileset.flipToIndex.find(tile.flips[kTileFlipType_None]) != out_tileset.flipToIndex.end())
 			{
 				return true;
 			}
@@ -612,8 +600,20 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 	const vector<Tile>& tiles = tileset.tiles;
 	for(size_t i = 0; i < tiles.size(); ++i)
 	{
-		const Tile& tile = tiles[i];
-		const size_t written = fwrite(&tile.flips[kTileFlipType_None], sizeof(TileFlip), 1, file);
+		constexpr uint32_t kTileDataSize = kTileSize * sizeof(uint32_t);
+		uint8_t tile_data[kTileDataSize];
+
+		const TileFlip& flip = tiles[i].flips[kTileFlipType_None];
+		for(uint32_t t = 0; t < kTileSize; ++t)
+		{
+			const uint32_t row = flip.rows[t];
+			tile_data[t * 2 +  0] = (row >>  0) & 0x000000FF;
+			tile_data[t * 2 +  1] = (row >>  8) & 0x000000FF;
+			tile_data[t * 2 + 16] = (row >> 16) & 0x000000FF;
+			tile_data[t * 2 + 17] = (row >> 24) & 0x000000FF;
+		}
+
+		const size_t written = fwrite(tile_data, kTileDataSize, 1, file);
 		if(written != 1)
 		{
 			cout << "Could not write tile [" << i << "]" << endl;
@@ -632,13 +632,11 @@ static bool writeTileset(const Tileset& tileset, const char* filename)
 
 struct Tilemap
 {
-	vector<uint8_t> indices;
-	vector<uint8_t> parameters;
+	vector<uint16_t> parameters;
 };
 
 static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const PaletteSet& palette_set, const Image& image)
 {
-	out_tilemap.indices.clear();
 	out_tilemap.parameters.clear();
 
 	const bool success = iterateImageTiles(
@@ -660,80 +658,43 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 			}
 
 			const TileFlipIndex tile_flip_index = index_it->second;
-			const size_t index = tile_flip_index.index;
-			const uint8_t tile_index = index % kTilesPerVramBank;
-			out_tilemap.indices.push_back(tile_index);
+			const uint8_t tile_index = tile_flip_index.index & 0xFF;
+			const uint8_t palette_number = tile.palette_index & (kPaletteMaxCount - 1);
+			const uint8_t flip_type = tile_flip_index.flip_type & 0x3;
 
-			const uint8_t palette_number = tile.palette_index & 0x7;
-			const uint8_t vram_bank = (index / kTilesPerVramBank) & 0x1;
-			const uint8_t flip_type = tile_flip_index.flip_type;
-
-			const uint8_t parameters =
-				palette_number |
-				(vram_bank << 3) |
-				(flip_type << 5);
+			const uint16_t parameters =
+				tile_index |
+				(palette_number << 10) |
+				(flip_type << 14);
 			out_tilemap.parameters.push_back(parameters);
+
 			return true;
 		});
 	if(!success)
 	{
 		return false;
 	}
-	const size_t index_count = out_tilemap.indices.size();
-	assert(index_count == out_tilemap.parameters.size());
-	if(index_count > kTilemapIndexMaxCount)
-	{
-		cout << "Too many indices in the tilemap (" << index_count << " > " << kTilemapIndexMaxCount << ")" << endl;
-		return false;
-	}
 	return true;
 }
 
-static bool writeTilemap(const Tilemap& tilemap, const char* index_filename, const char* parameter_filename)
+static bool writeTilemap(const Tilemap& tilemap, const char* filename)
 {
-	auto writeData = [](const uint8_t* data, size_t data_size, const char* filename)
+	FILE* file = fopen(filename, "wb");
+	if(!file)
 	{
-		FILE* file = fopen(filename, "wb");
-		if(!file)
-		{
-			cout << "Could not open file [" << filename << "]" << endl;
-			return false;
-		}
-		const size_t written = fwrite(data, 1, data_size, file);
-		if(written != data_size)
-		{
-			cout << "Could not write the data to file [" << filename << "]" << endl;
-			fclose(file);
-			return false;
-		}
-		const size_t padding_size = kTilemapIndexMaxCount - data_size;
-		for(uint32_t i = 0; i < padding_size; ++i)
-		{
-			const uint8_t padding = 0;
-			const size_t written = fwrite(&padding, sizeof(padding), 1, file);
-			if(written != 1)
-			{
-				cout << "Could not write the padding to file [" << filename << "]" << endl;
-				fclose(file);
-				return false;
-			}
-		}
-		fclose(file);
-		return true;
-	};
+		cout << "Could not open file [" << filename << "]" << endl;
+		return false;
+	}
 
-	const size_t index_count = tilemap.indices.size();
-	if(!writeData(tilemap.indices.data(), index_count * sizeof(tilemap.indices[0]), index_filename))
+	const size_t data_size = tilemap.parameters.size() * sizeof(tilemap.parameters[0]);
+	const size_t written = fwrite(tilemap.parameters.data(), 1, data_size, file);
+	const bool success = written == data_size;
+	if(!success)
 	{
-		cout << "Could not write the index file [" << index_filename << "]" << endl;
-		return false;
+		cout << "Could not write the data to file [" << filename << "]" << endl;
 	}
-	if(!writeData(tilemap.parameters.data(), index_count * sizeof(tilemap.parameters[0]), parameter_filename))
-	{
-		cout << "Could not write the parameter file [" << parameter_filename << "]" << endl;
-		return false;
-	}
-	return true;
+	fclose(file);
+	return success;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -746,81 +707,33 @@ int main(int argc, const char** argv)
 	{
 		cout
 			<< "USAGE" << endl
-			<< argv[0] << " [-mpt] <tileset_png_filename> [tilemap_png ...]" << endl
-			<< "Options" << endl
-			<< "\tm\tGenerate tilemaps" << endl
-			<< "\tp\tOutput a palette file" << endl
-			<< "\tt\tOptimize the tileset" << endl;
+			<< argv[0] << " <border_png_filename>" << endl;
 		return 0;
 	}
 
-	ExportParameters parameters = {};
-
-	int32_t first_filename = 1;
-	if(argv[1][0] == '-')
+	const char* filename = argv[1];
+	Image image;
+	if(!image.read(filename))
 	{
-		const char* options = argv[1];
-		const size_t option_len = strlen(options);
-		for(size_t i = 1; i < option_len; ++i)
-		{
-			const char o = options[i];
-			switch(o)
-			{
-				case 'm':
-				{
-					parameters.generate_tilemaps = true;
-					break;
-				}
-				case 'p':
-				{
-					parameters.export_palettes = true;
-					break;
-				}
-				case 't':
-				{
-					parameters.optimize_tileset = true;
-					break;
-				}
-				default:
-				{
-					cout << "Unknown option: [" << o << "]" << endl;
-					break;
-				}
-			}
-		}
-		first_filename = 2;
+		cout << "Could not read file [" << filename << "]" << endl;
+		return 1;
 	}
-
-	ImageList images;
+	if(!image.validateSize())
 	{
-		images.resize(argc - first_filename);
-		for(int32_t i = 0; i < images.size(); ++i)
-		{
-			const char* filename = argv[i + first_filename];
-			Image& image = images[i];
-			if(!image.read(filename))
-			{
-				cout << "Could not read file [" << filename << "]" << endl;
-				return 1;
-			}
-			if(!image.validateSize())
-			{
-				cout
-					<< "The image size (" << image.getWidth() << "x" << image.getHeight() << ") is invalid "
-					<< "for file [" << filename << "]" << endl;
-				return 1;
-			}
-		}
+		cout
+			<< "The image size (" << image.getWidth() << "x" << image.getHeight() << ") is invalid "
+			<< "for file [" << filename << "]" << endl;
+		return 1;
 	}
 
 	PaletteSet palette_set = {};
 	{
-		if(!extractPalettes(palette_set, images[0]))
+		if(!extractPalettes(palette_set, image))
 		{
-			cout << "Could not extract palettes for file [" << images[0].getFilename() << "]" << endl;
+			cout << "Could not extract palettes for file [" << image.getFilename() << "]" << endl;
 			return 1;
 		}
-		if(parameters.export_palettes && !writePaletteSet(palette_set, getOutputFilename(images[0].getFilename(), ".pal").c_str()))
+		if(!writePaletteSet(palette_set, getOutputFilename(image.getFilename(), ".pal").c_str()))
 		{
 			cout << "Could not write the palette file" << endl;
 			return 1;
@@ -829,34 +742,28 @@ int main(int argc, const char** argv)
 
 	Tileset tileset;
 	{
-		if(!extractTileset(tileset, palette_set, images[0], parameters.optimize_tileset))
+		if(!extractTileset(tileset, palette_set, image))
 		{
-			cout << "Could not extract the tiles for file [" << images[0].getFilename() << "]" << endl;
+			cout << "Could not extract the tiles for file [" << image.getFilename() << "]" << endl;
 			return 1;
 		}
-		if(!writeTileset(tileset, getOutputFilename(images[0].getFilename(), ".chr").c_str()))
+		if(!writeTileset(tileset, getOutputFilename(image.getFilename(), ".chr").c_str()))
 		{
 			cout << "Could not write the tileset file" << endl;
 			return 1;
 		}
 	}
 
-	if(parameters.generate_tilemaps)
+	Tilemap tilemap;
+	if(!extractTilemaps(tilemap, tileset, palette_set, image))
 	{
-		for(uint32_t i = 1; i < images.size(); ++i)
-		{
-			Tilemap tilemap;
-			if(!extractTilemaps(tilemap, tileset, palette_set, images[i]))
-			{
-				cout << "Could not extract the tiles for file [" << images[i].getFilename() << "]" << endl;
-				return 1;
-			}
-			if(!writeTilemap(tilemap, getOutputFilename(images[i].getFilename(), ".idx").c_str(), getOutputFilename(images[i].getFilename(), ".prm").c_str()))
-			{
-				cout << "Could not write the tilemap files for file [" << images[i].getFilename() << "]" << endl;
-				return 1;
-			}
-		}
+		cout << "Could not extract the tiles for file [" << image.getFilename() << "]" << endl;
+		return 1;
+	}
+	if(!writeTilemap(tilemap, getOutputFilename(image.getFilename(), ".prm").c_str()))
+	{
+		cout << "Could not write the tilemap files for file [" << image.getFilename() << "]" << endl;
+		return 1;
 	}
 
 	return 0;
