@@ -20,6 +20,7 @@ enum : uint32_t
 	kTileSize = 8,
 	kColorsPerPalette = 16,
 	kPaletteMaxCount = 3,
+	kPaletteFirstPaletteIndex = 4,
 	kTilesMaxCount = 256,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
@@ -654,7 +655,7 @@ static bool extractTilemaps(Tilemap& out_tilemap, const Tileset& tileset, const 
 
 			const TileFlipIndex tile_flip_index = index_it->second;
 			const uint8_t tile_index = tile_flip_index.index & 0xFF;
-			const uint8_t palette_number = tile.palette_index & (kPaletteMaxCount - 1);
+			const uint8_t palette_number = kPaletteFirstPaletteIndex + (tile.palette_index % kPaletteMaxCount);
 			const uint8_t flip_type = tile_flip_index.flip_type & 0x3;
 
 			const uint16_t parameters =
