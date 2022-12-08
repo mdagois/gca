@@ -116,8 +116,8 @@ set SGB_PAL_DIR=%SGB_GENERATED_DIR%%PAL_EXTENSION%\
 set SGB_TLM_DIR=%SGB_GENERATED_DIR%%TLM_EXTENSION%\
 set SGB_ATR_DIR=%SGB_GENERATED_DIR%%ATR_EXTENSION%\
 
-:: multi
-%DMG_CONV% %SGB_ASSETS_DIR%tileset.png %SGB_ASSETS_DIR%sgb_multi.png %SGB_ASSETS_DIR%sgb_settings.png
+:: general
+%DMG_CONV% %SGB_ASSETS_DIR%tileset.png %SGB_ASSETS_DIR%sgb_border.png %SGB_ASSETS_DIR%sgb_multi.png %SGB_ASSETS_DIR%sgb_settings.png
 if %errorlevel% neq 0 goto end
 
 :: tech
@@ -131,7 +131,8 @@ if %errorlevel% neq 0 goto end
 if %errorlevel% neq 0 goto end
 
 :: border
-%SFC_CONV% %SGB_ASSETS_DIR%sgb_border.png
+%SFC_CONV% %SGB_ASSETS_DIR%sgb_snes_border.png
+if %errorlevel% neq 0 goto end
 
 del /f /s /q %SGB_CHR_DIR% 2> nul 1> nul
 rmdir /s /q %SGB_CHR_DIR% 2> nul

@@ -19,7 +19,7 @@ enum : uint32_t
 {
 	kTileSize = 8,
 	kColorsPerPalette = 16,
-	kPaletteMaxCount = 4,
+	kPaletteMaxCount = 3,
 	kTilesMaxCount = 256,
 
 	kColorIndex_Invalid = 0xFFFFFFFFU,
