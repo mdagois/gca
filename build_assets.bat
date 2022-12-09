@@ -131,7 +131,9 @@ if %errorlevel% neq 0 goto end
 if %errorlevel% neq 0 goto end
 
 :: border
-%SFC_CONV% %SGB_ASSETS_DIR%sgb_snes_border.png
+%SFC_CONV% %SGB_ASSETS_DIR%sgb_snes_border_1.png
+if %errorlevel% neq 0 goto end
+%SFC_CONV% %SGB_ASSETS_DIR%sgb_snes_border_2.png
 if %errorlevel% neq 0 goto end
 
 del /f /s /q %SGB_CHR_DIR% 2> nul 1> nul

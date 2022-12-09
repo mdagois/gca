@@ -15,15 +15,15 @@ incbin "sgb_border.tlm"
 graphics_data_dmg_end:
 
 graphics_border_pal:
-incbin "sgb_snes_border_1.pal"
+incbin "sgb_snes_border_2.pal"
 graphics_border_pal_end:
 
 graphics_border_tileset:
-incbin "sgb_snes_border_1.chr"
+incbin "sgb_snes_border_2.chr"
 graphics_border_tileset_end:
 
 graphics_border_tilemap:
-incbin "sgb_snes_border_1.tlm"
+incbin "sgb_snes_border_2.tlm"
 graphics_border_tilemap_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
