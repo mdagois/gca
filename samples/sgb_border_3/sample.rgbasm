@@ -14,6 +14,14 @@ incbin "tileset.chr"
 incbin "sgb_border.tlm"
 graphics_data_dmg_end:
 
+graphics_data_tileset:
+incbin "sgb_center_3.chr"
+graphics_data_tileset_end:
+
+graphics_center_tilemap:
+incbin "sgb_center_3.tlm"
+graphics_center_tilemap_end:
+
 graphics_border_pal:
 incbin "sgb_snes_border_3.pal"
 graphics_border_pal_end:
@@ -110,6 +118,9 @@ def MASK_EN_FREEZE					equ ($01)
 def MASK_EN_BLACK					equ ($02)
 def MASK_EN_COLOR0					equ ($03)
 
+def ATTR_CHR_WRITE_HORIZONTAL		equ ($00)
+def ATTR_CHR_WRITE_VERTICAL			equ ($01)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,6 +164,34 @@ SgbPacket_MaskEn_Black:
 
 SgbPacket_MaskEn_Color0:
 	SgbPacket_MaskEn MASK_EN_COLOR0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Color packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_Palette01:
+db PAL01
+incbin "sgb_center_3.pal", 0, 8
+incbin "sgb_center_3.pal", 10, 6
+db PADDING
+
+SgbPacket_Palette23:
+db PAL23
+incbin "sgb_center_3.pal", 16, 8
+incbin "sgb_center_3.pal", 26, 6
+db PADDING
+
+SgbPacket_AttrChr:
+db ATTR_CHR_6
+db $00, $00	; coordinates
+dw $0168 ; number of indices
+db ATTR_CHR_WRITE_HORIZONTAL
+; indices
+ROW_BYTE_OFFSET = 0
+rept 18
+incbin "sgb_center_3.atr", ROW_BYTE_OFFSET, 5
+ROW_BYTE_OFFSET += 8
+endr
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Border packets
@@ -302,9 +341,12 @@ _SendCommand:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PerformCustomInitialization:
+	SendCommand SgbPacket_Palette01
+	SendCommand SgbPacket_Palette23
+	SendCommand SgbPacket_AttrChr
+
 	ld hl, rLCDC
 	set LCDCB_BG9C00, [hl]
-	set LCDCB_BG8000, [hl]
 
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
@@ -330,11 +372,11 @@ PerformCustomInitialization:
 
 	ld hl, rLCDC
 	res LCDCB_BG9C00, [hl]
-	res LCDCB_BG8000, [hl]
 
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
-	CopyMemory _VRAM, graphics_data_dmg, graphics_data_dmg_end - graphics_data_dmg
+	CopyMemory _VRAM, graphics_data_tileset, graphics_data_tileset_end - graphics_data_tileset
+	CopyMemory _SCRN0, graphics_center_tilemap, graphics_center_tilemap_end - graphics_center_tilemap
 	ld hl, rLCDC
 	set LCDCB_ON, [hl]
 
@@ -391,7 +433,7 @@ InitSample_SGB:
 
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 

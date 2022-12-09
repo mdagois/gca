@@ -17,9 +17,9 @@ def HARDWARE_MODEL_SGB			equ (2)
 def BYTES_PER_TILE				equ (16)
 def TILES_PER_BLOCK				equ (128)
 
-def SNES_TILES_PER_BLOCK		equ (128)
 def SNES_BYTES_PER_TILE			equ (32)
-def SNES_TILE_BLOCK_SIZE		equ (128 * 32)
+def SNES_TILES_PER_BLOCK		equ (128)
+def SNES_TILE_BLOCK_SIZE		equ (SNES_TILES_PER_BLOCK * SNES_BYTES_PER_TILE)
 def SNES_TILEMAP_SIZE			equ (2048)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
