@@ -30,6 +30,7 @@ enum : uint32_t
 enum : uint16_t
 {
 	kBGR555_Invalid = 0x8000U,
+	kBGR555_ClearColor = 0x7C1FU,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +99,7 @@ static double getLuminance(const ColorBGR555 color)
 static void sortColors(ColorBGR555* colors, uint32_t count)
 {
 	sort(
-		colors, colors + count,
+		colors + 1, colors + count - 1,
 		[](const ColorBGR555 lhs, const ColorBGR555 rhs)
 		{
 			return getLuminance(lhs) < getLuminance(rhs);
@@ -235,6 +236,7 @@ struct Palette
 		{
 			colors[i] = kBGR555_Invalid;
 		}
+		colors[0] = kBGR555_ClearColor;
 	}
 
 	ColorBGR555 colors[kColorsPerPalette];
@@ -262,7 +264,7 @@ static bool extractTilePalette(Palette& out_tile_palette, const ColorRGBA* pixel
 		return false;
 	}
 
-	uint32_t c = 0;
+	uint32_t c = 1;
 	for(ColorBGR555 color : colors)
 	{
 		out_tile_palette.colors[c] = color;
@@ -298,7 +300,7 @@ static bool mergePalettes(Palette& out_palette, const Palette lhs, const Palette
 		return false;
 	}
 
-	uint32_t c = 0;
+	uint32_t c = 1;
 	for(ColorBGR555 color : colors)
 	{
 		out_palette.colors[c] = color;
