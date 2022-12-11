@@ -702,6 +702,12 @@ UpdatePalPri:
 		jr .update_ui
 	.toggle
 
+	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_A
+	jr z, .update_palette
+		SendCommand SgbPacket_Palette01
+		SendCommand SgbPacket_AttrBlk
+	.update_palette
+
 	ret
 
 	.update_ui
