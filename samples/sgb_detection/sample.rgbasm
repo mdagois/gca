@@ -25,6 +25,9 @@ InitSample_DMG:
 	copy [rBGP], %11100100
 	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 0
+	
+	copy [rIE], IEF_VBLANK
+	ei
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
@@ -32,6 +35,9 @@ InitSample_SGB1:
 	copy [rBGP], %11100100
 	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 1
+
+	copy [rIE], IEF_VBLANK
+	ei
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
@@ -39,6 +45,9 @@ InitSample_SGB2:
 	copy [rBGP], %11100100
 	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 2
+
+	copy [rIE], IEF_VBLANK
+	ei
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 	ret
 
