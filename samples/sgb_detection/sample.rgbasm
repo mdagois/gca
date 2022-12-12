@@ -23,7 +23,7 @@ def TILE_ZERO_INDEX				equ (80)
 
 InitSample_DMG:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 0
 	
 	copy [rIE], IEF_VBLANK
@@ -33,7 +33,7 @@ InitSample_DMG:
 
 InitSample_SGB1:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 1
 
 	copy [rIE], IEF_VBLANK
@@ -43,7 +43,7 @@ InitSample_SGB1:
 
 InitSample_SGB2:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM8000, graphics_data, graphics_data_end - graphics_data
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
 	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 2
 
 	copy [rIE], IEF_VBLANK
