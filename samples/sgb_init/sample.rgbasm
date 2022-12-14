@@ -278,7 +278,7 @@ PerformCustomInitialization:
 
 InitializeSgbDevice:
 	WaitFrames 60
-	SendCommand SgbPacket_MaskEn_Black
+	SendCommand SgbPacket_MaskEn_Freeze
 
 COMMAND_INDEX = 0
 rept ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
