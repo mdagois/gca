@@ -274,7 +274,7 @@ _SendPacket:
 	ldh [rP1], a
 
 	; send the bytes of the packet
-	ld b, 16
+	ld b, SGB_BYTES_PER_PACKET
 	.send_byte
 		ld e, [hl]
 		inc hl
