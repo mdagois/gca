@@ -350,12 +350,12 @@ InitSample_DMG:
 
 InitSample_SGB:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM, graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
+	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
 	CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
 
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 

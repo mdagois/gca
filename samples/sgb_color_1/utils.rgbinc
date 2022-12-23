@@ -14,6 +14,9 @@ def HARDWARE_MODEL_REGISTER		equ (_HRAM)
 def HARDWARE_MODEL_DMG			equ (1)
 def HARDWARE_MODEL_SGB			equ (2)
 
+def BYTES_PER_TILE				equ (16)
+def TILES_PER_BLOCK				equ (128)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
