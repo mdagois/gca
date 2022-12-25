@@ -397,6 +397,14 @@ PerformCustomInitialization:
 	SendCommand SgbPacket_Palette01
 	SendCommand SgbPacket_Palette23
 	SendCommand SgbPacket_AttrChr
+
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
+	ClearMemory _SCRN0, SCRN_VX_B * SCRN_Y_B
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+
 	ret
 
 InitializeSgbDevice:
@@ -431,12 +439,9 @@ InitSample_DMG:
 
 InitSample_SGB:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM, graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
-	ClearMemory _SCRN0, SCRN_VX_B * SCRN_Y_B
-
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 
