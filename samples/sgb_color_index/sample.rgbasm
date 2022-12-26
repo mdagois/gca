@@ -145,8 +145,8 @@ def ATTR_LIN_PALETTE_1				equ (1 << 5)
 def ATTR_LIN_PALETTE_2				equ (2 << 5)
 def ATTR_LIN_PALETTE_3				equ (3 << 5)
 
-def ATTR_DIV_HORIZONTAL				equ ($01)
 def ATTR_DIV_VERTICAL				equ ($00)
+def ATTR_DIV_HORIZONTAL				equ ($40)
 def ATTR_DIV_BORDER_PALETTE_0		equ (0 << 4)
 def ATTR_DIV_BORDER_PALETTE_1		equ (1 << 4)
 def ATTR_DIV_BORDER_PALETTE_2		equ (2 << 4)
@@ -246,21 +246,37 @@ ATTR_LINE_NUM += 4
 endr
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_0 | ATTR_LINE_NUM + 0
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_1 | ATTR_LINE_NUM + 1
-ds 12, PADDING
+db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_0 | 16
+db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_1 | 17
+db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_2 | 18
+db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_3 | 19
+ds 8, PADDING
 
-SgbPacket_AttrDiv:
+SgbPacket_AttrDiv_Vertical:
 db ATTR_DIV
 db ATTR_DIV_VERTICAL | ATTR_DIV_TOP_LEFT_PALETTE_1 | ATTR_DIV_BORDER_PALETTE_2 | ATTR_DIV_BOTTOM_RIGHT_PALETTE_3
 db 14 ; dividing column
 ds 13, PADDING
 
+SgbPacket_AttrDiv_Horizontal:
+db ATTR_DIV
+db ATTR_DIV_HORIZONTAL | ATTR_DIV_TOP_LEFT_PALETTE_1 | ATTR_DIV_BORDER_PALETTE_2 | ATTR_DIV_BOTTOM_RIGHT_PALETTE_3
+db 10 ; dividing row
+ds 13, PADDING
+
 SgbPacket_AttrBlk:
-db ATTR_BLK_1
-db 1 ; number of square
+db ATTR_BLK_2
+db 3 ; number of blocks
 db ATTR_BLK_CONTROL_ALL
 db ATTR_BLK_OUTSIDE_PALETTE_1 | ATTR_BLK_BORDER_PALETTE_2 | ATTR_BLK_INSIDE_PALETTE_3
-db 2, 2, 17, 10 ; square coordinates
-ds 8, PADDING
+db 1, 1, 9, 9 ; block coordinates
+db ATTR_BLK_CONTROL_INSIDE
+db ATTR_BLK_INSIDE_PALETTE_3
+db 2, 11, 8, 16 ; block coordinates
+db ATTR_BLK_CONTROL_BORDER
+db ATTR_BLK_BORDER_PALETTE_3
+db 11, 1, 18, 16 ; block coordinates
+ds 12, PADDING
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -470,30 +486,42 @@ UpdateSample:
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
 	jr nz, .up
 		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrChr
+		SendCommand SgbPacket_AttrDiv_Horizontal
 		SendCommand SgbPacket_MaskEn_Cancel
 	.up
 
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
 	jr nz, .down
 		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrLin
+		SendCommand SgbPacket_AttrDiv_Vertical
 		SendCommand SgbPacket_MaskEn_Cancel
 	.down
 
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
 	jr nz, .left
 		SendCommand SgbPacket_MaskEn_Freeze
-		SendCommand SgbPacket_AttrDiv
+		SendCommand SgbPacket_AttrLin
 		SendCommand SgbPacket_MaskEn_Cancel
 	.left
 
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
 	jr nz, .right
+	.right
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_A
+	jr nz, .a_button
 		SendCommand SgbPacket_MaskEn_Freeze
 		SendCommand SgbPacket_AttrBlk
 		SendCommand SgbPacket_MaskEn_Cancel
-	.right
+	.a_button
+
+	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_B
+	jr nz, .b_button
+		SendCommand SgbPacket_MaskEn_Freeze
+		SendCommand SgbPacket_AttrChr
+		SendCommand SgbPacket_MaskEn_Cancel
+	.b_button
+
 
 	ret
 
