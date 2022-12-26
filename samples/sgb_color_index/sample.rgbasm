@@ -506,14 +506,10 @@ UpdateSample:
 
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
 	jr nz, .right
-	.right
-
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_A
-	jr nz, .a_button
 		SendCommand SgbPacket_MaskEn_Freeze
 		SendCommand SgbPacket_AttrBlk
 		SendCommand SgbPacket_MaskEn_Cancel
-	.a_button
+	.right
 
 	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_B
 	jr nz, .b_button
