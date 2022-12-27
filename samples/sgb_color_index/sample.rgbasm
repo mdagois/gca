@@ -234,7 +234,7 @@ endr
 
 SgbPacket_AttrLin:
 db ATTR_LIN_2
-db 18 ; number of lines
+db 22 ; number of lines
 ; lines data
 ATTR_LINE_NUM = 0
 rept 4
@@ -250,7 +250,7 @@ db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_0 | 16
 db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_1 | 17
 db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_2 | 18
 db ATTR_LIN_VERTICAL | ATTR_LIN_PALETTE_3 | 19
-ds 8, PADDING
+ds 4, PADDING
 
 SgbPacket_AttrDiv_Vertical:
 db ATTR_DIV
