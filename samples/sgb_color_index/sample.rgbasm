@@ -210,14 +210,14 @@ SgbPacket_MaskEn_Color0:
 
 SgbPacket_Palette01:
 db PAL01
-dw $0000, $FF7F, $0000, $0000
-dw        $007C, $0000, $0000
+dw $0000, $FF7F, $0000, $0000 ; white
+dw        $007C, $0000, $0000 ; blue
 db PADDING
 
 SgbPacket_Palette23:
 db PAL23
-dw $0000, $1F00, $0000, $0000
-dw        $E003, $0000, $0000
+dw $0000, $1F00, $0000, $0000 ; red
+dw        $E003, $0000, $0000 ; green
 db PADDING
 
 SgbPacket_AttrChr:
