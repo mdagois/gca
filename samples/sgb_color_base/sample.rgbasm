@@ -174,7 +174,7 @@ db ATTR_CHR_6
 db $00, $00	; coordinates
 dw $0168 ; number of indices
 db ATTR_CHR_WRITE_HORIZONTAL
-; indices
+; palette indices
 ROW_BYTE_OFFSET = 0
 rept 18
 incbin "tech_sgb.atr", ROW_BYTE_OFFSET, 5
