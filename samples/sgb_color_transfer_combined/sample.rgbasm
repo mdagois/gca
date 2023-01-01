@@ -361,17 +361,42 @@ _SendCommand:
 ; SGB initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def ATTRIBUTES_PER_BYTE				equ (4)
+def BYTES_PER_ATTRIBUTE_SCREEN		equ (SCRN_X_B * SCRN_Y_B / ATTRIBUTES_PER_BYTE)
+
 PerformCustomInitialization:
+	; set VRAM contents
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+
+	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
+	CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
+
+	CopyMemory _VRAM, palettes_sgb, palettes_sgb_end - palettes_sgb
+	CopyMemory _VRAM + BYTES_PER_ATTRIBUTE_SCREEN, graphics_sgb_attr_chr, graphics_sgb_attr_chr_end - graphics_sgb_attr_chr
+	xor a
+	ld hl, _SCRN1
+	ld c, 14
+	.scrn1_tilemap
+		ld [hli], a
+		inc a
+		dec c
+		jr nz, .scrn1_tilemap
+
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+
+	; send all commands
 	ld hl, rLCDC
 	set LCDCB_BG9C00, [hl]
-	res LCDCB_BG8000, [hl]
+	set LCDCB_BG8000, [hl]
 	SendCommand SgbPacket_PalTrn
 	SendCommand SgbPacket_AttrTrn
 	ld hl, rLCDC
 	res LCDCB_BG9C00, [hl]
-	set LCDCB_BG8000, [hl]
-
+	res LCDCB_BG8000, [hl]
 	SendCommand SgbPacket_PalSet	
+
 	ret
 
 InitializeSgbDevice:
@@ -406,23 +431,9 @@ InitSample_DMG:
 
 InitSample_SGB:
 	copy [rBGP], %11100100
-	CopyMemory _VRAM, graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
-	CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
-
-	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), palettes_sgb, palettes_sgb_end - palettes_sgb
-	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE) + 90, graphics_sgb_attr_chr, graphics_sgb_attr_chr_end - graphics_sgb_attr_chr
-	xor a
-	ld hl, _SCRN1
-	ld c, 14
-	.scrn1_tilemap
-		ld [hli], a
-		inc a
-		dec c
-		jr nz, .scrn1_tilemap
-
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 
@@ -431,9 +442,9 @@ InitSample_SGB:
 InitSample:
 	ld a, [HARDWARE_MODEL_REGISTER]
 	dec a
-	jp z, InitSample_DMG
+	jr z, InitSample_DMG
 	dec a
-	jp z, InitSample_SGB
+	jr z, InitSample_SGB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
