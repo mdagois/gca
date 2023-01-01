@@ -220,15 +220,15 @@ SgbPacket_PalTrn:
 db PAL_TRN
 ds 15, PADDING
 
+SgbPacket_AttrTrn:
+db ATTR_TRN
+ds 15, PADDING
+
 SgbPacket_PalSet:
 db PAL_SET
 dw $0000, $0001, $0002, $0003
 db PAL_SET_FLAG_SET_ATTR | 1
 ds 6, PADDING
-
-SgbPacket_AttrTrn:
-db ATTR_TRN
-ds 15, PADDING
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
