@@ -340,14 +340,43 @@ _SendCommand:
 ; SGB initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+_FillTransferTilemap:
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+
+	xor a
+	ld hl, _SCRN1
+	ld de, 12 ; columns to skip
+	ld c, 13 ; rows
+	.scrn1_tilemap
+		ld b, 20 ; columns
+		.scrn1_line
+			ld [hli], a
+			inc a
+			dec b
+			jr nz, .scrn1_line
+		add hl, de
+		dec c
+		jr nz, .scrn1_tilemap
+
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+	ret
+
 PerformCustomInitialization:
 	SendCommand SgbPacket_Palette01
 	SendCommand SgbPacket_Palette23
 	SendCommand SgbPacket_AttrChr
 
+	; set the LCD for 4KB transfers
 	ld hl, rLCDC
 	set LCDCB_BG9C00, [hl]
+	set LCDCB_BG8000, [hl]
 
+	; set the tilemap for payloads
+	call _FillTransferTilemap
+
+	; send the first block of border tile data
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
 	CopyMemory _VRAM, graphics_border_tileset, SNES_TILE_BLOCK_SIZE
@@ -355,6 +384,7 @@ PerformCustomInitialization:
 	set LCDCB_ON, [hl]
 	SendCommand SgbPacket_ChrTrn_Block0
 
+	; send the second block of border tile data
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
 	CopyMemory _VRAM, graphics_border_tileset + SNES_TILE_BLOCK_SIZE, SNES_TILE_BLOCK_SIZE
@@ -362,6 +392,7 @@ PerformCustomInitialization:
 	set LCDCB_ON, [hl]
 	SendCommand SgbPacket_ChrTrn_Block1
 
+	; send the border tilemap
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
 	CopyMemory _VRAM, graphics_border_tilemap, graphics_border_tilemap_end - graphics_border_tilemap
@@ -370,12 +401,15 @@ PerformCustomInitialization:
 	set LCDCB_ON, [hl]
 	SendCommand SgbPacket_PctTrn
 
+	; set the LCD for displaying graphics
 	ld hl, rLCDC
 	res LCDCB_BG9C00, [hl]
+	res LCDCB_BG8000, [hl]
 
+	; setting the actual graphics of the program
 	ld hl, rLCDC
 	res LCDCB_ON, [hl]
-	CopyMemory _VRAM, graphics_data_tileset, graphics_data_tileset_end - graphics_data_tileset
+	CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_data_tileset, graphics_data_tileset_end - graphics_data_tileset
 	CopyMemory _SCRN0, graphics_center_tilemap, graphics_center_tilemap_end - graphics_center_tilemap
 	ld hl, rLCDC
 	set LCDCB_ON, [hl]
@@ -414,26 +448,9 @@ InitSample_DMG:
 
 InitSample_SGB:
 	copy [rBGP], %11100100
-
-	xor a
-	ld hl, _SCRN1
-	ld de, 12
-	ld c, 13
-	.scrn1_tilemap
-		ld b, 20
-		.scrn1_line
-			ld [hli], a
-			inc a
-			dec b
-			jr nz, .scrn1_line
-
-		add hl, de
-		dec c
-		jr nz, .scrn1_tilemap
-
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 
