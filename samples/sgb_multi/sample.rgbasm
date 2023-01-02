@@ -231,9 +231,9 @@ def MASK_EN_FREEZE					equ ($01)
 def MASK_EN_BLACK					equ ($02)
 def MASK_EN_COLOR0					equ ($03)
 
-def MLT_REQ_ONE_PLAYER				equ ($00)
-def MLT_REQ_TWO_PLAYERS				equ ($01)
-def MLT_REQ_FOUR_PLAYERS			equ ($03)
+def MLT_REQ_ONE_JOYPAD				equ ($00)
+def MLT_REQ_TWO_JOYPADS				equ ($01)
+def MLT_REQ_FOUR_JOYPADS			equ ($03)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
@@ -283,20 +283,20 @@ SgbPacket_MaskEn_Color0:
 ; MLT_REQ packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; \1 = player count type
+; \1 = joypad count type
 macro SgbPacket_MltReq
 db MLT_REQ, \1
 ds 14, PADDING
 endm
 
-SgbPacket_OnePlayer:
-	SgbPacket_MltReq MLT_REQ_ONE_PLAYER
+SgbPacket_OneJoypad:
+	SgbPacket_MltReq MLT_REQ_ONE_JOYPAD
 
-SgbPacket_TwoPlayers:
-	SgbPacket_MltReq MLT_REQ_TWO_PLAYERS
+SgbPacket_TwoJoypads:
+	SgbPacket_MltReq MLT_REQ_TWO_JOYPADS
 
-SgbPacket_FourPlayers:
-	SgbPacket_MltReq MLT_REQ_FOUR_PLAYERS
+SgbPacket_FourJoypads:
+	SgbPacket_MltReq MLT_REQ_FOUR_JOYPADS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -459,7 +459,7 @@ WRAM_PAD_INPUT_1				rb sizeof_PAD_INPUT
 WRAM_PAD_INPUT_2				rb sizeof_PAD_INPUT
 WRAM_PAD_INPUT_3				rb sizeof_PAD_INPUT
 
-WRAM_PLAYERS_COUNT				rb 1
+WRAM_JOYPADS_COUNT				rb 1
 
 WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
 
@@ -516,7 +516,7 @@ InitSample:
 	InitPadInput WRAM_PAD_INPUT_1
 	InitPadInput WRAM_PAD_INPUT_2
 	InitPadInput WRAM_PAD_INPUT_3
-	copy [WRAM_PLAYERS_COUNT], 1
+	copy [WRAM_JOYPADS_COUNT], 1
 	ResetTransferList
 
 	copy [rBGP], %11100100
@@ -552,11 +552,11 @@ UpdatePad_3:
 	ret
 
 UpdatePad_All:
-	ld a, [WRAM_PLAYERS_COUNT]
+	ld a, [WRAM_JOYPADS_COUNT]
 	cp a, 1
-	jr z, .one_player
+	jr z, .one_joypad
 	cp a, 2
-	jr z, .two_players
+	jr z, .two_joypads
 
 	call UpdatePad_0
 	call UpdatePad_1
@@ -564,42 +564,42 @@ UpdatePad_All:
 	call UpdatePad_3
 	ret
 
-	.two_players
+	.two_joypads
 	call UpdatePad_0
 	call UpdatePad_1
 	ret
 
-	.one_player
+	.one_joypad
 	call UpdatePad_0
 	ret
 
 UpdateDisplay:
-	; player 1
+	; joypad 1
 	ld a, [WRAM_PAD_INPUT_0 + PAD_INPUT_CURRENT]
 	DisplayRegisterA 3, 7
-	ld a, [WRAM_PLAYERS_COUNT]
+	ld a, [WRAM_JOYPADS_COUNT]
 	dec a
-	jp z, .reset_3_players
+	jp z, .reset_3_joypads
 
-	; player 2
+	; joypad 2
 	ld a, [WRAM_PAD_INPUT_1 + PAD_INPUT_CURRENT]
 	DisplayRegisterA 5, 7
-	ld a, [WRAM_PLAYERS_COUNT]
+	ld a, [WRAM_JOYPADS_COUNT]
 	cp a, 2
-	jp z, .reset_2_players
+	jp z, .reset_2_joypads
 
-	; players 3 and 4
+	; joypads 3 and 4
 	ld a, [WRAM_PAD_INPUT_2 + PAD_INPUT_CURRENT]
 	DisplayRegisterA 7, 7
 	ld a, [WRAM_PAD_INPUT_3 + PAD_INPUT_CURRENT]
 	DisplayRegisterA 9, 7
 	jp .display_done
 
-	.reset_3_players
+	.reset_3_joypads
 	xor a
 	DisplayRegisterA 5, 7
 
-	.reset_2_players
+	.reset_2_joypads
 	xor a
 	DisplayRegisterA 7, 7
 	xor a
@@ -608,25 +608,25 @@ UpdateDisplay:
 	.display_done
 	ret
 
-SwitchPlayersCount:
-	ld a, [WRAM_PLAYERS_COUNT]
+SwitchJoypadsCount:
+	ld a, [WRAM_JOYPADS_COUNT]
 
 	cp a, 1
-	jr nz, .switch_to_2_players
-		copy [WRAM_PLAYERS_COUNT], 2
-		SendCommand SgbPacket_TwoPlayers
+	jr nz, .switch_to_2_joypads
+		copy [WRAM_JOYPADS_COUNT], 2
+		SendCommand SgbPacket_TwoJoypads
 		ret
-	.switch_to_2_players
+	.switch_to_2_joypads
 
 	cp a, 2
-	jr nz, .switch_to_4_players
-		copy [WRAM_PLAYERS_COUNT], 4
-		SendCommand SgbPacket_FourPlayers
+	jr nz, .switch_to_4_joypads
+		copy [WRAM_JOYPADS_COUNT], 4
+		SendCommand SgbPacket_FourJoypads
 		ret
-	.switch_to_4_players
+	.switch_to_4_joypads
 
-	copy [WRAM_PLAYERS_COUNT], 1
-	SendCommand SgbPacket_OnePlayer
+	copy [WRAM_JOYPADS_COUNT], 1
+	SendCommand SgbPacket_OneJoypad
 	ret
 
 UpdateSample:
@@ -650,7 +650,7 @@ UpdateSample:
 	call UpdateDisplay
 
 	TestPadInput_Pressed WRAM_PAD_INPUT_0, PADF_SELECT
-	call z, SwitchPlayersCount
+	call z, SwitchJoypadsCount
 
 	ret
 
