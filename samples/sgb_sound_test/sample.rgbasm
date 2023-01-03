@@ -82,7 +82,7 @@ PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
 sizeof_PUSH_TRANSFER_PARAM		rb 0
 
 ; push a single transfer into the transfer list
-PushTransferFunc:
+_PushTransferFunc:
 	; skip the transfer if the list is full
 	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
 	ld a, [hl]
@@ -125,7 +125,7 @@ PushTransferFunc:
 
 	ret
 
-; helper macro for PushTransferFunc
+; helper macro for _PushTransferFunc
 ; \1 = tilemap address, \2 = tile index
 macro PushTransfer
 	ld d, high(\1)
@@ -137,7 +137,7 @@ macro PushTransfer
 	ld [hl], d
 	inc hl
 	ld [hl], \2
-	call PushTransferFunc
+	call _PushTransferFunc
 	add sp, sizeof_PUSH_TRANSFER_PARAM
 endm
 
@@ -468,7 +468,7 @@ WRAM_EFFECT_B_ID				rb 1
 WRAM_EFFECT_B_PITCH				rb 1
 WRAM_EFFECT_B_VOLUME			rb 1
 
-WRAM_SOUND_PACKET				rb SGB_BYTES_PER_PACKET
+WRAM_SOUND_COMMAND				rb SGB_BYTES_PER_PACKET
 
 WRAM_END						rb 0
 
@@ -806,7 +806,7 @@ InitSample:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PlaySound:
-	ld hl, WRAM_SOUND_PACKET 
+	ld hl, WRAM_SOUND_COMMAND 
 	copy [hli], SOUND
 	copy [hli], [WRAM_EFFECT_A_ID]
 	copy [hli], [WRAM_EFFECT_B_ID]
@@ -836,8 +836,18 @@ PlaySound:
 	or a, b
 	ld [hli], a
 
-	SendCommand WRAM_SOUND_PACKET
+	SendCommand WRAM_SOUND_COMMAND
+	ret
 
+StopSound:
+	ld hl, WRAM_SOUND_COMMAND 
+	copy [hli], SOUND
+	ld a, $80 ; stop sound
+	ld [hli], a
+	ld [hli], a
+	xor a
+	ld [hli], a
+	SendCommand WRAM_SOUND_COMMAND
 	ret
 
 UpdateSample:
@@ -873,7 +883,12 @@ UpdateSample:
 	jp hl
 	.call_return_address
 
-	; request to play a sound based on the parameters
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_B
+	jr z, .stop_sound
+		call StopSound
+		ret
+	.stop_sound
+
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_A
 	call z, PlaySound
 
