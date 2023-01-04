@@ -661,10 +661,7 @@ UpdateVolumeA:
 	jr nz, .left
 		ld a, [WRAM_EFFECT_A_VOLUME]
 		dec a
-		cp a, $FF
-		jr nz, .underflow
-			ld a, 2
-		.underflow
+		and a, $03
 		ld [WRAM_EFFECT_A_VOLUME], a
 		jr .update_ui
 	.left
@@ -673,10 +670,7 @@ UpdateVolumeA:
 	jr nz, .right
 		ld a, [WRAM_EFFECT_A_VOLUME]
 		inc a
-		cp a, 3
-		jr nz, .overflow
-			xor a
-		.overflow
+		and a, $03
 		ld [WRAM_EFFECT_A_VOLUME], a
 		jr .update_ui
 	.right
