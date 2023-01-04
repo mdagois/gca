@@ -39,9 +39,9 @@ section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
 incbin "sound_test.chr"
 incbin "sgb_sound_test.tlm"
 
-def TILE_INDEX_BLANK				equ (-128)
-def TILE_INDEX_CURSOR				equ (-128 + 64)
-def TILE_INDEX_ZERO					equ (-112)
+def TILE_INDEX_BLANK				equ (128)
+def TILE_INDEX_CURSOR				equ (192)
+def TILE_INDEX_ZERO					equ (144)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; VRAM vblank transfer
@@ -478,8 +478,46 @@ println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Hexadecimal to tile conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "hexadecimal", rom0
+
+HexToTileTable:
+db $90, $91, $92, $93
+db $94, $95, $96, $97
+db $98, $99, $A1, $A2
+db $A3, $A4, $A5, $A6
+
+; convert (a) from hexadecimal to a tile index
+macro HexToTileA
+	ld h, 0
+	ld l, a
+	ld de, HexToTileTable
+	add hl, de
+	ld a, [hl]
+endm
+
+; \1 = line, \2 = column
+macro DisplayRegisterA
+	push af
+	swap a
+	and a, $0F
+	HexToTileA
+	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2, a
+	pop af
+	and a, $0F
+	HexToTileA
+	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2 + 1, a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Update functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def EFFECT_A_MAX_ID					equ ($30)
+def EFFECT_B_MAX_ID					equ ($19)
+def EFFECT_STOP_ID					equ ($80)
 
 ; update functions table
 UpdateFunc:
@@ -535,19 +573,23 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def EFFECT_A_MAX_ID		equ ($30)
-
 UpdateEffectA:
 	ProcessSelection LINE_VOLUME_B, LINE_EFFECT_A, LINE_PITCH_A, SELECTION_VOLUME_B, SELECTION_PITCH_A
 
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
 	jr nz, .left
 		ld a, [WRAM_EFFECT_A_ID]
-		dec a
-		cp a, $FF
-		jr nz, .underflow
+		cp a, EFFECT_STOP_ID
+		jr nz, .left_stop_id
 			ld a, EFFECT_A_MAX_ID
-		.underflow
+			jr .left_assign
+		.left_stop_id
+			dec a
+			cp a, $FF
+			jr nz, .underflow
+				ld a, EFFECT_STOP_ID
+			.underflow
+		.left_assign
 		ld [WRAM_EFFECT_A_ID], a
 		jr .update_ui
 	.left
@@ -555,11 +597,17 @@ UpdateEffectA:
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
 	jr nz, .right
 		ld a, [WRAM_EFFECT_A_ID]
-		inc a
-		cp a, EFFECT_A_MAX_ID + 1
-		jr nz, .overflow
+		cp a, EFFECT_STOP_ID
+		jr nz, .right_stop_id
 			xor a
-		.overflow
+			jr .right_assign
+		.right_stop_id
+			inc a
+			cp a, EFFECT_A_MAX_ID + 1
+			jr nz, .overflow
+				ld a, EFFECT_STOP_ID
+			.overflow
+		.right_assign
 		ld [WRAM_EFFECT_A_ID], a
 		jr .update_ui
 	.right
@@ -567,21 +615,8 @@ UpdateEffectA:
 	ret
 
 	.update_ui
-		ld b, $FF
 		ld a, [WRAM_EFFECT_A_ID]
-		.tens
-			inc b
-			sub a, 10
-			jr nc, .tens
-		add a, 10
-
-		push af
-		ld a, TILE_INDEX_ZERO
-		add a, b
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_EFFECT_A + 18, a
-		pop af
-		add a, TILE_INDEX_ZERO
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_EFFECT_A + 19, a
+		DisplayRegisterA LINE_EFFECT_A, 18
 
 	ret
 
@@ -657,19 +692,23 @@ UpdateVolumeA:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def EFFECT_B_MAX_ID		equ ($19)
-
 UpdateEffectB:
 	ProcessSelection LINE_VOLUME_A, LINE_EFFECT_B, LINE_PITCH_B, SELECTION_VOLUME_A, SELECTION_PITCH_B
 
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
 	jr nz, .left
 		ld a, [WRAM_EFFECT_B_ID]
-		dec a
-		cp a, $FF
-		jr nz, .underflow
+		cp a, EFFECT_STOP_ID
+		jr nz, .left_stop_id
 			ld a, EFFECT_B_MAX_ID
-		.underflow
+			jr .left_assign
+		.left_stop_id
+			dec a
+			cp a, $FF
+			jr nz, .underflow
+				ld a, EFFECT_STOP_ID
+			.underflow
+		.left_assign
 		ld [WRAM_EFFECT_B_ID], a
 		jr .update_ui
 	.left
@@ -677,11 +716,17 @@ UpdateEffectB:
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
 	jr nz, .right
 		ld a, [WRAM_EFFECT_B_ID]
-		inc a
-		cp a, EFFECT_B_MAX_ID + 1
-		jr nz, .overflow
+		cp a, EFFECT_STOP_ID
+		jr nz, .right_stop_id
 			xor a
-		.overflow
+			jr .right_assign
+		.right_stop_id
+			inc a
+			cp a, EFFECT_B_MAX_ID + 1
+			jr nz, .overflow
+				ld a, EFFECT_STOP_ID
+			.overflow
+		.right_assign
 		ld [WRAM_EFFECT_B_ID], a
 		jr .update_ui
 	.right
@@ -689,21 +734,8 @@ UpdateEffectB:
 	ret
 
 	.update_ui
-		ld b, $FF
 		ld a, [WRAM_EFFECT_B_ID]
-		.tens
-			inc b
-			sub a, 10
-			jr nc, .tens
-		add a, 10
-
-		push af
-		ld a, TILE_INDEX_ZERO
-		add a, b
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_EFFECT_B + 18, a
-		pop af
-		add a, TILE_INDEX_ZERO
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_EFFECT_B + 19, a
+		DisplayRegisterA LINE_EFFECT_B, 18
 
 	ret
 
@@ -788,6 +820,9 @@ InitSample:
 	InitPadInput WRAM_PAD_INPUT
 	ResetTransferList
 	PushTransfer _SCRN0 + SCRN_VX_B * 2, TILE_INDEX_CURSOR
+	ld a, EFFECT_STOP_ID
+	ld [WRAM_EFFECT_A_ID], a
+	ld [WRAM_EFFECT_B_ID], a
 
 	copy [rBGP], %11100100
 	LoadGraphicsDataIntoVRAM
@@ -839,17 +874,6 @@ PlaySound:
 	SendCommand WRAM_SOUND_COMMAND
 	ret
 
-StopSound:
-	ld hl, WRAM_SOUND_COMMAND 
-	copy [hli], SOUND
-	ld a, $80 ; stop sound
-	ld [hli], a
-	ld [hli], a
-	xor a
-	ld [hli], a
-	SendCommand WRAM_SOUND_COMMAND
-	ret
-
 UpdateSample:
 	halt
 
@@ -882,12 +906,6 @@ UpdateSample:
 	push de
 	jp hl
 	.call_return_address
-
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_B
-	jr z, .stop_sound
-		call StopSound
-		ret
-	.stop_sound
 
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_A
 	call z, PlaySound
