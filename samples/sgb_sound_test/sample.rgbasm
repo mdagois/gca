@@ -468,6 +468,8 @@ WRAM_EFFECT_B_ID				rb 1
 WRAM_EFFECT_B_PITCH				rb 1
 WRAM_EFFECT_B_VOLUME			rb 1
 
+WRAM_BGM_ID						rb 1
+
 WRAM_SOUND_COMMAND				rb SGB_BYTES_PER_PACKET
 
 WRAM_END						rb 0
@@ -517,6 +519,7 @@ endm
 
 def EFFECT_A_MAX_ID					equ ($30)
 def EFFECT_B_MAX_ID					equ ($19)
+def EFFECT_BGM_MAX_ID				equ ($02)
 def EFFECT_STOP_ID					equ ($80)
 
 ; update functions table
@@ -527,6 +530,7 @@ dw UpdateVolumeA
 dw UpdateEffectB
 dw UpdatePitchB
 dw UpdateVolumeB
+dw UpdateBgm
 UpdateFunc_End:
 
 ; line numbers
@@ -536,6 +540,7 @@ def LINE_VOLUME_A					equ (4)
 def LINE_EFFECT_B					equ (6)
 def LINE_PITCH_B					equ (7)
 def LINE_VOLUME_B					equ (8)
+def LINE_BGM						equ (10)
 
 ; selection indices
 rsreset
@@ -545,6 +550,7 @@ SELECTION_VOLUME_A				rb 1
 SELECTION_EFFECT_B				rb 1
 SELECTION_PITCH_B				rb 1
 SELECTION_VOLUME_B				rb 1
+SELECTION_BGM					rb 1
 SELECTIONS_COUNT				rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
@@ -574,7 +580,7 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateEffectA:
-	ProcessSelection LINE_VOLUME_B, LINE_EFFECT_A, LINE_PITCH_A, SELECTION_VOLUME_B, SELECTION_PITCH_A
+	ProcessSelection LINE_BGM, LINE_EFFECT_A, LINE_PITCH_A, SELECTION_BGM, SELECTION_PITCH_A
 
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
 	jr nz, .left
@@ -768,7 +774,7 @@ UpdatePitchB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateVolumeB:
-	ProcessSelection LINE_PITCH_B, LINE_VOLUME_B, LINE_EFFECT_A, SELECTION_PITCH_B, SELECTION_EFFECT_A
+	ProcessSelection LINE_PITCH_B, LINE_VOLUME_B, LINE_BGM, SELECTION_PITCH_B, SELECTION_BGM
 
 	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
 	jr nz, .left
@@ -803,6 +809,55 @@ UpdateVolumeB:
 
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateBgm:
+	ProcessSelection LINE_VOLUME_B, LINE_BGM, LINE_EFFECT_A, SELECTION_VOLUME_B, SELECTION_EFFECT_A
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+	jr nz, .left
+		ld a, [WRAM_BGM_ID]
+		cp a, EFFECT_STOP_ID
+		jr nz, .left_stop_id
+			ld a, EFFECT_BGM_MAX_ID
+			jr .left_assign
+		.left_stop_id
+			dec a
+			cp a, $FF
+			jr nz, .underflow
+				ld a, EFFECT_STOP_ID
+			.underflow
+		.left_assign
+		ld [WRAM_BGM_ID], a
+		jr .update_ui
+	.left
+
+	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+	jr nz, .right
+		ld a, [WRAM_BGM_ID]
+		cp a, EFFECT_STOP_ID
+		jr nz, .right_stop_id
+			xor a
+			jr .right_assign
+		.right_stop_id
+			inc a
+			cp a, EFFECT_BGM_MAX_ID + 1
+			jr nz, .overflow
+				ld a, EFFECT_STOP_ID
+			.overflow
+		.right_assign
+		ld [WRAM_BGM_ID], a
+		jr .update_ui
+	.right
+
+	ret
+
+	.update_ui
+		ld a, [WRAM_BGM_ID]
+		DisplayRegisterA LINE_BGM, 18
+
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Sample
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -817,6 +872,7 @@ InitSample:
 	ld a, EFFECT_STOP_ID
 	ld [WRAM_EFFECT_A_ID], a
 	ld [WRAM_EFFECT_B_ID], a
+	ld [WRAM_BGM_ID], a
 
 	copy [rBGP], %11100100
 	LoadGraphicsDataIntoVRAM
@@ -864,6 +920,8 @@ PlaySound:
 	and a, $03
 	or a, b
 	ld [hli], a
+
+	copy [hli], [WRAM_BGM_ID]
 
 	SendCommand WRAM_SOUND_COMMAND
 	ret
