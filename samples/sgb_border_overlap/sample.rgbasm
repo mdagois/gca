@@ -110,6 +110,24 @@ def MASK_EN_FREEZE					equ ($01)
 def MASK_EN_BLACK					equ ($02)
 def MASK_EN_COLOR0					equ ($03)
 
+def ATTR_BLK_CONTROL_NONE			equ ($00)
+def ATTR_BLK_CONTROL_INSIDE			equ ($01)
+def ATTR_BLK_CONTROL_BORDER			equ ($02)
+def ATTR_BLK_CONTROL_OUTSIDE		equ ($04)
+def ATTR_BLK_CONTROL_ALL			equ (ATTR_BLK_CONTROL_INSIDE | ATTR_BLK_CONTROL_BORDER | ATTR_BLK_CONTROL_OUTSIDE)
+def ATTR_BLK_OUTSIDE_PALETTE_0		equ (0 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_1		equ (1 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_2		equ (2 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_3		equ (3 << 4)
+def ATTR_BLK_BORDER_PALETTE_0		equ (0 << 2)
+def ATTR_BLK_BORDER_PALETTE_1		equ (1 << 2)
+def ATTR_BLK_BORDER_PALETTE_2		equ (2 << 2)
+def ATTR_BLK_BORDER_PALETTE_3		equ (3 << 2)
+def ATTR_BLK_INSIDE_PALETTE_0		equ (0 << 0)
+def ATTR_BLK_INSIDE_PALETTE_1		equ (1 << 0)
+def ATTR_BLK_INSIDE_PALETTE_2		equ (2 << 0)
+def ATTR_BLK_INSIDE_PALETTE_3		equ (3 << 0)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; initialization packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -169,6 +187,42 @@ ds 14, PADDING
 SgbPacket_PctTrn:
 db PCT_TRN
 ds 15, PADDING
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Color packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_Palette01_Init:
+db PAL01
+dw $0000, $0000, $0000, $0000
+dw        $0000, $0000, $0000
+db PADDING
+
+SgbPacket_Palette23_Init:
+db PAL23
+dw $0000, $0000, $0000, $0000
+dw        $0000, $0000, $0000
+db PADDING
+
+SgbPacket_Palette01:
+db PAL01
+dw $6BFC, $3B11, $29A6, $1061
+dw        $3B11, $29A6, $1061
+db PADDING
+
+SgbPacket_Palette23:
+db PAL23
+dw $6BFC, $3B11, $29A6, $1061
+dw        $3B11, $29A6, $1061
+db PADDING
+
+SgbPacket_AttrBlk:
+db ATTR_BLK_1
+db 1 ; number of blocks
+db ATTR_BLK_CONTROL_ALL
+db ATTR_BLK_OUTSIDE_PALETTE_0 | ATTR_BLK_BORDER_PALETTE_0 | ATTR_BLK_INSIDE_PALETTE_0
+db 0, 0, 19, 17 ; block coordinates
+ds 8, PADDING
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Wait function
@@ -374,6 +428,14 @@ PerformCustomInitialization:
 
 InitializeSgbDevice:
 	WaitFrames 60
+	
+	SendCommand SgbPacket_Palette01_Init
+	SendCommand SgbPacket_Palette23_Init
+	SendCommand SgbPacket_AttrBlk
+	WaitFrames 2
+
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
 	SendCommand SgbPacket_MaskEn_Freeze
 
 COMMAND_INDEX = 0
@@ -386,6 +448,12 @@ endr
 
 	WaitFrames 1
 	SendCommand SgbPacket_MaskEn_Cancel
+
+	WaitFrames 128
+
+	SendCommand SgbPacket_Palette01
+	SendCommand SgbPacket_Palette23
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -406,7 +474,6 @@ InitSample_SGB:
 	copy [rBGP], %11100100
 	copy [rIE], IEF_VBLANK
 	ei
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
 	call InitializeSgbDevice
 
