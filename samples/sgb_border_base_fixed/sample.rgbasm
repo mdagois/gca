@@ -192,26 +192,14 @@ ds 15, PADDING
 ; Color packets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SgbPacket_Palette01_Init:
+SgbPacket_Palette01_Black:
 db PAL01
-dw $0000, $0000, $0000, $0000
-dw        $0000, $0000, $0000
-db PADDING
-
-SgbPacket_Palette23_Init:
-db PAL23
 dw $0000, $0000, $0000, $0000
 dw        $0000, $0000, $0000
 db PADDING
 
 SgbPacket_Palette01:
 db PAL01
-dw $6BFC, $3B11, $29A6, $1061
-dw        $3B11, $29A6, $1061
-db PADDING
-
-SgbPacket_Palette23:
-db PAL23
 dw $6BFC, $3B11, $29A6, $1061
 dw        $3B11, $29A6, $1061
 db PADDING
@@ -429,12 +417,11 @@ PerformCustomInitialization:
 InitializeSgbDevice:
 	WaitFrames 60
 	
-	SendCommand SgbPacket_Palette01_Init
-	SendCommand SgbPacket_Palette23_Init
+	SendCommand SgbPacket_Palette01_Black
 	SendCommand SgbPacket_AttrBlk
-	WaitFrames 2
 
 	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	WaitFrames 2
 
 	SendCommand SgbPacket_MaskEn_Freeze
 
@@ -452,7 +439,6 @@ endr
 	WaitFrames 128
 
 	SendCommand SgbPacket_Palette01
-	SendCommand SgbPacket_Palette23
 
 	ret
 
