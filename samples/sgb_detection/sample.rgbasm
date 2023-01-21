@@ -1,0 +1,72 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+graphics_data:
+incbin "tileset.chr"
+incbin "sgb_detection.tlm"
+graphics_data_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+def MODEL_NUMBER_TILE_ADDRESS	equ (_SCRN0 + 3 * SCRN_VX_B + 15)
+def TILE_ZERO_INDEX				equ (80)
+
+InitSample_DMG:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
+	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 0
+	
+	copy [rIE], IEF_VBLANK
+	ei
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ret
+
+InitSample_SGB1:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
+	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 1
+
+	copy [rIE], IEF_VBLANK
+	ei
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ret
+
+InitSample_SGB2:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM, graphics_data, graphics_data_end - graphics_data
+	copy [MODEL_NUMBER_TILE_ADDRESS], TILE_ZERO_INDEX + 2
+
+	copy [rIE], IEF_VBLANK
+	ei
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ret
+
+InitSample:
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	jr z, InitSample_DMG
+	dec a
+	jr z, InitSample_SGB1
+	dec a
+	jr z, InitSample_SGB2
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitSample, UpdateSample
+

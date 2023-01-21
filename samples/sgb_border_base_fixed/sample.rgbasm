@@ -1,0 +1,484 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics", rom0
+
+graphics_data_dmg:
+incbin "tileset.chr"
+incbin "sgb_border.tlm"
+graphics_data_dmg_end:
+
+graphics_border_pal:
+incbin "sgb_snes_border_1.pal"
+graphics_border_pal_end:
+
+graphics_border_tileset:
+incbin "sgb_snes_border_1.chr"
+graphics_border_tileset_end:
+
+graphics_border_tilemap:
+incbin "sgb_snes_border_1.tlm"
+graphics_border_tilemap_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sgb", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def SGB_BYTES_PER_PACKET			equ (16)
+
+def COMMAND_PAL01					equ ($00)
+def COMMAND_PAL23					equ ($01)
+def COMMAND_PAL03					equ ($02)
+def COMMAND_PAL12					equ ($03)
+def COMMAND_ATTR_BLK				equ ($04)
+def COMMAND_ATTR_LIN				equ ($05)
+def COMMAND_ATTR_DIV				equ ($06)
+def COMMAND_ATTR_CHR				equ ($07)
+def COMMAND_SOUND					equ ($08)
+def COMMAND_SOU_TRN					equ ($09)
+def COMMAND_PAL_SET					equ ($0A)
+def COMMAND_PAL_TRN					equ ($0B)
+def COMMAND_ATRC_EN					equ ($0C)
+def COMMAND_ICON_EN					equ ($0E)
+def COMMAND_DATA_SND				equ ($0F)
+def COMMAND_DATA_TRN				equ ($10)
+def COMMAND_MLT_REQ					equ ($11)
+def COMMAND_JUMP					equ ($12)
+def COMMAND_CHR_TRN					equ ($13)
+def COMMAND_PCT_TRN					equ ($14)
+def COMMAND_ATTR_TRN				equ ($15)
+def COMMAND_ATTR_SET				equ ($16)
+def COMMAND_MASK_EN					equ ($17)
+def COMMAND_PAL_PRI					equ ($19)
+
+def PAL01							equ ((COMMAND_PAL01 << 3) | 1)
+def PAL23							equ ((COMMAND_PAL23 << 3) | 1)
+def PAL03							equ ((COMMAND_PAL03 << 3) | 1)
+def PAL12							equ ((COMMAND_PAL12 << 3) | 1)
+def ATTR_BLK_1						equ ((COMMAND_ATTR_BLK << 3) | 1)
+def ATTR_BLK_2						equ ((COMMAND_ATTR_BLK << 3) | 2)
+def ATTR_BLK_3						equ ((COMMAND_ATTR_BLK << 3) | 3)
+def ATTR_BLK_4						equ ((COMMAND_ATTR_BLK << 3) | 4)
+def ATTR_BLK_5						equ ((COMMAND_ATTR_BLK << 3) | 5)
+def ATTR_BLK_6						equ ((COMMAND_ATTR_BLK << 3) | 6)
+def ATTR_BLK_7						equ ((COMMAND_ATTR_BLK << 3) | 7)
+def ATTR_LIN_1						equ ((COMMAND_ATTR_LIN << 3) | 1)
+def ATTR_LIN_2						equ ((COMMAND_ATTR_LIN << 3) | 2)
+def ATTR_LIN_3						equ ((COMMAND_ATTR_LIN << 3) | 3)
+def ATTR_LIN_4						equ ((COMMAND_ATTR_LIN << 3) | 4)
+def ATTR_LIN_5						equ ((COMMAND_ATTR_LIN << 3) | 5)
+def ATTR_LIN_6						equ ((COMMAND_ATTR_LIN << 3) | 6)
+def ATTR_LIN_7						equ ((COMMAND_ATTR_LIN << 3) | 7)
+def ATTR_DIV						equ ((COMMAND_ATTR_DIV << 3) | 1)
+def ATTR_CHR_1						equ ((COMMAND_ATTR_CHR << 3) | 1)
+def ATTR_CHR_2						equ ((COMMAND_ATTR_CHR << 3) | 2)
+def ATTR_CHR_3						equ ((COMMAND_ATTR_CHR << 3) | 3)
+def ATTR_CHR_4						equ ((COMMAND_ATTR_CHR << 3) | 4)
+def ATTR_CHR_5						equ ((COMMAND_ATTR_CHR << 3) | 5)
+def ATTR_CHR_6						equ ((COMMAND_ATTR_CHR << 3) | 6)
+def SOUND							equ ((COMMAND_SOUND << 3) | 1)
+def SOU_TRN							equ ((COMMAND_SOU_TRN << 3) | 1)
+def PAL_SET							equ ((COMMAND_PAL_SET << 3) | 1)
+def PAL_TRN							equ ((COMMAND_PAL_TRN << 3) | 1)
+def ATRC_EN							equ ((COMMAND_ATRC_EN << 3) | 1)
+def ICON_EN							equ ((COMMAND_ICON_EN << 3) | 1)
+def DATA_SND						equ ((COMMAND_DATA_SND << 3) | 1)
+def DATA_TRN						equ ((COMMAND_DATA_TRN << 3) | 1)
+def MLT_REQ							equ ((COMMAND_MLT_REQ << 3) | 1)
+def JUMP							equ ((COMMAND_JUMP << 3) | 1)
+def CHR_TRN							equ ((COMMAND_CHR_TRN << 3) | 1)
+def PCT_TRN							equ ((COMMAND_PCT_TRN << 3) | 1)
+def ATTR_TRN						equ ((COMMAND_ATTR_TRN << 3) | 1)
+def ATTR_SET						equ ((COMMAND_ATTR_SET << 3) | 1)
+def MASK_EN							equ ((COMMAND_MASK_EN << 3) | 1)
+def PAL_PRI							equ ((COMMAND_PAL_PRI << 3) | 1)
+
+def PADDING							equ ($00)
+
+def MASK_EN_CANCEL					equ ($00)
+def MASK_EN_FREEZE					equ ($01)
+def MASK_EN_BLACK					equ ($02)
+def MASK_EN_COLOR0					equ ($03)
+
+def ATTR_BLK_CONTROL_NONE			equ ($00)
+def ATTR_BLK_CONTROL_INSIDE			equ ($01)
+def ATTR_BLK_CONTROL_BORDER			equ ($02)
+def ATTR_BLK_CONTROL_OUTSIDE		equ ($04)
+def ATTR_BLK_CONTROL_ALL			equ (ATTR_BLK_CONTROL_INSIDE | ATTR_BLK_CONTROL_BORDER | ATTR_BLK_CONTROL_OUTSIDE)
+def ATTR_BLK_OUTSIDE_PALETTE_0		equ (0 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_1		equ (1 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_2		equ (2 << 4)
+def ATTR_BLK_OUTSIDE_PALETTE_3		equ (3 << 4)
+def ATTR_BLK_BORDER_PALETTE_0		equ (0 << 2)
+def ATTR_BLK_BORDER_PALETTE_1		equ (1 << 2)
+def ATTR_BLK_BORDER_PALETTE_2		equ (2 << 2)
+def ATTR_BLK_BORDER_PALETTE_3		equ (3 << 2)
+def ATTR_BLK_INSIDE_PALETTE_0		equ (0 << 0)
+def ATTR_BLK_INSIDE_PALETTE_1		equ (1 << 0)
+def ATTR_BLK_INSIDE_PALETTE_2		equ (2 << 0)
+def ATTR_BLK_INSIDE_PALETTE_3		equ (3 << 0)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; initialization packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPackets_CoreInit:
+; mandatory initial commands
+db DATA_SND, $5D, $08, $00, $0B, $8C, $D0, $F4, $60, $00, $00, $00, $00, $00, $00, $00
+db DATA_SND, $52, $08, $00, $0B, $A9, $E7, $9F, $01, $C0, $7E, $E8, $E8, $E8, $E8, $E0
+db DATA_SND, $47, $08, $00, $0B, $C4, $D0, $16, $A5, $CB, $C9, $05, $D0, $10, $A2, $28
+db DATA_SND, $3C, $08, $00, $0B, $F0, $12, $A5, $C9, $C9, $C8, $D0, $1C, $A5, $CA, $C9
+db DATA_SND, $31, $08, $00, $0B, $0C, $A5, $CA, $C9, $7E, $D0, $06, $A5, $CB, $C9, $7E
+db DATA_SND, $26, $08, $00, $0B, $39, $CD, $48, $0C, $D0, $34, $A5, $C9, $C9, $80, $D0
+db DATA_SND, $1B, $08, $00, $0B, $EA, $EA, $EA, $EA, $EA, $A9, $01, $CD, $4F, $0C, $D0
+db DATA_SND, $10, $08, $00, $0B, $4C, $20, $08, $EA, $EA, $EA, $EA, $EA, $60, $EA, $EA
+; optional initial commands for SOU_TRN
+db DATA_SND, $00, $09, $00, $0B, $AD, $C2, $02, $C9, $09, $D0, $1A, $A9, $01, $8D, $00
+db DATA_SND, $0B, $09, $00, $0B, $42, $AF, $DB, $FF, $00, $F0, $05, $20, $73, $C5, $80
+db DATA_SND, $16, $09, $00, $0B, $03, $20, $76, $C5, $A9, $31, $8D, $00, $42, $68, $68
+db DATA_SND, $21, $09, $00, $01, $60, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+db DATA_SND, $00, $08, $00, $03, $4C, $00, $09, $00, $00, $00, $00, $00, $00, $00, $00
+SgbPackets_CoreInit_End:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MASK_EN packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; \1 = mask type
+macro SgbPacket_MaskEn
+db MASK_EN, \1
+ds 14, PADDING
+endm
+
+SgbPacket_MaskEn_Cancel:
+	SgbPacket_MaskEn MASK_EN_CANCEL
+
+SgbPacket_MaskEn_Freeze:
+	SgbPacket_MaskEn MASK_EN_FREEZE
+
+SgbPacket_MaskEn_Black:
+	SgbPacket_MaskEn MASK_EN_BLACK
+
+SgbPacket_MaskEn_Color0:
+	SgbPacket_MaskEn MASK_EN_COLOR0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Border packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_ChrTrn_Block0:
+db CHR_TRN, 0
+ds 14, PADDING
+
+SgbPacket_ChrTrn_Block1:
+db CHR_TRN, 1
+ds 14, PADDING
+
+SgbPacket_PctTrn:
+db PCT_TRN
+ds 15, PADDING
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Color packets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+SgbPacket_Palette01_Black:
+db PAL01
+dw $0000, $0000, $0000, $0000
+dw        $0000, $0000, $0000
+db PADDING
+
+SgbPacket_Palette01:
+db PAL01
+dw $6BFC, $3B11, $29A6, $1061
+dw        $3B11, $29A6, $1061
+db PADDING
+
+SgbPacket_AttrBlk:
+db ATTR_BLK_1
+db 1 ; number of blocks
+db ATTR_BLK_CONTROL_ALL
+db ATTR_BLK_OUTSIDE_PALETTE_0 | ATTR_BLK_BORDER_PALETTE_0 | ATTR_BLK_INSIDE_PALETTE_0
+db 0, 0, 19, 17 ; block coordinates
+ds 8, PADDING
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Wait function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; \1 = number of frames to wait
+macro WaitFrames
+	push bc
+	push de
+	ld c, \1
+	call _WaitFrames
+	pop de
+	pop bc
+endm
+
+_WaitFrames:
+	; (c) holds the number of frames to wait
+	.all_frames
+		ld de, 1756
+		.single_frame
+			nop
+			nop
+			nop
+			dec de
+			ld a, d
+			or a, e
+			jr nz, .single_frame
+		dec c
+		jr nz, .all_frames
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Command
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro SendCommand
+	ld hl, \1
+	call _SendCommand
+endm
+
+_SendPacket:
+	; packet start marker
+	xor a
+	ldh [rP1], a
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
+
+	; send the bytes of the packet
+	ld b, SGB_BYTES_PER_PACKET
+	.send_byte
+		ld e, [hl]
+		inc hl
+
+		; send the bits of the byte 
+		ld d, 8
+		.send_bit
+			rrc e
+			ld a, P1F_4		; one
+			jr c, .pulse
+				ld a, P1F_5	; zero
+			.pulse
+			ldh [rP1], a
+			ld a, P1F_GET_NONE
+			ldh [rP1], a
+
+			dec d
+			jr nz, .send_bit
+
+		dec b
+		jr nz, .send_byte
+
+	; sentinel
+	ld a, P1F_5
+	ldh [rP1], a
+	ld a, P1F_GET_NONE
+	ldh [rP1], a
+
+	; wait for about 60 ms
+	WaitFrames 4
+	ret
+
+_SendCommand:
+	; get the command header
+	ld a, [hl]
+	push af
+
+	; retrieve the number of packets in the command
+	and a, $07
+
+	; check that there is at least one packet
+	ret z
+
+	; send the packets of the command
+	ld c, a
+	.send_packet
+		call _SendPacket
+		dec c
+		jr nz, .send_packet
+
+	; retrieve the command type
+	pop af
+	srl a
+	srl a
+	srl a
+
+	; check whether the command is using a 4KB payload
+	cp a, COMMAND_SOU_TRN
+	jr z, .4KB_command
+	cp a, COMMAND_PAL_TRN
+	jr z, .4KB_command
+	cp a, COMMAND_DATA_TRN
+	jr z, .4KB_command
+	cp a, COMMAND_CHR_TRN
+	jr z, .4KB_command
+	cp a, COMMAND_PCT_TRN
+	jr z, .4KB_command
+	cp a, COMMAND_ATTR_TRN
+	jr z, .4KB_command
+
+	; not a 4KB command
+	ret
+
+	.4KB_command
+	; wait extra frames for completion of 4KB commands
+	WaitFrames 2
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; SGB initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_FillTransferTilemap:
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+
+	xor a
+	ld hl, _SCRN1
+	ld de, 12 ; columns to skip
+	ld c, 13 ; rows
+	.scrn1_tilemap
+		ld b, 20 ; columns
+		.scrn1_line
+			ld [hli], a
+			inc a
+			dec b
+			jr nz, .scrn1_line
+		add hl, de
+		dec c
+		jr nz, .scrn1_tilemap
+
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+	ret
+
+PerformCustomInitialization:
+	; set the LCD for 4KB transfers
+	ld hl, rLCDC
+	set LCDCB_BG9C00, [hl]
+	set LCDCB_BG8000, [hl]
+
+	; set the tilemap for payloads
+	call _FillTransferTilemap
+
+	; send the first block of border tile data
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+	CopyMemory _VRAM, graphics_border_tileset, SNES_TILE_BLOCK_SIZE
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+	SendCommand SgbPacket_ChrTrn_Block0
+
+	; send the second block of border tile data
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+	CopyMemory _VRAM, graphics_border_tileset + SNES_TILE_BLOCK_SIZE, SNES_TILE_BLOCK_SIZE
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+	SendCommand SgbPacket_ChrTrn_Block1
+
+	; send the border tilemap
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+	CopyMemory _VRAM, graphics_border_tilemap, graphics_border_tilemap_end - graphics_border_tilemap
+	CopyMemory _VRAM + SNES_TILEMAP_SIZE, graphics_border_pal, graphics_border_pal_end - graphics_border_pal
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+	SendCommand SgbPacket_PctTrn
+
+	; set the LCD for displaying graphics
+	ld hl, rLCDC
+	res LCDCB_BG9C00, [hl]
+	res LCDCB_BG8000, [hl]
+
+	; setting the actual graphics of the program
+	ld hl, rLCDC
+	res LCDCB_ON, [hl]
+	CopyMemory _VRAM, graphics_data_dmg, graphics_data_dmg_end - graphics_data_dmg
+	ld hl, rLCDC
+	set LCDCB_ON, [hl]
+
+	ret
+
+InitializeSgbDevice:
+	WaitFrames 60
+	
+	SendCommand SgbPacket_Palette01_Black
+	SendCommand SgbPacket_AttrBlk
+
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	WaitFrames 2
+
+	SendCommand SgbPacket_MaskEn_Freeze
+
+COMMAND_INDEX = 0
+rept ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
+	SendCommand SgbPackets_CoreInit + COMMAND_INDEX
+COMMAND_INDEX += SGB_BYTES_PER_PACKET
+endr
+
+	call PerformCustomInitialization
+
+	WaitFrames 1
+	SendCommand SgbPacket_MaskEn_Cancel
+
+	WaitFrames 128
+
+	SendCommand SgbPacket_Palette01
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+InitSample_DMG:
+	copy [rBGP], %11100100
+	CopyMemory _VRAM, graphics_data_dmg, graphics_data_dmg_end - graphics_data_dmg
+
+	copy [rIE], IEF_VBLANK
+	ei
+	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+
+	ret
+
+InitSample_SGB:
+	copy [rBGP], %11100100
+	copy [rIE], IEF_VBLANK
+	ei
+
+	call InitializeSgbDevice
+
+	ret
+
+InitSample:
+	ld a, [HARDWARE_MODEL_REGISTER]
+	dec a
+	jr z, InitSample_DMG
+	dec a
+	jr z, InitSample_SGB
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export InitSample, UpdateSample
+
