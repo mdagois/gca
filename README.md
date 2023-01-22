@@ -35,7 +35,7 @@ The graphics assets (tilesets and tilemaps) are PNG files.
 ### Converting assets
 
 Assets are already converted and ready to use in the samples.
-However, it is possible to convert them again using the `gfxconv` and `cgbconv` tools.
+However, it is possible to convert them again using the `gfxconv`, `cgbconv`, `sgbconv` and `sfcconv` tools.
 
 ### The gfxconv tool
 
@@ -44,7 +44,7 @@ The `gfxconv` tool converts PNG files into tilesets and tilemaps compatible with
 #### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
-Here are a few example of using `gfxconv`.
+Here are a few examples of using `gfxconv`.
 
 ```
 # Converting a tileset.
@@ -69,7 +69,7 @@ A CHR file contains tiles in the right format for the VRAM.
 Any extra parameter after the tileset PNG is considered as a tilemap PNG.
 Tilemap PNGs are expected to use the same colors as the tileset.
 They are converted to TLM files.
-TLM files contain tile indices referring tiles inside the tileset.
+TLM files contain tile indices referring to tiles inside the tileset.
 They can be copied as is in VRAM.
 
 ### The cgbconv tool
@@ -79,7 +79,7 @@ The `cgbconv` tool converts PNG files into tilesets, palettes, tilemap indices a
 #### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
-Here are a few example of using `cgbconv`.
+Here are a few examples of using `cgbconv`.
 
 ```
 # Converting a tileset.
@@ -93,7 +93,7 @@ cgbconv tileset.png tilemap.png
 # Converting a tileset and two tilemaps.
 # The output files are tileset.chr, tileset.pal, tilemap_0.idx, tilemap_0.prm,
 # tilemap_1.idx and tilemap_1.prm.
-gfxconv tileset.png tilemap_0.png tilemap_1.png
+cgbconv tileset.png tilemap_0.png tilemap_1.png
 ```
 
 The tileset PNG must be the first parameter.
@@ -105,14 +105,73 @@ Any extra parameter after the tileset PNG is considered as a tilemap PNG.
 Tilemap PNGs are expected to use the tiles and colors from the tileset.
 They should be either 256x144 or 256x256 pixels.
 They are converted to IDX and PRM files.
-IDX files contain tile indices referring tiles inside the tileset.
+IDX files contain tile indices referring to tiles inside the tileset.
 They are meant to be copied into bank 0 of the VRAM.
 PRM files contain tile parameters to control the tiles rendering (palette number, flip, etc.).
 They are meant to be copied into bank 1 of the VRAM.
 
+### The sgbconv tool
+
+The `sgbconv` tool converts PNG files into tilesets, palettes, tilemaps and screen tile attributes compatible with the SGB.
+
+#### Usage
+
+The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
+Here are a few examples of using `sgbconv`.
+
+```
+# Converting a tileset and a tilemap.
+# The output files are tileset.chr, tileset.pal, tilemap.tlm and tilemap.atr.
+sgbconv tileset.png tilemap.png
+
+# Converting a tileset and two tilemaps.
+# The output files are tileset.chr, tileset.pal, tilemap_0.tlm, tilemap_0.atr,
+# tilemap_1.tlm and tilemap_1.atr.
+sgbconv tileset.png tilemap_0.png tilemap_1.png
+```
+
+The tileset PNG must be the first parameter.
+It is the only mandatory parameter.
+It can contain up to 256 tiles.
+It is converted into two files: a CHR file containing tiles and a PAL file containing four 4-color palettes.
+Palettes are meant to be part of SGB color commands.
+
+Any extra parameter after the tileset PNG is considered as a tilemap PNG.
+Tilemap PNGs are expected to use the tiles and colors from the tileset.
+They should be 256x144.
+They are converted to TLM and ATR files.
+TLM files contain tile indices referring to tiles inside the tileset.
+They are meant to be copied into VRAM.
+ATR files contain screen tile attributes.
+They are meant to be part of a `ATTR_CHR` or `ATTR_TRN` command.
+
+### The sfcconv tool
+
+The `sfcconv` tool converts PNG files into tilesets, palettes and tilemaps compatible with the SGB border graphics (SNES format).
+
+The tool takes one tileset PNG and one tilemap PNG file as parameters.
+Here is an example of using `sfcconv`.
+
+```
+# Converting a tileset and a tilemap.
+# The output files are tileset.chr, tileset.pal and tilemap.tlm.
+sfcconv tileset.png tilemap.png
+```
+
+The tileset PNG must be the first parameter.
+It can contain up to 256 tiles.
+It is converted into two files: a CHR file containing tiles and a PAL file containing three 16-color palettes.
+Tiles are meant to be part of a `CHR_TRN` command, while palettes are meant to be part of a `PCT_TRN` command.
+
+The tilemap PNG is expected to use the tiles and colors from the tileset.
+It should be 256x224.
+It is converted to a TLM file.
+A TLM file contains tile indices referring to tiles inside the tileset.
+It is meant to be part of a `PCT_TRN` command.
+
 ### Tool binaries
 
-Windows binaries for `gfxconv` and `cgbconv` are available in the [bin](bin) folder.
+Windows binaries for all converters are available in the [bin](bin) folder.
 For other operating systems, it is necessary to build the tools.
 
 #### Building the tools
@@ -127,7 +186,7 @@ It also supports `cmake` out of the box.
 
 A Windows batch file, [build_assets.bat](build_assets.bat), is available to rebuild all the assets.
 It puts the converted files (tilesets, palettes, tilemaps, etc.) into the [generated](generated) folder.
-The batch uses `gfxconv` and `cgbconv` from the [bin](bin) folder, so there is no need to rebuild them.
+The batch uses the converter binaries from the [bin](bin) folder, so there is no need to rebuild them.
 
 For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
 
