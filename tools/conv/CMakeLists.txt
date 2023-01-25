@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(converter)
 
 # packages
-find_package(libpng CONFIG REQUIRED)
+find_package(PNG REQUIRED)
 
 # DMG converter
 add_executable(gfxconv gfxconv.cpp)
