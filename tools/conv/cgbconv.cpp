@@ -103,9 +103,9 @@ static ColorBGR555 convertColor(ColorRGBA rgba)
 
 static double getLuminance(const ColorBGR555 color)
 {
-	const double red = ((color >> 10) & 0x1F) / 32.0;
+	const double blue = ((color >> 10) & 0x1F) / 32.0;
 	const double green = ((color >> 5) & 0x1F) / 32.0;
-	const double blue = (color & 0x1F) / 32.0;
+	const double red = (color & 0x1F) / 32.0;
 	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
