@@ -8,7 +8,6 @@ include "memory.rgbinc"
 include "window.rgbinc"
 
 ; TODO add simple sounds
-; TODO fix makefile to keep object files and never rebuild uselessly
 
 section "minesweep", rom0
 

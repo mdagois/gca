@@ -109,15 +109,15 @@ compile_command = $$(rgbasm_command) $$($1_$2_compile_options_list) --output $3 
 
 # linkage
 # $1 = project, $2 = configuration, $3 = output binary file, $4 = input object files list
-link_command = $$(rgblink_command) $$($1_$2_link_options_list) --map $$($1_$2_map_file) --sym $$($1_$2_sym_file) --output $3$$($1_$2_rom_extension) $4
+link_command = $$(rgblink_command) $$($1_$2_link_options_list) --map $$($1_$2_map_file) --sym $$($1_$2_sym_file) --output $3 $4
 
 # fix
 # $1 = project, $2 = configuration, $3 = rom file
-fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) --title $1 $3$$($1_$2_rom_extension)
+fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) --title $1 $3
 
 # launch
 # $1 = project, $2 = configuration, $3 = option list number, $4 = force flag
-launch_command = $$(if $$($1_$2_launch_options_list$3) $4,$$(emulator_command) $$($1_$2_launch_options_list$3) $$($1_$2_binary)$$($1_$2_rom_extension),)
+launch_command = $$(if $$($1_$2_launch_options_list$3) $4,$$(emulator_command) $$($1_$2_launch_options_list$3) $$($1_$2_binary),)
 
 ########################################
 # Generation templates
@@ -206,13 +206,13 @@ $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$
 $1_$2_launch_options_list = $$(strip $$($1_launch_options) $$($2_launch_options) $$($1_$2_launch_options))
 $1_$2_launch_options_list2 = $$(strip $$($1_launch_options2) $$($2_launch_options2) $$($1_$2_launch_options2))
 
+$1_$2_rom_extension := $$(if $$(filter --color-only --color-compatible -C -c,$$($1_$2_fix_options_list)),.gbc,.gb)
+
 $1_$2_build_directory := $$($1_build_directory)/$2
 $1_$2_binary_directory := $$($2_binary_directory)/$1
-$1_$2_binary := $$($1_$2_binary_directory)/$1
+$1_$2_binary := $$($1_$2_binary_directory)/$1$$($1_$2_rom_extension)
 $1_$2_map_file := $$($1_$2_binary).map
 $1_$2_sym_file := $$($1_$2_binary).sym
-
-$1_$2_rom_extension := $$(if $$(filter --color-only --color-compatible -C -c,$$($1_$2_fix_options_list)),.gbc,.gb)
 
 $1_$2_objects := $$(addprefix $$($1_$2_build_directory)/,$$($1_$2_sources_list:=$(object_extension)))
 .INTERMEDIATE: $$($1_$2_objects)
