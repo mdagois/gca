@@ -12,9 +12,6 @@
 # secondary expansion is heavily used in rule generation
 .SECONDEXPANSION:
 
-# suppress messages
-MAKEFLAGS += --silent
-
 ########################################
 # Helper functions
 ########################################

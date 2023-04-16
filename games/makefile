@@ -6,7 +6,7 @@ source_directory = .
 build_directory = build
 
 compile_options = -Werror -Weverything -Hl -I./common/include
-debug_compile_options = -DBUILD_DEBUG -DSHOW_MINES
+debug_compile_options = -DBUILD_DEBUG
 release_compile_options = -DBUILD_RELEASE
 
 link_options = --pad 199
@@ -40,6 +40,7 @@ minesweep_sources = \
 	minesweep.rgbasm \
 	window.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
+minesweep_debug_compile_options = -DSHOW_MINES
 
 ####################
 
