@@ -1,0 +1,230 @@
+include "board.rgbinc"
+include "data.rgbinc"
+include "memory.rgbinc"
+
+export _Board_Initialize
+export _Board_ConvertLogicalToBoardStateCoordinate, _Board_ConvertOamToBoardStateCoordinate
+export _Board_RequestBoardTileChange, _Board_ProcessBoardTileChangeRequest
+export _Board_ResetUncoverList, _Board_PushIntoUncoverList, _Board_PopFromUncoverList
+
+section "board", rom0
+
+_Board_Initialize:
+	; init the tiles map
+	ld hl, _SCRN0
+		; top line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_TOP_LEFT
+		ld a, TILE_WALL_TOP
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_TOP_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld de, SCRN_VX_B - SCRN_X_B
+		add hl, de
+
+		; middle lines
+		ld c, BOARD_TILE_NUM_X
+		.init_middle_lines
+			rept BOARD_PLAIN_TILES_LEFT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+			ld_hli_v8 TILE_WALL_LEFT
+			ld a, TILE_BOARD_SQUARE_HIDDEN
+			rept BOARD_TILE_NUM_X
+				ld [hli], a
+			endr
+			ld_hli_v8 TILE_WALL_RIGHT
+			rept BOARD_PLAIN_TILES_RIGHT_COUNT
+				ld_hli_v8 TILE_WALL_PLAIN
+			endr
+
+			ld de, SCRN_VX_B - SCRN_X_B
+			add hl, de
+
+			dec c
+			jr nz, .init_middle_lines
+
+		; bottom line
+		rept BOARD_PLAIN_TILES_LEFT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_LEFT
+		ld a, TILE_WALL_BOTTOM
+		rept BOARD_TILE_NUM_X
+			ld [hli], a
+		endr
+		ld_hli_v8 TILE_WALL_BOTTOM_RIGHT
+		rept BOARD_PLAIN_TILES_RIGHT_COUNT
+			ld_hli_v8 TILE_WALL_PLAIN
+		endr
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; coordinates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; convert the logical coordinate in (b) into a state coordinate
+; save the result coordinate into (hl)
+_Board_ConvertLogicalToBoardStateCoordinate:
+	ld hl, $0000
+
+	; add the row contribution
+	; (row / BOARD_TILE_NUM_X) * 2
+	ld a, b
+	and a, ~(BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	add hl, de
+	add hl, de
+
+	; add the column contribution
+	; (row % BOARD_TILE_NUM_X)
+	ld a, b
+	and a, (BOARD_TILE_NUM_X - 1)
+	ld_r16_r8 de, a
+	add hl, de
+
+	ret
+
+; convert the OAM coordinate in (de) into a state coordinate
+; save the result coordinate into (hl)
+_Board_ConvertOamToBoardStateCoordinate:
+	; reset (hl)
+	ld hl, $0000
+
+	; compute the row contribution and put it into (hl)
+	ld a, e
+	add a, -(OAM_Y_OFS + BOARD_TILE_OFFSET_Y * TILE_SIDE)
+	ld_r16_r8 hl, a
+	; equivalent to ((a / TILE_SIDE) * SCRN_VX_B)
+	add hl, hl
+	add hl, hl
+
+	; compute the column contribution and add to (hl)
+	ld a, d
+	add a, -(OAM_X_OFS + BOARD_TILE_OFFSET_X * TILE_SIDE)
+	; equivalent to (a / TILE_SIDE)
+	rrca
+	rrca
+	rrca
+	ld_r16_r8 de, a
+	add hl, de
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tile graphics
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; request to change the tile at state coordinate (hl) to value (a)
+; the change must be carried out during vblank, so it is only scheduled here
+; _Board_ProcessBoardTileChangeRequest must be used to do the actual change
+_Board_RequestBoardTileChange:
+	; set the tile value
+	ld [vBoardTileRequestValue], a
+
+	; set the tile address
+	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
+	add hl, de
+	store16 vBoardTileRequestAddress, hl
+
+	ret
+
+; perform the tile change if any is requested (high byte is non-zero)
+; must be called during vblank
+_Board_ProcessBoardTileChangeRequest:
+	load16 hl, vBoardTileRequestAddress
+	ld a, h
+	or a
+	jr z, .no_tile_operation
+		; set the vram value
+		ld a, [vBoardTileRequestValue]
+		ld [hl], a
+
+		; reset tile change by zero clearing the high byte
+		xor a
+		ld [vBoardTileRequestAddress + 1], a
+	.no_tile_operation
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; uncover list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; reset the uncover list
+_Board_ResetUncoverList:
+	xor a
+	ld [vUncoverListSize], a
+	ret
+
+; push state coordinate (bc) into the uncover list
+_Board_PushIntoUncoverList:
+	; get the board state value for the coordinate into (a)
+	ld_r16_r16 hl, bc
+	ld de, vBoard
+	add hl, de
+	ld a, [hl]
+
+	; check if the element was already added to the list previously
+	; if so, skip it as it has already been dealt with
+	bit BOARD_BIT_HIDDEN, a
+	jr z, .already_added_to_list
+		; clear the uncover flag as we are adding the coordinate to the list
+		res BOARD_BIT_HIDDEN, a
+		ld [hl], a
+
+		; get a pointer in (hl) to the next slot in the list
+		ld a, [vUncoverListSize]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, vUncoverList
+		add hl, de
+
+		; store the coordinate in the list
+		ld [hl], c
+		inc hl
+		ld [hl], b
+
+		; update the list size
+		ld hl, vUncoverListSize
+		inc [hl]
+	.already_added_to_list
+
+	ret
+
+; pop the last uncover element into (hl)
+_Board_PopFromUncoverList:
+	; sanity check the list size to make sure we do not pop too much
+	ld hl, vUncoverListSize
+	ld a, [hl]
+	or a
+	jr z, .cannot_pop
+		; decrement list size
+		dec [hl]
+
+		; compute the index of the element
+		ld a, [vUncoverListSize]
+		ld_r16_r8 de, a
+		sla_r16 de
+		ld hl, vUncoverList
+		add hl, de
+
+		; fetch the value and put it in (hl)
+		ld c, [hl]
+		inc hl
+		ld b, [hl]
+		ld_r16_r16 hl, bc
+
+		jr .pop_done
+	.cannot_pop
+		ld hl, BOARD_STATE_INVALID_COORDINATE
+	.pop_done
+
+	ret
+

@@ -1,0 +1,42 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "catch", rom0[$0000]
+catch:
+	debug "[ERROR] an unused area of the ROM was accessed"
+	breakpoint
+catch_loop:
+	jr catch_loop
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def CARTRIDGE_HEADER_START			equ ($0100)
+def CARTRIDGE_HEADER_END			equ ($0150)
+
+section "header", rom0[CARTRIDGE_HEADER_START]
+entrypoint:
+	di
+	jp main
+	ds (CARTRIDGE_HEADER_END - @), 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro DisableLCD
+	.wait_vblank\@
+		ld a, [rLY]
+		cp a, SCRN_Y
+		jr nz, .wait_vblank\@
+	xor a
+	ld [rLCDC], a
+endm
+
+section "main", rom0
+main:
+	debug "[INFO] program started"
+	DisableLCD
+	call Initialize
+	.game_loop
+		call Update
+		jr .game_loop
+

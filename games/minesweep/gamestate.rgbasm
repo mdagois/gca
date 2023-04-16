@@ -1,0 +1,18 @@
+include "gamestate.rgbinc"
+
+export _game_state_functions
+
+section "gamestate", rom0
+
+_game_state_functions:
+dw GameStateFunc_WaitForNewGame
+dw GameStateFunc_NewGame
+dw GameStateFunc_Play
+dw GameStateFunc_PutFlag
+dw GameStateFunc_Uncover
+dw GameStateFunc_Lose
+dw GameStateFunc_Win
+_game_state_functions_end:
+
+assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS_COUNT * 2, "Mismatch between the game state table and game state enum"
+

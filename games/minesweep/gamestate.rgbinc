@@ -1,0 +1,31 @@
+if !def(GAME_RGBINC)
+def GAME_RGBINC equ 1
+
+include "memory.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Game state function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME		rb 1
+GAMESTATE_FUNC_ID_NEW_GAME				rb 1
+GAMESTATE_FUNC_ID_PLAY					rb 1
+GAMESTATE_FUNC_ID_FLAG					rb 1
+GAMESTATE_FUNC_ID_UNCOVER				rb 1
+GAMESTATE_FUNC_ID_LOSE					rb 1
+GAMESTATE_FUNC_ID_WIN					rb 1
+GAMESTATE_FUNC_IDS_COUNT				rb 0
+
+; set the state function id
+macro GameState_SetFuncId
+	copy [vGameStateFuncId], \1
+endm
+
+; call the current state function
+macro GameState_CallFunc
+	CallFunctionFromTable _game_state_functions, [vGameStateFuncId]
+endm
+
+endc
+

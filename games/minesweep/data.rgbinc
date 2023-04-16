@@ -1,0 +1,60 @@
+if !def(DATA_RGBINC)
+def DATA_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tile id (index in vram tileset)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def TILES_PER_WINDOW_TITLE			equ (4)
+
+rsreset
+; squares
+TILE_BOARD_SQUARE_HIDDEN		rb 1
+TILE_BOARD_SQUARE_MINE			rb 1
+TILE_BOARD_SQUARE_FLAG			rb 1
+TILE_BOARD_SQUARE_NUMBER_0		rb 9
+
+; board
+TILE_WALL_PLAIN					rb 1
+TILE_WALL_TOP_LEFT				rb 1
+TILE_WALL_TOP					rb 1
+TILE_WALL_TOP_RIGHT				rb 1
+TILE_WALL_LEFT					rb 1
+TILE_WALL_RIGHT					rb 1
+TILE_WALL_BOTTOM_LEFT			rb 1
+TILE_WALL_BOTTOM				rb 1
+TILE_WALL_BOTTOM_RIGHT			rb 1
+
+; cursor
+TILE_CURSOR_ON					rb 1
+TILE_CURSOR_OFF					rb 1
+
+; hidden square counter
+TILE_UI_NUMBER_0				rb 10
+
+; window
+TILE_WINDOW_TOP_LEFT			rb 1
+TILE_WINDOW_TOP					rb 1
+TILE_WINDOW_TOP_RIGHT			rb 1
+TILE_WINDOW_LEFT				rb 1
+TILE_WINDOW_PLAIN				rb 1
+TILE_WINDOW_RIGHT				rb 1
+TILE_WINDOW_BOTTOM_LEFT			rb 1
+TILE_WINDOW_BOTTOM				rb 1
+TILE_WINDOW_BOTTOM_RIGHT		rb 1
+
+; window text
+TILE_WINDOW_TITLE_WELCOME		rb 4
+TILE_WINDOW_TITLE_LOSE			rb 4
+TILE_WINDOW_TITLE_WIN			rb 4
+TILE_WINDOW_BUTTON_A			rb 1
+TILE_WINDOW_BUTTON_B			rb 1
+TILE_WINDOW_BUTTON_START		rb 3
+TILE_WINDOW_FLAG_TILE			rb 5
+TILE_WINDOW_UNCOVER_TILE		rb 6
+TILE_WINDOW_NEW_GAME			rb 5
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+
