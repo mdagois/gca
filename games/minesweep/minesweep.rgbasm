@@ -7,9 +7,8 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "window.rgbinc"
 
-; TODO comment each game state
-; TODO add delay after lose
 ; TODO add simple sounds
+; TODO fix makefile to keep object files and never rebuild uselessly
 
 section "minesweep", rom0
 

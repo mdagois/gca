@@ -9,10 +9,12 @@ section "gamestate_win", rom0
 
 GameStateFunc_Win:
 	Cursor_Hide
-	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
-	
 	halt
 	Cursor_UpdateGraphics
-	Window_Show TILE_WINDOW_TITLE_WIN
+
+    ; set game as won
+    copy [vLastGameIsWin], 1
+	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
+    halt
 	ret
 

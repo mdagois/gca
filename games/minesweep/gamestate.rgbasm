@@ -9,6 +9,7 @@ dw GameStateFunc_WaitForNewGame
 dw GameStateFunc_NewGame
 dw GameStateFunc_Play
 dw GameStateFunc_PutFlag
+dw GameStateFunc_ShowResults
 dw GameStateFunc_Uncover
 dw GameStateFunc_Lose
 dw GameStateFunc_Win

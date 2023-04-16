@@ -65,10 +65,13 @@ sizeof_lose_TEMP				rb 0
 	jr nz, .uncover_hidden
 
 	; set next state and clean up
-	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
+	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
 	add sp, sizeof_lose_TEMP
 
+    ; set game as lost
+    xor a
+    ld [vLastGameIsWin], a
+
 	halt
-	Window_Show TILE_WINDOW_TITLE_LOSE
 	ret
 

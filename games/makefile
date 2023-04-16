@@ -32,6 +32,7 @@ minesweep_sources = \
 	gamestate_lose.rgbasm \
 	gamestate_newgame.rgbasm \
 	gamestate_play.rgbasm \
+	gamestate_showresults.rgbasm \
 	gamestate_uncover.rgbasm \
 	gamestate_waitfornewgame.rgbasm \
 	gamestate_win.rgbasm \
