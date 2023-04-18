@@ -1,4 +1,6 @@
-# TODO Description of the projects
+########################################
+# global
+########################################
 
 projects = minesweep
 configurations = debug release
@@ -50,7 +52,9 @@ minesweep_sources = \
 minesweep_link_options = --dmg --tiny --wramx
 minesweep_debug_compile_options = -DSHOW_MINES
 
-####################
+########################################
+# extra rules
+########################################
 
 %.chr: %.png
 	$(gfxconv) $<
