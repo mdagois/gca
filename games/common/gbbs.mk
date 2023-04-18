@@ -5,7 +5,7 @@
 # Requirements:
 # - RGBDS toolchain (`rgbasm`, `rgblink` and `rgbfix`)
 # - make 4.0 or later
-# - Git (for `mkdir` and `rm` commands)
+# - Git (for `mkdir`, `rm` and `touch` commands)
 #
 #################################################################################
 
@@ -74,21 +74,25 @@ $(call assert,$(call string_equal,$(subst $(build_directory),,$(source_directory
 # Constants
 ########################################
 
-# extension
+# extensions
 object_extension := .o
+dependency_extension := .d
+signature_extension := .s
+force_extension := .f
 
 # file commands
-mkdir_command=$(git_directory)mkdir -p
-rmdir_command=$(git_directory)rm -rf
+mkdir_command=$(shell_command_directory)mkdir -p
+rmdir_command=$(shell_command_directory)rm -rf
+touch_command=$(shell_command_directory)touch
 
 # toolchain commands
 rgbasm_command=$(rgbds_directory)rgbasm
 rgblink_command=$(rgbds_directory)rgblink
 rgbfix_command=$(rgbds_directory)rgbfix
-emulator_command=$(rgbds_directory)bgb
+emulator_command ?= bgb
 
 ########################################
-# Directory rules
+# General rules
 ########################################
 
 # all temporary files are held into a temporary directory under the build directory
@@ -97,7 +101,13 @@ $(call assert,$(call not,$(filter $(temporary_directory),$(configurations))),'$(
 
 # directory creation rule
 %/:
-	$(mkdir_command) $(dir $@)
+	@$(mkdir_command) $(dir $@)
+
+# build echo rule
+.PHONY: build_echo_%
+build_echo_%:
+	@echo " "
+	@echo [BUILD] $*
 
 ################################################################################
 # Build commands
@@ -105,7 +115,7 @@ $(call assert,$(call not,$(filter $(temporary_directory),$(configurations))),'$(
 
 # compilation
 # $1 = project, $2 = configuration, $3 = output object file, $4 = input source file
-compile_command = $$(rgbasm_command) $$($1_$2_compile_options_list) --output $3 $4
+compile_command = $$(rgbasm_command) $$($1_$2_compile_options_list) -M $(3:=$(dependency_extension)) -MG -MP --output $3 $4
 
 # linkage
 # $1 = project, $2 = configuration, $3 = output binary file, $4 = input object files list
@@ -203,23 +213,38 @@ $1_$2_compile_options_list = -I$$($1_source_directory) -I$(source_directory) $(c
 $1_$2_link_options_list = $(link_options) $$($1_link_options) $$($2_link_options) $$($1_$2_link_options)
 $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$($1_$2_fix_options)
 
-$1_$2_launch_options_list = $$(strip $$($1_launch_options) $$($2_launch_options) $$($1_$2_launch_options))
-$1_$2_launch_options_list2 = $$(strip $$($1_launch_options2) $$($2_launch_options2) $$($1_$2_launch_options2))
+$1_$2_launch_options_list = $$(strip $(launch_options) $$($1_launch_options) $$($2_launch_options) $$($1_$2_launch_options))
+$1_$2_launch_options_list2 = $$(strip $(launch_options2) $$($1_launch_options2) $$($2_launch_options2) $$($1_$2_launch_options2))
 
 $1_$2_rom_extension := $$(if $$(filter --color-only --color-compatible -C -c,$$($1_$2_fix_options_list)),.gbc,.gb)
 
 $1_$2_build_directory := $$($1_build_directory)/$2
 $1_$2_binary_directory := $$($2_binary_directory)/$1
-$1_$2_binary := $$($1_$2_binary_directory)/$1$$($1_$2_rom_extension)
-$1_$2_map_file := $$($1_$2_binary).map
-$1_$2_sym_file := $$($1_$2_binary).sym
+$1_$2_binary_basename := $$($1_$2_binary_directory)/$1
+$1_$2_binary := $$($1_$2_binary_basename)$$($1_$2_rom_extension)
+$1_$2_binary_signature := $$($1_$2_build_directory)/$1$(signature_extension)
+$1_$2_binary_force := $$($1_$2_build_directory)/$1$(force_extension)
+$1_$2_map_file := $$($1_$2_binary_basename).map
+$1_$2_sym_file := $$($1_$2_binary_basename).sym
 
 $1_$2_objects := $$(addprefix $$($1_$2_build_directory)/,$$($1_$2_sources_list:=$(object_extension)))
-.INTERMEDIATE: $$($1_$2_objects)
+$1_$2_dependencies := $$($1_$2_objects:=$(dependency_extension))
+$1_$2_signatures := $$($1_$2_objects:=$(signature_extension)) $$($1_$2_binary_signature)
 
 $$(call assert,$$(strip $$($1_$2_sources_list)),No source files for target '$1_$2' (add source files to '$1_sources' or '$1_$2_sources'))
 
 
+endef
+
+# signature
+# $1 = project, $2 = configuration, $3 = target, $4 = signature, $5 = force, $6 = expanded command, $7 = non-expanded command
+define signature_template
+$$(if $$(wildcard $$(dir $4)),\
+$$(file >$4,$5:)\
+$$(file >>$4,$3: $5)\
+$$(file >>$4,$$$$(if $$$$(call string_not_equal,$6,$7),$$$$(shell $(touch_command) $5)))\
+$$(file >$5)\
+)
 endef
 
 # target rules
@@ -235,13 +260,16 @@ clean_$1: clean_$1_$2
 
 $1: $1_$2
 $2: $1_$2
+$1_$2: | build_echo_$1_$2
 $1_$2: $$($1_$2_binary)
 
-$$($1_$2_binary): | $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
-$$($1_$2_binary): $$($1_$2_objects) | $1_targets 
-	$(call link_command,$1,$2,$$@,$$^) && $(call fix_command,$1,$2,$$@)
+$$($1_$2_binary): | $1_targets $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
+$$($1_$2_binary): $$($1_$2_objects)
+	$(call signature_template,$1,$2,$$@,$$($1_$2_binary_signature),$$($1_$2_binary_force),$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@),$$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $$(call fix_command,$1,$2,$$@))
+	$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@)
 
 $$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$(@D)/
+	$(call signature_template,$1,$2,$$@,$$($1_$2_build_directory)/$$*$(object_extension)$(signature_extension),$$($1_$2_build_directory)/$$*$(object_extension)$(force_extension),$(call compile_command,$1,$2,$$@,$$<),$$(call compile_command,$1,$2,$$@,$$<))
 	$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
@@ -252,6 +280,8 @@ clean_$1_$2:
 	$$(rmdir_command) $$($1_$2_build_directory)
 	$$(rmdir_command) $$($1_$2_binary_directory)
 
+-include $$($1_$2_dependencies)
+-include $$($1_$2_signatures)
 
 endef
 

@@ -1,9 +1,14 @@
+# TODO Description of the projects
+
 projects = minesweep
 configurations = debug release
 default_target = minesweep_release
 
 source_directory = .
 build_directory = build
+
+debug_description = build with debug features and extra checks enabled
+release_description = deliverable build
 
 compile_options = -Werror -Weverything -Hl -I./common/include
 debug_compile_options = -DBUILD_DEBUG
@@ -20,6 +25,8 @@ gfxconv = ../bin/gfxconv
 ########################################
 # minesweep
 ########################################
+
+minesweep_description = a simple minesweep game
 
 minesweep_source_sub_directory = minesweep
 minesweep_sources = \
@@ -45,15 +52,8 @@ minesweep_debug_compile_options = -DSHOW_MINES
 
 ####################
 
-minesweep_targets: minesweep_resources
-
-minesweep_png_list = tiles.png
-minesweep_resources_list =  $(addprefix $(minesweep_source_sub_directory)/res/,$(minesweep_png_list:.png=.chr))
-minesweep_resources: $(minesweep_resources_list)
 %.chr: %.png
 	$(gfxconv) $<
-
-.PHONY: minesweep_resources
 
 ########################################
 
