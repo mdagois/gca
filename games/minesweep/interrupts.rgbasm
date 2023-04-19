@@ -1,5 +1,5 @@
-include "utils.rgbinc"
 include "sound.rgbinc"
+include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
