@@ -1,0 +1,37 @@
+if !def(SOUND_RGBINC)
+def SOUND_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Sound
+; A module to play preset sound effects.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+SOUND_NEW_GAME			rb 1
+SOUND_UNCOVER_NUMBER	rb 1
+SOUND_PUT_FLAG			rb 1
+SOUND_REMOVE_FLAG		rb 1
+SOUND_UNCOVER_MINE		rb 1
+SOUND_WIN				rb 1
+SOUND_SHOW_RESULTS_END	rb 1
+SOUNDS_COUNT			rb 0
+
+; initialize sound
+macro Sound_Initialize
+	call _Sound_Initialize
+endm
+
+; play preset sound \1
+macro Sound_Play
+	ld a, \1
+	call _Sound_Play
+endm
+
+; update the sound system
+; should be used during vblank
+macro Sound_Update
+	call _Sound_Update
+endm
+
+endc
+

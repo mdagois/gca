@@ -48,6 +48,7 @@ minesweep_sources = \
 	interrupts.rgbasm \
 	memory.rgbasm \
 	minesweep.rgbasm \
+	sound.rgbasm \
 	window.rgbasm
 minesweep_link_options = --dmg --tiny --wramx
 minesweep_debug_compile_options = -DSHOW_MINES

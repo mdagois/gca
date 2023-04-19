@@ -1,0 +1,15 @@
+include "sound.rgbinc"
+
+export _Sound_Initialize, _Sound_Play, _Sound_Update
+
+section "sound", rom0
+
+_Sound_Initialize:
+	ret
+
+_Sound_Play:
+	ret
+
+_Sound_Update:
+	ret
+

@@ -8,7 +8,6 @@ include "memory.rgbinc"
 include "window.rgbinc"
 
 ; TODO add simple sounds
-; TODO camera shake on lose
 ; TODO effect on win
 
 section "minesweep", rom0

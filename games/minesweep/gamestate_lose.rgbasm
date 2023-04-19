@@ -15,41 +15,41 @@ _GetRandom:
 	LFSR8_GetNextValue
 	ld [vLfsrValue], a
 
-    and a, $07
-    bit 2, a
-    jr z, .positive
-        and a, $03
-        ld b, a
-        xor a
-        sub a, b
-    .positive
-    ret
+	and a, $07
+	bit 2, a
+	jr z, .positive
+		and a, $03
+		ld b, a
+		xor a
+		sub a, b
+	.positive
+	ret
 
 _ShakeScreen:
 	LFSR8_PickSeed
 	ld [vLfsrValue], a
 
-    ld c, 16
-    .shake
-        call _GetRandom
-        ld hl, rSCX
-        ld [hl], a
+	ld c, 16
+	.shake
+		call _GetRandom
+		ld hl, rSCX
+		ld [hl], a
 
-        halt
+		halt
 
-        call _GetRandom
-        ld hl, rSCY
-        ld [hl], a
+		call _GetRandom
+		ld hl, rSCY
+		ld [hl], a
 
-        halt
+		halt
 
-        dec c
-        jr nz, .shake
+		dec c
+		jr nz, .shake
 
-    xor a
-    ld [rSCX], a
-    ld [rSCY], a
-    ret
+	xor a
+	ld [rSCX], a
+	ld [rSCY], a
+	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -65,8 +65,8 @@ sizeof_lose_TEMP				rb 0
 	halt
 	Cursor_UpdateGraphics
 
-    ; screen shake
-    call _ShakeScreen
+	; screen shake
+	call _ShakeScreen
 
 	; uncover all board remaining coordinates
 	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
@@ -116,9 +116,9 @@ sizeof_lose_TEMP				rb 0
 	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
 	add sp, sizeof_lose_TEMP
 
-    ; set game as lost
-    xor a
-    ld [vLastGameIsWin], a
+	; set game as lost
+	xor a
+	ld [vLastGameIsWin], a
 
 	halt
 	ret

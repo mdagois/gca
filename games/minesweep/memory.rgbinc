@@ -36,7 +36,7 @@ vUncoveredCount					rb 1
 vFlagCoordinate					rw 1
 
 ; flow control
-vLastGameIsWin                  rb 1
+vLastGameIsWin				 	rb 1
 
 ; rng
 vLfsrValue						rb 1

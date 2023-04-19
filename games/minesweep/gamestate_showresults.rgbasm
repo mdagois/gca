@@ -13,20 +13,20 @@ GameStateFunc_ShowResults:
 	jr nz, .start_not_released
 		GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 
-        ld a, [vLastGameIsWin]
-        or a, a
-        jr z, .show_window_lost
-            halt
-            Window_Show TILE_WINDOW_TITLE_WIN
-            jr .show_window_done
-        .show_window_lost
-            halt
-            Window_Show TILE_WINDOW_TITLE_LOSE
-        .show_window_done
+		ld a, [vLastGameIsWin]
+		or a, a
+		jr z, .show_window_lost
+			halt
+			Window_Show TILE_WINDOW_TITLE_WIN
+			jr .show_window_done
+		.show_window_lost
+			halt
+			Window_Show TILE_WINDOW_TITLE_LOSE
+		.show_window_done
 
 		ret
 	.start_not_released
 
-    halt
+	halt
 	ret
 

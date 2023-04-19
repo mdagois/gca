@@ -12,9 +12,9 @@ GameStateFunc_Win:
 	halt
 	Cursor_UpdateGraphics
 
-    ; set game as won
-    copy [vLastGameIsWin], 1
+	; set game as won
+	copy [vLastGameIsWin], 1
 	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
-    halt
+	halt
 	ret
 
