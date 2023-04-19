@@ -84,7 +84,7 @@ endm
 ; Utility
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; clear a memory region between two addresses
+; clear a memory region to zero
 ; \1 = start address
 ; \2 = size
 macro ClearMemory
@@ -99,6 +99,24 @@ macro ClearMemory
 		ld a, high((\1) + (\2))
 		cp a, h
 		jr nz, .clear\@
+endm
+
+; set a memory region to a given value
+; \1 = start address
+; \2 = size
+; \3 = value
+macro SetMemory
+	assert \2 > 0, "Clear size must be superior to zero"
+	ld hl, \1
+	.set_memory\@
+		ld a, \3
+		ld [hli], a
+		ld a, low((\1) + (\2))
+		cp a, l
+		jr nz, .set_memory\@
+		ld a, high((\1) + (\2))
+		cp a, h
+		jr nz, .set_memory\@
 endm
 
 ; copy memory from one address to another

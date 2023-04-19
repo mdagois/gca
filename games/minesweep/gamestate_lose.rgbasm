@@ -8,6 +8,51 @@ export GameStateFunc_Lose
 
 section "gamestate_lose", rom0
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_GetRandom:
+	ld a, [vLfsrValue]
+	LFSR8_GetNextValue
+	ld [vLfsrValue], a
+
+    and a, $07
+    bit 2, a
+    jr z, .positive
+        and a, $03
+        ld b, a
+        xor a
+        sub a, b
+    .positive
+    ret
+
+_ShakeScreen:
+	LFSR8_PickSeed
+	ld [vLfsrValue], a
+
+    ld c, 16
+    .shake
+        call _GetRandom
+        ld hl, rSCX
+        ld [hl], a
+
+        halt
+
+        call _GetRandom
+        ld hl, rSCY
+        ld [hl], a
+
+        halt
+
+        dec c
+        jr nz, .shake
+
+    xor a
+    ld [rSCX], a
+    ld [rSCY], a
+    ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 GameStateFunc_Lose:
 ; temp variables on the stack
 rsreset
@@ -19,6 +64,9 @@ sizeof_lose_TEMP				rb 0
 	Cursor_Hide
 	halt
 	Cursor_UpdateGraphics
+
+    ; screen shake
+    call _ShakeScreen
 
 	; uncover all board remaining coordinates
 	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
