@@ -1,6 +1,7 @@
 include "board.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "sound.rgbinc"
 
 export GameStateFunc_PutFlag
 
@@ -35,11 +36,14 @@ GameStateFunc_PutFlag:
 	; toggle the flag based on the value at the coordinate
 	bit BOARD_BIT_FLAGGED, a
 	jr nz, .has_flag
+		Sound_Play SOUND_PUT_FLAG
 		set BOARD_BIT_FLAGGED, a
 		ld [hl], a
 		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
 		jr .flag_toggle_done
 	.has_flag
+
+	Sound_Play SOUND_REMOVE_FLAG
 if !def(SHOW_MINES)
 		res BOARD_BIT_FLAGGED, a
 		ld [hl], a
@@ -55,6 +59,7 @@ else
 			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 		.mine_check_end
 endc
+
 	.flag_toggle_done
 
 	; clear the flag coordinate

@@ -2,6 +2,7 @@ include "board.rgbinc"
 include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "sound.rgbinc"
 include "window.rgbinc"
 
 export GameStateFunc_ShowResults
@@ -11,6 +12,7 @@ section "gamestate_showresults", rom0
 GameStateFunc_ShowResults:
 	PadInput_TestReleased vPadInput, PADF_START
 	jr nz, .start_not_released
+		Sound_Play SOUND_CLOSE_RESULTS
 		GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 
 		ld a, [vLastGameIsWin]

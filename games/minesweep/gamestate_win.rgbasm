@@ -1,6 +1,7 @@
 include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "sound.rgbinc"
 include "window.rgbinc"
 
 export GameStateFunc_Win
@@ -13,6 +14,7 @@ GameStateFunc_Win:
 	Cursor_UpdateGraphics
 
 	; set game as won
+	Sound_Play SOUND_WIN
 	copy [vLastGameIsWin], 1
 	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
 	halt

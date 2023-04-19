@@ -4,7 +4,7 @@
 
 projects = minesweep
 configurations = debug release
-default_target = minesweep_release
+default_target = all
 
 source_directory = .
 build_directory = build

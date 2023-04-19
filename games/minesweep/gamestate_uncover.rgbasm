@@ -3,6 +3,7 @@ include "counter.rgbinc"
 include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "sound.rgbinc"
 
 export GameStateFunc_Uncover
 
@@ -44,10 +45,13 @@ GameStateFunc_Uncover:
 	; check for lose condition (a mine is uncovered)
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
+		Sound_Play SOUND_UNCOVER_MINE
 		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 		GameState_SetFuncId GAMESTATE_FUNC_ID_LOSE
 		jp .update_graphics
 	.no_lose
+
+	Sound_Play SOUND_UNCOVER_TILE
 
 	; (a) still holds the value at the coordinate
 	; retrieve the number of mines adjacent to the board coordinate
