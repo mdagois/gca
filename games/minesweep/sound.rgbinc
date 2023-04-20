@@ -23,8 +23,10 @@ endm
 
 ; play preset sound \1
 macro Sound_Play
+	push af
 	ld a, \1
 	call _Sound_Play
+	pop af
 endm
 
 ; update the sound system
