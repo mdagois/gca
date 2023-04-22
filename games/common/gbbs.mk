@@ -5,7 +5,7 @@
 # Requirements:
 # - RGBDS toolchain (`rgbasm`, `rgblink` and `rgbfix`)
 # - make 4.0 or later
-# - Git (for `mkdir`, `rm` and `touch` commands)
+# - Shell commands (`mkdir`, `rm` and `touch`)
 #
 #################################################################################
 
@@ -61,6 +61,7 @@ projects := $(strip $(projects))
 configurations := $(strip $(configurations))
 source_directory := $(call expand_path,$(source_directory))
 build_directory := $(call expand_path,$(build_directory))
+root_directory := $(call expand_path,.)
 
 $(call assert,$(projects),The 'projects' list is empty)
 $(call assert,$(configurations),The 'configurations' list is empty)
@@ -81,14 +82,16 @@ signature_extension := .s
 force_extension := .f
 
 # file commands
-mkdir_command=$(shell_command_directory)mkdir -p
-rmdir_command=$(shell_command_directory)rm -rf
-touch_command=$(shell_command_directory)touch
+shell_command_directory_with_slash := $(if $(shell_command_directory),$(shell_command_directory)/,)
+mkdir_command=$(shell_command_directory_with_slash)mkdir -p
+rmdir_command=$(shell_command_directory_with_slash)rm -rf
+touch_command=$(shell_command_directory_with_slash)touch
 
 # toolchain commands
-rgbasm_command=$(rgbds_directory)rgbasm
-rgblink_command=$(rgbds_directory)rgblink
-rgbfix_command=$(rgbds_directory)rgbfix
+rgbds_directory_with_slash := $(if $(rgbds_directory),$(rgbds_directory)/,)
+rgbasm_command=$(rgbds_directory_with_slash)rgbasm
+rgblink_command=$(rgbds_directory_with_slash)rgblink
+rgbfix_command=$(rgbds_directory_with_slash)rgbfix
 emulator_command ?= bgb
 
 ########################################
@@ -106,7 +109,6 @@ $(call assert,$(call not,$(filter $(temporary_directory),$(configurations))),'$(
 # build echo rule
 .PHONY: build_echo_%
 build_echo_%:
-	@echo " "
 	@echo [BUILD] $*
 
 ################################################################################
@@ -170,9 +172,8 @@ $1_build_directory = $(build_directory)/$(temporary_directory)/$1
 
 all: $1
 clean: clean_$1
-$1_targets: ;
 
-.PHONY: $1 clean_$1 $1_targets
+.PHONY: $1 clean_$1
 clean_$1:
 	$$(rmdir_command) $$($1_build_directory)
 
@@ -260,12 +261,12 @@ $2: $1_$2
 $1_$2: | build_echo_$1_$2
 $1_$2: $$($1_$2_binary)
 
-$$($1_$2_binary): | $1_targets $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
+$$($1_$2_binary): | $$($1_$2_build_directory)/ $$($1_$2_binary_directory)/
 $$($1_$2_binary): $$($1_$2_objects)
 	$(call signature_template,$1,$2,$$@,$$($1_$2_binary_signature),$$($1_$2_binary_force),$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@),$$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $$(call fix_command,$1,$2,$$@))
 	$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@)
 
-$$($1_$2_build_directory)/%$(object_extension): $$(source_directory)/% | $$$$(@D)/
+$$($1_$2_build_directory)/%$(object_extension): $$(root_directory)/% | $$$$(@D)/
 	$(call signature_template,$1,$2,$$@,$$($1_$2_build_directory)/$$*$(object_extension)$(signature_extension),$$($1_$2_build_directory)/$$*$(object_extension)$(force_extension),$(call compile_command,$1,$2,$$@,$$<),$$(call compile_command,$1,$2,$$@,$$<))
 	$(call compile_command,$1,$2,$$@,$$<)
 
@@ -279,6 +280,7 @@ clean_$1_$2:
 
 -include $$($1_$2_dependencies)
 -include $$($1_$2_signatures)
+
 
 endef
 
