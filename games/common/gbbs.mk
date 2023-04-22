@@ -115,7 +115,7 @@ build_echo_%:
 
 # compilation
 # $1 = project, $2 = configuration, $3 = output object file, $4 = input source file
-compile_command = $$(rgbasm_command) $$($1_$2_compile_options_list) -M $(3:=$(dependency_extension)) -MG -MP --output $3 $4
+compile_command = $$(rgbasm_command) $$($1_$2_compile_options_list) -I$$(dir $4) -M $(3:=$(dependency_extension)) -MG -MP --output $3 $4
 
 # linkage
 # $1 = project, $2 = configuration, $3 = output binary file, $4 = input object files list
@@ -166,7 +166,6 @@ define project_specific_template
 
 $1_description ?= no description
 
-$1_source_directory = $(source_directory)/$$($1_source_sub_directory)
 $1_build_directory = $(build_directory)/$(temporary_directory)/$1
 
 all: $1
@@ -176,8 +175,6 @@ $1_targets: ;
 .PHONY: $1 clean_$1 $1_targets
 clean_$1:
 	$$(rmdir_command) $$($1_build_directory)
-
-$$(call assert,$$(wildcard $$($1_source_directory)),The 'source_sub_directory' for project '$1' does not exist (current value is '$$($1_source_sub_directory)'))
 
 
 endef
@@ -209,7 +206,7 @@ define target_variable_definitions_template
 
 $1_$2_sources_list = $$($1_sources) $$($1_$2_sources)
 
-$1_$2_compile_options_list = -I$$($1_source_directory) -I$(source_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
+$1_$2_compile_options_list = -I$(source_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
 $1_$2_link_options_list = $(link_options) $$($1_link_options) $$($2_link_options) $$($1_$2_link_options)
 $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$($1_$2_fix_options)
 
@@ -268,7 +265,7 @@ $$($1_$2_binary): $$($1_$2_objects)
 	$(call signature_template,$1,$2,$$@,$$($1_$2_binary_signature),$$($1_$2_binary_force),$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@),$$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $$(call fix_command,$1,$2,$$@))
 	$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@)
 
-$$($1_$2_build_directory)/%$(object_extension): $$($1_source_directory)/% | $$$$(@D)/
+$$($1_$2_build_directory)/%$(object_extension): $$(source_directory)/% | $$$$(@D)/
 	$(call signature_template,$1,$2,$$@,$$($1_$2_build_directory)/$$*$(object_extension)$(signature_extension),$$($1_$2_build_directory)/$$*$(object_extension)$(force_extension),$(call compile_command,$1,$2,$$@,$$<),$$(call compile_command,$1,$2,$$@,$$<))
 	$(call compile_command,$1,$2,$$@,$$<)
 

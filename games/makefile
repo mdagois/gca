@@ -29,27 +29,7 @@ gfxconv = ../bin/gfxconv
 ########################################
 
 minesweep_description = a simple minesweep game
-
-minesweep_source_sub_directory = minesweep
-minesweep_sources = \
-	board.rgbasm \
-	counter.rgbasm \
-	cursor.rgbasm \
-	data.rgbasm \
-	gamestate.rgbasm \
-	gamestate_flag.rgbasm \
-	gamestate_lose.rgbasm \
-	gamestate_newgame.rgbasm \
-	gamestate_play.rgbasm \
-	gamestate_showresults.rgbasm \
-	gamestate_uncover.rgbasm \
-	gamestate_waitfornewgame.rgbasm \
-	gamestate_win.rgbasm \
-	interrupts.rgbasm \
-	memory.rgbasm \
-	minesweep.rgbasm \
-	sound.rgbasm \
-	window.rgbasm
+minesweep_sources = $(wildcard minesweep/*.rgbasm)
 minesweep_link_options = --dmg --tiny --wramx
 minesweep_debug_compile_options = -DSHOW_MINES
 
