@@ -27,7 +27,9 @@ expand_path = $(abspath $(strip $1))
 not = $(if $1,$(false),$(true))
 
 # generate a fatal error with message $2 if the condition $1 is false
-assert = $(if $2,$(if $1,,$(error Assertion failed: $2)),$(warning The assertion is ignored as it does not have any error message))
+# asserts can be disabled by adding 'disable_asserts=1' to the make command (e.g. make all disable_asserts=1)
+report_assert = $(if $(disable_asserts),,$(error $1))
+assert = $(if $2,$(if $1,,$(call report_assert,Assertion failed: $2)),$(warning The assertion is ignored as it does not have any error message))
 
 # string comparison functions
 string_equal = $(if $(subst x$1,,x$2)$(subst x$2,,x$1),$(false),$(true))
