@@ -61,17 +61,12 @@ endif
 
 projects := $(strip $(projects))
 configurations := $(strip $(configurations))
-source_directory := $(call expand_path,$(source_directory))
 build_directory := $(call expand_path,$(build_directory))
 root_directory := $(call expand_path,.)
 
 $(call assert,$(projects),The 'projects' list is empty)
 $(call assert,$(configurations),The 'configurations' list is empty)
-$(call assert,$(source_directory),The 'source_directory' is not valid)
-$(call assert,$(wildcard $(source_directory)),The 'source_directory' does not exist)
 $(call assert,$(build_directory),The 'build_directory' is not valid)
-$(call assert,$(call string_not_equal,$(source_directory),$(build_directory)),'source_directory' and 'build_directory' must be different)
-$(call assert,$(call string_equal,$(subst $(build_directory),,$(source_directory)),$(source_directory)),The 'build_directory' must not be a parent of the source directory (it must be completely dedicated to holding build files))
 
 ########################################
 # Constants
@@ -209,7 +204,7 @@ define target_variable_definitions_template
 
 $1_$2_sources_list = $$($1_sources) $$($1_$2_sources)
 
-$1_$2_compile_options_list = -I$(source_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
+$1_$2_compile_options_list = -I$(root_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
 $1_$2_link_options_list = $(link_options) $$($1_link_options) $$($2_link_options) $$($1_$2_link_options)
 $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$($1_$2_fix_options)
 

@@ -6,7 +6,6 @@ projects = minesweep
 configurations = debug release
 default_target = all
 
-source_directory = .
 build_directory = build
 
 debug_description = build with debug features and extra checks enabled
