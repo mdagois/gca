@@ -34,6 +34,10 @@ endm
 section "main", rom0
 main:
 	debug "[INFO] program started"
+
+	; move the stack to the top of WRAM bank #0
+	ld sp, _RAM + $1000
+
 	DisableLCD
 	call Initialize
 	.game_loop
