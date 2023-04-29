@@ -124,10 +124,6 @@ link_command = $$(rgblink_command) $$($1_$2_link_options_list) --map $$($1_$2_ma
 # $1 = project, $2 = configuration, $3 = rom file
 fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) --title $1 $3
 
-# launch
-# $1 = project, $2 = configuration, $3 = option list number, $4 = force flag
-launch_command = $$(if $$($1_$2_launch_options_list$3) $4,$$(emulator_command) $$($1_$2_launch_options_list$3) $$($1_$2_binary),)
-
 ########################################
 # Generation templates
 ########################################
@@ -268,8 +264,8 @@ $$($1_$2_build_directory)/%$(object_extension): $$(root_directory)/% | $$$$(@D)/
 	$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
-	$(call launch_command,$1,$2,,$(true))
-	$(call launch_command,$1,$2,2,$(false))
+	$(emulator_command) $($1_$2_launch_options_list) $($1_$2_binary) &
+	$(if $($1_$2_launch_options_list2),$(emulator_command) $($1_$2_launch_options_list2) $($1_$2_binary) &,)
 
 clean_$1_$2:
 	$$(rmdir_command) $$($1_$2_build_directory)
