@@ -8,7 +8,6 @@ include "memory.rgbinc"
 include "sound.rgbinc"
 include "window.rgbinc"
 
-; TODO implement sound system
 ; TODO write a batch file to build the game
 
 section "minesweep", rom0

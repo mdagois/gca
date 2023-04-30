@@ -44,6 +44,9 @@ vFlagCoordinate					rw 1
 ; menu flow control
 vLastGameIsWin				 	rb 1
 
+; sound
+vSoundParameters				rb 1
+
 ; rng
 vLfsrValue						rb 1
 

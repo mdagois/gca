@@ -32,7 +32,9 @@ endm
 ; update the sound system
 ; must be called during vblank
 macro Sound_Update
+	PushAllRegisters
 	call _Sound_Update
+	PopAllRegisters
 endm
 
 endc
