@@ -6,6 +6,7 @@ def GAME_RGBINC equ 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def RESULT_TIMER_DURATION	equ (180)
+def WIN_TIMER_DURATION		equ (240)
 
 rsreset
 
