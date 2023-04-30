@@ -11,7 +11,7 @@ macro Cursor_Initialize
 	call _Cursor_Initialize
 endm
 
-; hide the cursor
+; hide the cursor (the cursor stays in the same location)
 macro Cursor_Hide
 	call _Cursor_Hide
 endm
@@ -21,9 +21,14 @@ macro Cursor_Show
 	call _Cursor_Show
 endm
 
-; reset the cursor to a default position
-macro Cursor_Reset
-	call _Cursor_Reset
+; disable the cursor (the cursor is moved outside the screen)
+macro Cursor_Disable
+	call _Cursor_Disable
+endm
+
+; enable the cursor and move it to a default position
+macro Cursor_Enable
+	call _Cursor_Enable
 endm
 
 ; update the cursor graphics

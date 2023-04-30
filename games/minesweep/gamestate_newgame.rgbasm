@@ -200,7 +200,7 @@ GameStateFunc_NewGame:
 	GenerateMines BOARD_STATE_MINES_COUNT
 	ComputeMineCounts
 	ResetBoardVariables
-	Cursor_Reset
+	Cursor_Enable
 	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 
 	halt

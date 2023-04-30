@@ -14,7 +14,7 @@ GameStateFunc_Win:
 	Sound_Play SOUND_WIN
 	copy [vLastGameIsWin], 1
 
-	Cursor_Hide
+	Cursor_Disable
 	halt
 	Cursor_UpdateGraphics
 

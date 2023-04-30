@@ -61,7 +61,7 @@ sizeof_lose_TEMP				rb 0
 
 	add sp, -sizeof_lose_TEMP
 
-	Cursor_Hide
+	Cursor_Disable
 	halt
 	Cursor_UpdateGraphics
 
