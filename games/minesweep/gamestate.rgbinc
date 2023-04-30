@@ -7,6 +7,8 @@ include "memory.rgbinc"
 ; Game state function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def WINDOW_RESULT_TIMER_DURATION equ 180
+
 rsreset
 
 ; wait for the player to press start to launch a new game
@@ -34,6 +36,11 @@ GAMESTATE_FUNC_ID_LOSE					rb 1
 GAMESTATE_FUNC_ID_WIN					rb 1
 
 GAMESTATE_FUNC_IDS_COUNT				rb 0
+
+; initialize the game states
+macro GameState_Initialize
+	copy [vShowResultsTimer], WINDOW_RESULT_TIMER_DURATION
+endm
 
 ; set the state function id
 macro GameState_SetFuncId

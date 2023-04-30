@@ -30,6 +30,7 @@ Initialize:
 	Board_Initialize
 	Counter_Initialize
 	Cursor_Initialize
+	GameState_Initialize
 	PadInput_Initialize vPadInput
 	Window_Initialize
 	Sound_Initialize

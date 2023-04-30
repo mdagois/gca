@@ -38,8 +38,9 @@ vGameStateFuncId				rb 1
 vUncoveredCount					rb 1
 vFlagCoordinate					rw 1
 
-; flow control
+; menu flow control
 vLastGameIsWin				 	rb 1
+vShowResultsTimer				rb 1
 
 ; rng
 vLfsrValue						rb 1
