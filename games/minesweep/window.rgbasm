@@ -1,7 +1,7 @@
 include "data.rgbinc"
 include "window.rgbinc"
 
-export _Window_Initialize, _Window_Hide, _Window_Show
+export _Window_Initialize, _Window_Hide, _Window_Show, _Window_Update
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
@@ -78,6 +78,7 @@ _Window_Initialize:
 	ld [rWX], a
 	ld a, WINDOW_HIDE_Y
 	ld [rWY], a
+	ld [vWindowTargetY], a
 
 	; init the tiles map
 	ld hl, _SCRN1
@@ -122,7 +123,7 @@ _Window_Initialize:
 
 _Window_Hide:
 	ld a, WINDOW_HIDE_Y
-	ld [rWY], a
+	ld [vWindowTargetY], a
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -138,7 +139,25 @@ _Window_Show:
 	endr
 
 	ld a, WINDOW_SHOW_Y
+	ld [vWindowTargetY], a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_Window_Update:
+	push af
+	push bc
+
+	ld a, [rWY]
+	ld b, a
+	ld a, [vWindowTargetY]
+	sub a, b
+	rra
+	add a, b
 	ld [rWY], a
 
+	pop bc
+	pop af
 	ret
 

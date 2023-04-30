@@ -30,7 +30,7 @@ macro Sound_Play
 endm
 
 ; update the sound system
-; should be used during vblank
+; must be called during vblank
 macro Sound_Update
 	call _Sound_Update
 endm

@@ -30,6 +30,9 @@ vCounterOam						rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
 vBoardTileRequestAddress		rw 1
 vBoardTileRequestValue			rb 1
 
+; window
+vWindowTargetY					rb 1
+
 ; game state
 vGameStateFuncId				rb 1
 vUncoveredCount					rb 1

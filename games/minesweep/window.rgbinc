@@ -29,5 +29,11 @@ macro Window_Show
 	call _Window_Show
 endm
 
+; update the window
+; must be called during vblank
+macro Window_Update
+	call _Window_Update
+endm
+
 endc
 

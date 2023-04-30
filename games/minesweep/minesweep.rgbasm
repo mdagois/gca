@@ -9,7 +9,6 @@ include "sound.rgbinc"
 include "window.rgbinc"
 
 ; TODO implement sound system
-; TODO menu animation
 ; TODO effect on win
 ; TODO write a batch file to build the game
 
