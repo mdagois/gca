@@ -10,8 +10,8 @@ def PLAY_SOUND_FLAG		equ (1 << PLAY_SOUND_BIT)
 section "sound", rom0
 
 _sound_data:
-db $00, $17, $80, $F8, $DA, $C3 ;SOUND_OPEN_WINDOW
-db $00, $1F, $80, $F8, $DA, $C3 ;SOUND_CLOSE_WINDOW
+db $03, $00, $00, $F2, $07, $80 ;SOUND_OPEN_WINDOW
+db $03, $00, $00, $F2, $07, $80 ;SOUND_CLOSE_WINDOW
 db $00, $77, $80, $AF, $DB, $87 ;SOUND_UNCOVER_TILE
 db $00, $15, $80, $F0, $0B, $C6 ;SOUND_PUT_FLAG
 db $00, $1D, $A6, $F0, $0B, $C6 ;SOUND_REMOVE_FLAG
