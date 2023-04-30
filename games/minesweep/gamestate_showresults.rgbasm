@@ -13,7 +13,7 @@ GameStateFunc_ShowResults:
 	ld hl, vShowResultsTimer
 	dec [hl]
 	jr nz, .results_done
-		ld [hl], WINDOW_RESULT_TIMER_DURATION
+		ld [hl], RESULT_TIMER_DURATION
 
 		Sound_Play SOUND_CLOSE_RESULTS
 		GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME

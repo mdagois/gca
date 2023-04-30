@@ -1,6 +1,8 @@
 include "gamestate.rgbinc"
+include "memory.rgbinc"
+include "utils.rgbinc"
 
-export _game_state_functions
+export _game_state_functions, _GameState_Initialize
 
 section "gamestate", rom0
 
@@ -16,4 +18,40 @@ dw GameStateFunc_Win
 _game_state_functions_end:
 
 assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS_COUNT * 2, "Mismatch between the game state table and game state enum"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_GameState_Initialize:
+	copy [vShowResultsTimer], RESULT_TIMER_DURATION
+
+	; victory OAM
+	ld hl, OAM_VICTORY
+
+		; top row
+		ld c, VICTORY_SPRITES_PER_ROW
+		copy b, TILE_VICTORY_TOP_ROW
+		.victory_top_row_oam_setup
+			copy [hli], 0
+			copy [hli], ((SCRN_X_B - VICTORY_SPRITES_PER_ROW) / 2) * TILE_SIDE + OAM_X_OFS
+			copy [hli], b
+			inc b
+			copy [hli], 0
+
+			dec c
+			jr nz, .victory_top_row_oam_setup
+
+		; bottom row
+		ld c, VICTORY_SPRITES_PER_ROW
+		copy b, TILE_VICTORY_BOTTOM_ROW
+		.victory_bottom_row_oam_setup
+			copy [hli], 8
+			copy [hli], ((SCRN_X_B - VICTORY_SPRITES_PER_ROW) / 2) * TILE_SIDE + OAM_X_OFS
+			copy [hli], b
+			inc b
+			copy [hli], 0
+
+			dec c
+			jr nz, .victory_bottom_row_oam_setup
+
+	ret
 

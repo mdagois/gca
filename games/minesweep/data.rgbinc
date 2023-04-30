@@ -6,6 +6,9 @@ def DATA_RGBINC equ 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def TILES_PER_WINDOW_TITLE			equ (4)
+def VICTORY_ROWS_COUNT				equ (2)
+def VICTORY_SPRITES_PER_ROW			equ (10)
+def VICTORY_OAM_COUNT				equ (VICTORY_ROWS_COUNT * VICTORY_SPRITES_PER_ROW)
 
 rsreset
 ; squares
@@ -53,6 +56,14 @@ TILE_WINDOW_BUTTON_START		rb 3
 TILE_WINDOW_FLAG_TILE			rb 5
 TILE_WINDOW_UNCOVER_TILE		rb 6
 TILE_WINDOW_NEW_GAME			rb 5
+
+; unused tile
+TILE_UNUSED_TILES_0				rb 5
+
+; victory
+TILE_VICTORY_TOP_ROW			rb VICTORY_SPRITES_PER_ROW
+TILE_UNUSED_TILES_1				rb 6
+TILE_VICTORY_BOTTOM_ROW			rb VICTORY_SPRITES_PER_ROW
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

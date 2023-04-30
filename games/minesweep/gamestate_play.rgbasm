@@ -1,6 +1,7 @@
 include "board.rgbinc"
 include "cursor.rgbinc"
 include "gamestate.rgbinc"
+include "memory.rgbinc"
 
 export GameStateFunc_Play
 

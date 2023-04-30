@@ -1,13 +1,11 @@
 if !def(GAME_RGBINC)
 def GAME_RGBINC equ 1
 
-include "memory.rgbinc"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game state function
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WINDOW_RESULT_TIMER_DURATION equ 180
+def RESULT_TIMER_DURATION	equ (180)
 
 rsreset
 
@@ -23,7 +21,7 @@ GAMESTATE_FUNC_ID_PLAY					rb 1
 ; the player uses a flag
 GAMESTATE_FUNC_ID_FLAG					rb 1
 
-; show the results at the end of the game
+; show the board with all tiles uncovered at the end of the game
 GAMESTATE_FUNC_ID_SHOW_RESULTS			rb 1
 
 ; the player uncovers a tile
@@ -39,7 +37,7 @@ GAMESTATE_FUNC_IDS_COUNT				rb 0
 
 ; initialize the game states
 macro GameState_Initialize
-	copy [vShowResultsTimer], WINDOW_RESULT_TIMER_DURATION
+	call _GameState_Initialize
 endm
 
 ; set the state function id

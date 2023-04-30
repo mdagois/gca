@@ -3,6 +3,8 @@ def MEMORY_RGBINC equ 1
 
 include "board.rgbinc"
 include "counter.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -10,6 +12,7 @@ include "counter.rgbinc"
 rsset _OAMRAM
 OAM_CURSOR				rb sizeof_OAM_ATTRS
 OAM_COUNTER				rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
+OAM_VICTORY				rb sizeof_OAM_ATTRS * VICTORY_OAM_COUNT
 OAM_END					rb 0
 
 def OAM_USAGE				equ (OAM_END - _OAMRAM)

@@ -1,6 +1,7 @@
 include "board.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
+include "memory.rgbinc"
 include "sound.rgbinc"
 
 export GameStateFunc_PutFlag
