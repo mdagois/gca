@@ -46,7 +46,7 @@ GameStateFunc_Uncover:
 	; check for lose condition (a mine is uncovered)
 	bit BOARD_BIT_MINE, a
 	jr z, .no_lose
-		Sound_Play SOUND_UNCOVER_MINE
+		Sound_Play SOUND_LOSE
 		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
 		GameState_SetFuncId GAMESTATE_FUNC_ID_LOSE
 		jp .update_graphics

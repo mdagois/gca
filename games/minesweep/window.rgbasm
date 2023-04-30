@@ -1,4 +1,5 @@
 include "data.rgbinc"
+include "sound.rgbinc"
 include "window.rgbinc"
 
 export _Window_Initialize, _Window_Hide, _Window_Show, _Window_Update
@@ -122,6 +123,7 @@ _Window_Initialize:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Window_Hide:
+	Sound_Play SOUND_CLOSE_WINDOW
 	ld a, WINDOW_HIDE_Y
 	ld [vWindowTargetY], a
 	ret
@@ -138,6 +140,7 @@ _Window_Show:
 		inc a
 	endr
 
+	Sound_Play SOUND_OPEN_WINDOW
 	ld a, WINDOW_SHOW_Y
 	ld [vWindowTargetY], a
 

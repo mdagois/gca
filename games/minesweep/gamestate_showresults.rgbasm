@@ -2,35 +2,34 @@ include "board.rgbinc"
 include "cursor.rgbinc"
 include "data.rgbinc"
 include "gamestate.rgbinc"
-include "sound.rgbinc"
 include "window.rgbinc"
 
 export GameStateFunc_ShowResults
 
 section "gamestate_showresults", rom0
 
+def RESULT_TIMER_DURATION equ (180)
+
 GameStateFunc_ShowResults:
-	ld hl, vShowResultsTimer
-	dec [hl]
-	jr nz, .results_done
-		ld [hl], RESULT_TIMER_DURATION
+	; keep the screen fixed for a bit
+	ld c, RESULT_TIMER_DURATION
+	.wait
+		halt
+		dec c
+		jr nz, .wait
 
-		Sound_Play SOUND_CLOSE_RESULTS
-		GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
+	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 
-		ld a, [vLastGameIsWin]
-		or a, a
-		jr z, .show_window_lost
-			halt
-			Window_Show TILE_WINDOW_TITLE_WIN
-			jr .show_window_done
-		.show_window_lost
-			halt
-			Window_Show TILE_WINDOW_TITLE_LOSE
-		.show_window_done
-
-		ret
-	.results_done
+	ld a, [vLastGameIsWin]
+	or a, a
+	jr z, .show_window_lost
+		halt
+		Window_Show TILE_WINDOW_TITLE_WIN
+		jr .show_window_done
+	.show_window_lost
+		halt
+		Window_Show TILE_WINDOW_TITLE_LOSE
+	.show_window_done
 
 	halt
 	ret

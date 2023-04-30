@@ -24,8 +24,6 @@ assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS
 def VICTORY_SPRITE_START_X equ ((BOARD_TILE_OFFSET_X + (BOARD_TILE_NUM_X - VICTORY_SPRITES_PER_ROW) / 2) * TILE_SIDE + OAM_X_OFS)
 
 _GameState_Initialize:
-	copy [vShowResultsTimer], RESULT_TIMER_DURATION
-
 	; victory OAM
 	ld hl, OAM_VICTORY
 

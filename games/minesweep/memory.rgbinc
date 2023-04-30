@@ -43,7 +43,6 @@ vFlagCoordinate					rw 1
 
 ; menu flow control
 vLastGameIsWin				 	rb 1
-vShowResultsTimer				rb 1
 
 ; rng
 vLfsrValue						rb 1

@@ -1,5 +1,4 @@
 include "gamestate.rgbinc"
-include "sound.rgbinc"
 include "window.rgbinc"
 
 export GameStateFunc_WaitForNewGame
@@ -9,7 +8,6 @@ section "gamestate_waitfornewgame", rom0
 GameStateFunc_WaitForNewGame:
 	PadInput_TestReleased vPadInput, PADF_START
 	jr nz, .start_not_released
-		Sound_Play SOUND_NEW_GAME
 		GameState_SetFuncId GAMESTATE_FUNC_ID_NEW_GAME
 		halt
 		Window_Hide
