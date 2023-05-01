@@ -195,12 +195,22 @@ For other operating systems, it is necessary to rebuild the conversion tools and
 The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) directory.
 Check the [README](tools/printer/README.md) file there to know more about the simulator.
 
+## Games
+
+Simple games are available in the [games](games) directory.
+Check the [README](games/README.md) file there for more details.
+
 ## Makefile for custom project
 
 A makefile is available in the [tools/build](tools/build) directory.
 It is meant to make it easy to build ROMs.
 It is used to build the [Printer Simulator](tools/printer).
 Please follow the instructions in the makefile file itself to know how to leverage it, and use the Printer Simulator [makefile](tools/printer/makefile) as a reference.
+
+A more complete build system, [GBBS](https://github.com/mdagois/gbtools/gbbs), is available in the [GB tools](https://github.com/mdagois/gbtools) repository.
+It is used to build the [games](games) in the repository.
+It handles dependencies, multiple projects and much more.
+Check it out to manage complex projects.
 
 ## Support
 
