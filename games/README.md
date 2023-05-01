@@ -12,5 +12,9 @@ A batch, `build.bat`, is also available to build on Windows.
 
 ## List
 
-* Minesweep: the famous puzzle game.
+### Minesweep
+
+A logic puzzle game in which 40 mines are hidden in a 16x16 grid.
+
+![](images/minesweep.png)
 
