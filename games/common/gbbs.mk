@@ -12,6 +12,9 @@
 # secondary expansion is heavily used in rule generation
 .SECONDEXPANSION:
 
+# include the user configuration (e.g. to override the shell command directory)
+-include user.mk
+
 ########################################
 # Helper functions
 ########################################
@@ -89,6 +92,8 @@ rgbds_directory_with_slash := $(if $(rgbds_directory),$(rgbds_directory)/,)
 rgbasm_command=$(rgbds_directory_with_slash)rgbasm
 rgblink_command=$(rgbds_directory_with_slash)rgblink
 rgbfix_command=$(rgbds_directory_with_slash)rgbfix
+
+# emulator
 emulator_command ?= bgb
 
 ########################################
@@ -264,8 +269,8 @@ $$($1_$2_build_directory)/%$(object_extension): $$(root_directory)/% | $$$$(@D)/
 	$(call compile_command,$1,$2,$$@,$$<)
 
 launch_$1_$2:
-	$(emulator_command) $($1_$2_launch_options_list) $($1_$2_binary) &
-	$(if $($1_$2_launch_options_list2),$(emulator_command) $($1_$2_launch_options_list2) $($1_$2_binary) &,)
+	$(emulator_command) $$($1_$2_launch_options_list) $$($1_$2_binary) &
+	$$(if $$($1_$2_launch_options_list2),$(emulator_command) $$($1_$2_launch_options_list2) $$($1_$2_binary) &,)
 
 clean_$1_$2:
 	$$(rmdir_command) $$($1_$2_build_directory)
