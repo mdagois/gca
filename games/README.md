@@ -8,7 +8,7 @@ A bunch of simple games for Game Boy.
 Check the requirements to use it.
 Note that a copy of `make` is available in the [bin](../bin) directory of the repository.
 
-A batch, `build.bat`, is also available to build on Windows.
+A batch, `build.bat`, is also available as an additional option to build on Windows.
 
 ## List
 
