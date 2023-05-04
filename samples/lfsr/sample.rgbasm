@@ -1,0 +1,232 @@
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[$0040]
+	reti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def TILES_COUNT						equ (384)
+def BYTES_PER_TILE					equ (16)
+def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILEMAP_BYTE_SIZE				equ (1024)
+def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+
+; load the graphics data from ROM to VRAM
+macro LoadGraphicsDataIntoVRAM
+	ld de, GRAPHICS_DATA_ADDRESS_START
+	ld hl, _VRAM8000
+	.load_tile\@
+		ld a, [de]
+		inc de
+		ld [hli], a
+		ld a, d
+		cp a, high(GRAPHICS_DATA_ADDRESS_END)
+		jr nz, .load_tile\@
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+
+WRAM_LSFR_4_BIT					rb 1
+WRAM_LSFR_8_BIT					rb 1
+
+WRAM_END						rb 0
+
+; sanity checks
+def WRAM_USAGE						equ (WRAM_END - _RAM)
+println "WRAM usage: {d:WRAM_USAGE} bytes"
+assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; LFSR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; pick a seed for a 4-bit LFSR and put it in (a)
+macro LFSR4_PickSeed
+	; get a semi-random value from the div timer
+	ld a, [rDIV]
+
+	; make sure the value is not zero
+	or a
+	jr nz, .not_zero\@
+		inc a
+	.not_zero\@
+
+	; mask to leave only 4 bits
+	and a, $0F
+endm
+
+; produce the next 4-bit LFSR value from the value in (a)
+; (a) should not be zero, otherwise zero will be returned
+; this will never produce zero if (a) is not zero
+macro LFSR4_GetNextValue
+	ld d, a ; save the value
+	ld e, a ; used to perform the taps
+
+	; bit 2 and 3 are used as taps; the new bit will be in bit 3 of (a)
+		; bit 3 is already at the right place in (a)
+
+		; bit 2
+		sla e
+		xor a, e
+
+	; bring the new bit into the carry
+	swap a
+	rla
+	; transfer the new bit into the original value
+	rl d
+	; save the result in (a) and mask to leave only 4 bits
+	ld a, d
+	and a, $0F
+endm
+
+; pick a seed for a 8-bit LFSR and put it in (a)
+macro LFSR8_PickSeed
+	; get a semi-random value from the div timer
+	ld a, [rDIV]
+
+	; make sure the value is not zero
+	or a
+	jr nz, .not_zero\@
+		inc a
+	.not_zero\@
+endm
+
+; produce the next 8-bit LFSR value from the value in (a)
+; (a) should not be zero, otherwise zero will be returned
+; this will never produce zero if (a) is not zero
+macro LFSR8_GetNextValue
+	ld d, a ; save the value
+	ld e, a ; used to perform the taps
+
+	; bit 7, 5, 4 and 3 are used as taps; the new bit will be in the highest bit of (a)
+		; bit 7 is already at the right place in (a)
+
+		; bit 5
+		sla e
+		sla e
+		xor a, e
+
+		; bit 4
+		sla e
+		xor a, e
+
+		; bit 3
+		sla e
+		xor a, e
+
+	; bring the new bit into the carry
+	rla
+	; transfer the new bit into the original value
+	rl d
+	; save the result in (a)
+	ld a, d
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "sample", rom0
+
+; convert (a) from hexadecimal to a tile index
+macro HexToTileA
+	ld h, 0
+	ld l, a
+	ld de, HexToTileTable
+	add hl, de
+	ld a, [hl]
+endm
+
+HexToTileTable:
+db $50, $51, $52, $53
+db $54, $55, $56, $57
+db $58, $59, $61, $62
+db $63, $64, $65, $66
+
+; \1 = line, \2 = offset x
+macro DisplayRegisterA
+	push af
+	swap a
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
+	pop af
+	and a, $0F
+	HexToTileA
+	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+InitSample:
+	; init the WRAM state
+	ClearMemory _RAM, WRAM_END
+	InitPadInput WRAM_PAD_INPUT
+
+	; pick non-zero seeds for LFSRs
+	LFSR4_PickSeed
+	ld [WRAM_LSFR_4_BIT], a
+	LFSR8_PickSeed
+	ld [WRAM_LSFR_8_BIT], a
+
+	; init the palette
+	ld a, %11100100
+	ld [rBGP], a
+
+	LoadGraphicsDataIntoVRAM
+
+	; enable the vblank interrupt
+	ld a, IEF_VBLANK
+	ld [rIE], a
+	ei
+
+	; set the graphics parameters and turn back LCD on
+	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+	ld [rLCDC], a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+UpdateSample:
+	halt
+
+	ld a, [WRAM_LSFR_4_BIT]
+	DisplayRegisterA 3, 10
+	ld a, [WRAM_LSFR_8_BIT]
+	DisplayRegisterA 5, 10
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	UpdatePadInput WRAM_PAD_INPUT
+
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_A
+	jr nz, .lfsr_4
+		ld a, [WRAM_LSFR_4_BIT]
+		LFSR4_GetNextValue
+		ld [WRAM_LSFR_4_BIT], a
+	.lfsr_4
+
+	TestPadInput_Released WRAM_PAD_INPUT, PADF_B
+	jr nz, .lfsr_8
+		ld a, [WRAM_LSFR_8_BIT]
+		LFSR8_GetNextValue
+		ld [WRAM_LSFR_8_BIT], a
+	.lfsr_8
+
+	ret
+
+export InitSample, UpdateSample
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
+incbin "tileset.chr"
+incbin "lfsr.tlm"
+
