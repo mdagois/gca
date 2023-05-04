@@ -27,6 +27,9 @@ There are also scripts to build all the samples at once.
 They are located at the root of the repository: [build_samples.bat](build_samples.bat) for Windows and [build_samples.sh](build_samples.sh) (a bash script) for the other operating systems.
 The built ROMs are gathered into the `generated/roms` folder at the root of the repository.
 
+Finally, it is possible to build the samples with [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs).
+Just type `make -j` at the root of the repository to build all samples.
+
 ## Assets
 
 All the sample assets are available in the [assets](assets) folder.
