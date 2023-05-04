@@ -211,7 +211,7 @@ It is used to build the [Printer Simulator](tools/printer).
 Please follow the instructions in the makefile file itself to know how to leverage it, and use the Printer Simulator [makefile](tools/printer/makefile) as a reference.
 
 A more complete build system, [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs), is available in the [GB tools](https://github.com/mdagois/gbtools) repository.
-It is used to build the [games](games) in the repository.
+It is used to build the samples and [games](games) in the repository.
 It handles dependencies, multiple projects and much more.
 Check it out to manage complex projects.
 
