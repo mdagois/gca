@@ -163,7 +163,7 @@ macro LFSR8_GetNextValue
 	ld d, a ; save the value
 	ld e, a ; used to perform the taps
 	
-	; bit 7, 5, 4 and 3 are used as taps; the new bit will be in the highest bit of (a)
+	; bits 7, 5, 4 and 3 are used as taps; the new bit will be in the highest bit of (a)
 		; bit 7 is already at the right place in (a)
 
 		; bit 5
