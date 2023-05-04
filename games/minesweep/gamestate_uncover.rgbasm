@@ -1,0 +1,102 @@
+include "board.rgbinc"
+include "counter.rgbinc"
+include "cursor.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+include "memory.rgbinc"
+include "sound.rgbinc"
+
+export GameStateFunc_Uncover
+
+section "gamestate_uncover", rom0
+
+; push an index into the uncover list
+; \1 is an index relative to the coordinate the player uncovered which is in (hl)
+; (hl) remains unchanged
+macro PushAdjacentIntoUncoverList
+	push hl
+		ld de, \1
+		add hl, de
+		Board_PushIntoUncoverList hl
+	pop hl
+endm
+
+GameStateFunc_Uncover:
+	Cursor_Hide
+
+	; pop the coordinate to uncover
+	Board_PopFromUncoverList
+	; (hl) contains the state coordinate
+	; go back to interactive gameplay if the uncover list is empty
+	ld a, high(BOARD_STATE_INVALID_COORDINATE)
+	cp a, h
+	jr nz, .list_not_empty
+		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
+		halt
+		ret
+	.list_not_empty
+
+	; get the board state value, but make sure to keep (hl) unchanged
+	ld de, vBoard
+	add hl, de
+	ld a, [hl]
+	ld de, -vBoard & $FFFF
+	add hl, de
+
+	; check for lose condition (a mine is uncovered)
+	bit BOARD_BIT_MINE, a
+	jr z, .no_lose
+		Sound_Play SOUND_LOSE
+		Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
+		GameState_SetFuncId GAMESTATE_FUNC_ID_LOSE
+		jp .update_graphics
+	.no_lose
+
+	Sound_Play SOUND_UNCOVER_TILE
+
+	; (a) still holds the value at the coordinate
+	; retrieve the number of mines adjacent to the board coordinate
+	and a, ADJACENT_MINES_COUNT_MASK
+
+	; request the tile change, but keep (hl) and (a) unchanged
+	ld_r16_r8 de, a
+	push de
+	push hl
+		add a, TILE_BOARD_SQUARE_NUMBER_0
+		Board_RequestBoardTileChange hl, a
+	pop hl
+	pop de
+	ld a, e
+
+	; check if the number of mines is zero around the coordinate
+	; if so, push the adjacent coordinates to be uncovered
+	or a
+	jp nz, .sum_not_zero
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH + 1)
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH + 0)
+		PushAdjacentIntoUncoverList -(BOARD_STATE_WIDTH - 1)
+		PushAdjacentIntoUncoverList -1
+		PushAdjacentIntoUncoverList +1
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH - 1)
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH + 0)
+		PushAdjacentIntoUncoverList +(BOARD_STATE_WIDTH + 1)
+	.sum_not_zero
+
+	; decrement the uncover counter and check for the win condition
+	ld hl, vUncoveredCount
+	dec [hl]
+	jr nz, .no_win
+		GameState_SetFuncId GAMESTATE_FUNC_ID_WIN
+	.no_win
+	
+	; update the counter
+	ld hl, vUncoveredCount
+	Counter_SetCount [hl]
+
+	.update_graphics
+	halt
+	Cursor_UpdateGraphics
+	Board_ProcessBoardTileChangeRequest
+	Counter_UpdateGraphics
+	ret
+

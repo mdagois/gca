@@ -1,0 +1,125 @@
+include "board.rgbinc"
+include "cursor.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+include "window.rgbinc"
+
+export GameStateFunc_Lose
+
+section "gamestate_lose", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_GetRandom:
+	ld a, [vLfsrValue]
+	LFSR8_GetNextValue
+	ld [vLfsrValue], a
+
+	and a, $07
+	bit 2, a
+	jr z, .positive
+		and a, $03
+		ld b, a
+		xor a
+		sub a, b
+	.positive
+	ret
+
+_ShakeScreen:
+	LFSR8_PickSeed
+	ld [vLfsrValue], a
+
+	ld c, 16
+	.shake
+		call _GetRandom
+		ld hl, rSCX
+		ld [hl], a
+
+		halt
+
+		call _GetRandom
+		ld hl, rSCY
+		ld [hl], a
+
+		halt
+
+		dec c
+		jr nz, .shake
+
+	xor a
+	ld [rSCX], a
+	ld [rSCY], a
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+GameStateFunc_Lose:
+; temp variables on the stack
+rsreset
+lose_LOGICAL_BOARD_COORDINATE	rb 1
+sizeof_lose_TEMP				rb 0
+
+	add sp, -sizeof_lose_TEMP
+
+	Cursor_Disable
+	halt
+	Cursor_UpdateGraphics
+
+	; screen shake
+	call _ShakeScreen
+
+	; uncover all board remaining coordinates
+	ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+	ld [hl], 0
+	ld a, 0
+	; at the start of the loop, (a) must contain the logical coordinate to uncover
+	.uncover_hidden
+		; vsync every 8 coordinates
+		and a, $07
+		jr nz, .no_vsync
+			halt
+		.no_vsync
+
+		; get the value at the coordinate
+		ld a, [hl]
+		Board_ConvertLogicalToBoardStateCoordinate a
+		ld de, vBoard
+		add hl, de
+		ld a, [hl]
+
+		; get the state coordinate back into (hl) for tile change requests
+		ld de, -vBoard & $FFFF
+		add hl, de
+
+		; uncover the tile (either mine or number)
+		bit BOARD_BIT_HIDDEN, a
+		jr z, .not_hidden
+			bit BOARD_BIT_MINE, a
+			jr z, .no_mine
+				Board_RequestBoardTileChange hl, TILE_BOARD_SQUARE_MINE
+				jr .mine_check_end
+			.no_mine
+				and a, ADJACENT_MINES_COUNT_MASK
+				add a, TILE_BOARD_SQUARE_NUMBER_0
+				Board_RequestBoardTileChange hl, a
+			.mine_check_end
+			Board_ProcessBoardTileChangeRequest
+		.not_hidden
+
+		; increment the logical coordinate and put it in (a)
+		ld hl, sp + lose_LOGICAL_BOARD_COORDINATE
+		inc [hl]
+		ld a, [hl]
+	jr nz, .uncover_hidden
+
+	; set next state and clean up
+	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
+	add sp, sizeof_lose_TEMP
+
+	; set game as lost
+	xor a
+	ld [vLastGameIsWin], a
+
+	halt
+	ret
+

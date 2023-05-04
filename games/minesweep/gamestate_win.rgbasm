@@ -1,0 +1,78 @@
+include "cursor.rgbinc"
+include "data.rgbinc"
+include "gamestate.rgbinc"
+include "sound.rgbinc"
+include "window.rgbinc"
+
+export GameStateFunc_Win
+
+section "gamestate_win", rom0
+
+def WIN_TIMER_DURATION equ (240)
+
+GameStateFunc_Win:
+	Sound_Play SOUND_WIN
+	copy [vLastGameIsWin], 1
+
+	Cursor_Disable
+	halt
+	Cursor_UpdateGraphics
+
+	; display victory OAM
+	halt
+	ld hl, OAM_VICTORY + OAMA_Y
+	ld de, sizeof_OAM_ATTRS
+
+		; top row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_TOP_ROW
+		.victory_top_row_oam_show
+			copy [hl], 52
+			add hl, de
+			dec c
+			jr nz, .victory_top_row_oam_show
+
+		; bottom row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_BOTTOM_ROW
+		.victory_bottom_row_oam_show
+			copy [hl], 60
+			add hl, de
+			dec c
+			jr nz, .victory_bottom_row_oam_show
+
+	; keep the victory message visible for a bit
+	ld c, WIN_TIMER_DURATION
+	.wait
+		halt
+		dec c
+		jr nz, .wait
+
+	; hide victory OAM
+	halt
+	ld hl, OAM_VICTORY + OAMA_Y
+	ld de, sizeof_OAM_ATTRS
+
+		; top row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_TOP_ROW
+		.victory_top_row_oam_hide
+			copy [hl], 0
+			add hl, de
+			dec c
+			jr nz, .victory_top_row_oam_hide
+
+		; bottom row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_BOTTOM_ROW
+		.victory_bottom_row_oam_hide
+			copy [hl], 8
+			add hl, de
+			dec c
+			jr nz, .victory_bottom_row_oam_hide
+
+	; set game as won
+	GameState_SetFuncId GAMESTATE_FUNC_ID_SHOW_RESULTS
+	halt
+	ret
+

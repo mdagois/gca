@@ -1,0 +1,120 @@
+if !def(BOARD_RGBINC)
+def BOARD_RGBINC equ 1
+
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; logical board
+; size is 16x16, top left index is (0, 0)
+; coordinates are 1 byte long
+def BOARD_TILE_NUM_X				equ (16)
+def BOARD_TILE_NUM_Y				equ (BOARD_TILE_NUM_X)
+def BOARD_TILES_COUNT				equ (BOARD_TILE_NUM_X * BOARD_TILE_NUM_Y)
+
+; board graphics
+; used to place ui elements
+def BOARD_TILE_OFFSET_X				equ (1)
+def BOARD_TILE_OFFSET_Y				equ ((SCRN_Y_B - BOARD_TILE_NUM_Y) / 2)
+def BOARD_BORDER_TILES_COUNT		equ (2)
+def BOARD_PLAIN_TILES_COUNT			equ ((SCRN_X_B - BOARD_TILE_NUM_X) - BOARD_BORDER_TILES_COUNT)
+def BOARD_PLAIN_TILES_LEFT_COUNT	equ (BOARD_TILE_OFFSET_X - (BOARD_BORDER_TILES_COUNT / 2))
+def BOARD_PLAIN_TILES_RIGHT_COUNT	equ (BOARD_PLAIN_TILES_COUNT - BOARD_PLAIN_TILES_LEFT_COUNT)
+
+; board state
+; a size of 32x16 is used to make the coordinates identical to the vram background
+; coordinates are 2 bytes long
+; it does waste space, but make tiles computations easier
+def BOARD_STATE_WIDTH				equ (SCRN_VX_B)
+def BOARD_STATE_HEIGHT				equ (BOARD_TILE_NUM_Y)
+def BOARD_STATE_SIZE				equ (BOARD_STATE_WIDTH * BOARD_STATE_HEIGHT)
+
+def ADJACENT_MINES_COUNT_BIT_COUNT	equ (4) ; there are up to 8 adjacent mines, so 4 bits are needed
+def ADJACENT_MINES_COUNT_MASK		equ ((1 << ADJACENT_MINES_COUNT_BIT_COUNT) - 1)
+
+; board state flags
+rsreset
+ADJACENT_BOARD_BIT_MINES_COUNT	rb ADJACENT_MINES_COUNT_BIT_COUNT
+BOARD_BIT_FLAGGED				rb 1
+BOARD_BIT_MINE					rb 1
+BOARD_BIT_HIDDEN				rb 1
+BOARD_BITS_COUNT				rb 0
+static_assert BOARD_BITS_COUNT <= 8, "Too many bits used for board bits"
+static_assert ADJACENT_BOARD_BIT_MINES_COUNT == 0, "The mines count must be in the lowest bits"
+
+; miscellaneous
+def BOARD_STATE_MINES_COUNT			equ (40)
+def BOARD_STATE_INVALID_COORDINATE	equ ($FFFF)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; general
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+macro Board_Initialize
+	call _Board_Initialize
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; coordinates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; convert the logical coordinate \1 into a state coordinate
+; save the result coordinate into (hl)
+macro Board_ConvertLogicalToBoardStateCoordinate
+	ld b, \1
+	call _Board_ConvertLogicalToBoardStateCoordinate
+endm
+
+; convert the OAM struct \1 into a state coordinate
+; save the result coordinate into (hl)
+macro Board_ConvertOamToBoardStateCoordinate
+	; put OAM Y into (e)
+	ld hl, \1
+	ld e, [hl]
+	inc hl
+	; put OAM X into (e)
+	ld d, [hl]
+	call _Board_ConvertOamToBoardStateCoordinate
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tile graphics
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; request to change the tile at state coordinate \1 to value \2
+macro Board_RequestBoardTileChange
+	ld_r16_r16 hl, \1
+	ld a, \2
+	call _Board_RequestBoardTileChange
+endm
+
+; perform the tile change if any is requested
+; must be called during vblank
+macro Board_ProcessBoardTileChangeRequest
+	call _Board_ProcessBoardTileChangeRequest
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; uncover list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; reset the uncover list
+macro Board_ResetUncoverList
+	call _Board_ResetUncoverList
+endm
+
+; push state coordinate \1 into the uncover list
+macro Board_PushIntoUncoverList
+	ld_r16_r16 bc, \1
+	call _Board_PushIntoUncoverList
+endm
+
+; pop the last uncover element into (hl)
+macro Board_PopFromUncoverList
+	call _Board_PopFromUncoverList
+endm
+
+endc
+

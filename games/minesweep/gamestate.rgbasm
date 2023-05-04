@@ -1,0 +1,79 @@
+include "gamestate.rgbinc"
+include "memory.rgbinc"
+include "utils.rgbinc"
+
+export _game_state_functions, _GameState_Initialize
+
+section "gamestate", rom0
+
+_game_state_functions:
+dw GameStateFunc_WaitForNewGame
+dw GameStateFunc_NewGame
+dw GameStateFunc_Play
+dw GameStateFunc_PutFlag
+dw GameStateFunc_ShowResults
+dw GameStateFunc_Uncover
+dw GameStateFunc_Lose
+dw GameStateFunc_Win
+_game_state_functions_end:
+
+assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS_COUNT * 2, "Mismatch between the game state table and game state enum"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def VICTORY_SPRITE_START_X equ ((BOARD_TILE_OFFSET_X + (BOARD_TILE_NUM_X - VICTORY_SPRITES_PER_ROW) / 2) * TILE_SIDE + OAM_X_OFS)
+
+_GameState_Initialize:
+	; victory OAM
+	ld hl, OAM_VICTORY
+
+		; top row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_TOP_ROW
+		ld d, VICTORY_SPRITE_START_X
+		.victory_top_row_oam_setup
+			; y
+			copy [hli], 0
+
+			; x
+			copy [hli], d
+			ld a, 8
+			add a, d
+			ld d, a
+
+			; tile
+			copy [hli], b
+			inc b
+
+			; flags
+			copy [hli], 0
+
+			dec c
+			jr nz, .victory_top_row_oam_setup
+
+		; bottom row
+		ld c, VICTORY_SPRITES_PER_ROW
+		ld b, TILE_VICTORY_BOTTOM_ROW
+		ld d, VICTORY_SPRITE_START_X
+		.victory_bottom_row_oam_setup
+			; y
+			copy [hli], 8
+
+			; x
+			copy [hli], d
+			ld a, 8
+			add a, d
+			ld d, a
+
+			; tile
+			copy [hli], b
+			inc b
+
+			; flags
+			copy [hli], 0
+
+			dec c
+			jr nz, .victory_bottom_row_oam_setup
+
+	ret
+

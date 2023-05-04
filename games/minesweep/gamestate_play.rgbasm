@@ -1,0 +1,93 @@
+include "board.rgbinc"
+include "cursor.rgbinc"
+include "gamestate.rgbinc"
+include "memory.rgbinc"
+
+export GameStateFunc_Play
+
+section "gamestate_play", rom0
+
+; move the cursor based on the player's input
+; the cursor will wrap around when moved over any side of the board
+macro CheckCursorMove
+	; check dpad left
+	PadInput_TestPressed vPadInput, PADF_LEFT
+	jr nz, .left_not_pressed\@
+		ld a, [vCursorOam + OAMA_X]
+		add a, -TILE_SIDE
+		cp a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_X_OFS
+		jr nc, .no_left_wrap\@
+			ld a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X - 1) * TILE_SIDE + OAM_X_OFS
+		.no_left_wrap\@
+		ld [vCursorOam + OAMA_X], a
+	.left_not_pressed\@
+
+	; check dpad right
+	PadInput_TestPressed vPadInput, PADF_RIGHT
+	jr nz, .right_not_pressed\@
+		ld a, [vCursorOam + OAMA_X]
+		add a, TILE_SIDE
+		cp a, (BOARD_TILE_OFFSET_X + BOARD_TILE_NUM_X) * TILE_SIDE + OAM_X_OFS
+		jr c, .no_right_wrap\@
+			ld a, BOARD_TILE_OFFSET_X * TILE_SIDE + OAM_X_OFS
+		.no_right_wrap\@
+		ld [vCursorOam + OAMA_X], a
+	.right_not_pressed\@
+
+	; check dpad up
+	PadInput_TestPressed vPadInput, PADF_UP
+	jr nz, .up_not_pressed\@
+		ld a, [vCursorOam + OAMA_Y]
+		add a, -TILE_SIDE
+		cp a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_Y_OFS
+		jr nc, .no_up_wrap\@
+			ld a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y - 1) * TILE_SIDE + OAM_Y_OFS
+		.no_up_wrap\@
+		ld [vCursorOam + OAMA_Y], a
+	.up_not_pressed\@
+
+	; check dpad down
+	PadInput_TestPressed vPadInput, PADF_DOWN
+	jr nz, .down_not_pressed\@
+		ld a, [vCursorOam + OAMA_Y]
+		add a, TILE_SIDE
+		cp a, (BOARD_TILE_OFFSET_Y + BOARD_TILE_NUM_Y) * TILE_SIDE + OAM_Y_OFS
+		jr c, .no_down_wrap\@
+			ld a, BOARD_TILE_OFFSET_Y * TILE_SIDE + OAM_Y_OFS
+		.no_down_wrap\@
+		ld [vCursorOam + OAMA_Y], a
+	.down_not_pressed\@
+endm
+
+; trigger actions based on the player's input
+; only one action can be triggered at the same time as they change the game state
+macro CheckActions
+	; check flag action
+	PadInput_TestPressed vPadInput, PADF_A
+	jr nz, .no_flag_action\@
+		Board_ConvertOamToBoardStateCoordinate vCursorOam
+		store16 vFlagCoordinate, hl
+		GameState_SetFuncId GAMESTATE_FUNC_ID_FLAG
+		jr .actions_check_done\@
+	.no_flag_action\@
+
+	; check uncover action
+	PadInput_TestPressed vPadInput, PADF_B
+	jr nz, .no_uncover_action\@
+		Board_ResetUncoverList
+		Board_ConvertOamToBoardStateCoordinate vCursorOam
+		Board_PushIntoUncoverList hl
+		GameState_SetFuncId GAMESTATE_FUNC_ID_UNCOVER
+	.no_uncover_action\@
+
+	.actions_check_done\@
+endm
+
+GameStateFunc_Play:
+	Cursor_Show
+	CheckCursorMove
+	CheckActions
+	halt
+	Cursor_UpdateGraphics
+	ret
+
