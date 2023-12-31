@@ -2,7 +2,7 @@
 # global
 ########################################
 
-projects = minesweep
+projects = minesweep bustout
 configurations = debug release
 default_target = all
 
@@ -36,9 +36,9 @@ minesweep_debug_compile_options = -DSHOW_MINES
 # bustout
 ########################################
 
-minesweep_description = a brick breaker game
-minesweep_sources = $(wildcard bustout/*.rgbasm)
-minesweep_link_options = --dmg --tiny --wramx
+bustout_description = a brick breaker game
+bustout_sources = $(wildcard bustout/*.rgbasm)
+bustout_link_options = --dmg --tiny --wramx
 
 ########################################
 # extra rules

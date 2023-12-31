@@ -1,0 +1,22 @@
+include "utils.rgbinc"
+
+export tile_data_start, tile_data_end
+
+section "data", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tileset
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+tile_data_start:
+incbin "res/tiles.chr"
+tile_data_end:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; sanity check
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def MAX_TILES_COUNT					equ (384)
+def TILE_DATA_SIZE					equ (MAX_TILES_COUNT * BYTES_PER_TILE)
+static_assert tile_data_end - tile_data_start == TILE_DATA_SIZE, "The tile data size is expected to be ${X:TILE_DATA_SIZE}"
+
