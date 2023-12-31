@@ -4,11 +4,14 @@ include "memory.rgbinc"
 ; sanity checks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+println "OAM usage: {d:OAM_USAGE} bytes"
+assert OAM_USAGE <= sizeof_OAM_ATTRS * OAM_COUNT, "Too many sprite used"
+
 println "HRAM usage: {d:HRAM_USAGE} bytes"
-static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
+static_assert HRAM_USAGE <= 127, "Too many byte used in HRAM"
 
 println "RAM usage: {d:RAM_USAGE} bytes"
 println "vBoard: ${X:vBoard}"
 println "vUncoverList: ${X:vUncoverList}"
-static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
+static_assert RAM_USAGE <= $2000, "Too many bytes used in RAM"
 

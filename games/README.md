@@ -18,3 +18,7 @@ A logic puzzle game in which 40 mines are hidden in a 16x16 grid.
 
 ![](images/minesweep.png)
 
+### Bustout
+
+![](images/bustout.png)
+

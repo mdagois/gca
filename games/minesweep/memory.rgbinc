@@ -16,7 +16,6 @@ OAM_VICTORY				rb sizeof_OAM_ATTRS * VICTORY_OAM_COUNT
 OAM_END					rb 0
 
 def OAM_USAGE				equ (OAM_END - _OAMRAM)
-assert OAM_USAGE <= sizeof_OAM_ATTRS * OAM_COUNT, "Too many sprite used"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
