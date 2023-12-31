@@ -1,0 +1,42 @@
+if !def(MEMORY_RGBINC)
+def MEMORY_RGBINC equ 1
+
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; OAM addresses
+rsset _OAMRAM
+
+vDummyOAM						rb 1
+
+OAM_END							rb 0
+
+def OAM_USAGE				equ (OAM_END - _OAMRAM)
+assert OAM_USAGE <= sizeof_OAM_ATTRS * OAM_COUNT, "Too many sprite used"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _HRAM
+
+; input
+vPadInput						rb sizeof_PAD_INPUT
+
+HRAM_END						rb 0
+
+def HRAM_USAGE equ (HRAM_END - _HRAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _RAM
+
+vDummyRam						rb 1
+
+RAM_END							rb 0
+
+def RAM_USAGE equ (RAM_END - _RAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

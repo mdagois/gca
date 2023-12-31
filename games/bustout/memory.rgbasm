@@ -1,0 +1,12 @@
+include "memory.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; sanity checks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+println "HRAM usage: {d:HRAM_USAGE} bytes"
+static_assert HRAM_USAGE < 64, "Too many byte used in HRAM (keeping some for the stack)"
+
+println "RAM usage: {d:RAM_USAGE} bytes"
+static_assert RAM_USAGE < $2000, "Too many bytes used in RAM"
+

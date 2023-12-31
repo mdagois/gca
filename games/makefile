@@ -27,10 +27,18 @@ gfxconv = ../bin/gfxconv
 # minesweep
 ########################################
 
-minesweep_description = a simple minesweep game
+minesweep_description = a 16x16 minesweep game
 minesweep_sources = $(wildcard minesweep/*.rgbasm)
 minesweep_link_options = --dmg --tiny --wramx
 minesweep_debug_compile_options = -DSHOW_MINES
+
+########################################
+# bustout
+########################################
+
+minesweep_description = a brick breaker game
+minesweep_sources = $(wildcard bustout/*.rgbasm)
+minesweep_link_options = --dmg --tiny --wramx
 
 ########################################
 # extra rules
