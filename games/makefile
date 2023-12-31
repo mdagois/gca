@@ -41,11 +41,15 @@ bustout_sources = $(wildcard bustout/*.rgbasm)
 bustout_link_options = --dmg --tiny --wramx
 
 ########################################
-# extra rules
+# resource rules
 ########################################
 
 %.chr: %.png
 	$(gfxconv) $<
+
+resource_list = $(subst .png,.chr,$(foreach project,$(projects),$(wildcard $(project)/res/*.png)))
+.PHONY: resource
+resource: $(resource_list)
 
 ########################################
 

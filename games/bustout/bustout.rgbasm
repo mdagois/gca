@@ -24,7 +24,6 @@ Initialize:
 	ret
 
 Update:
-	;PadInput_Update vPadInput
-	;GameState_CallFunc
+	PadInput_Update vPadInput
 	ret
 
