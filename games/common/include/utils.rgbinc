@@ -31,13 +31,6 @@ macro copy
 	ld \1, a
 endm
 
-; set \1 to zero through (a)
-; example: reset [$FF84]
-macro reset
-	xor a
-	ld \1, a
-endm
-
 ; load 16-bits register \1 into 16-bits register \2
 macro ld_r16_r16
 	ld high(\1), high(\2)
@@ -165,7 +158,7 @@ endm
 ; pick a seed for LFSR and put it in (a)
 macro LFSR8_PickSeed
 	; get a semi-random value from the div timer
-	ld a, [rDIV]
+	ldh a, [rDIV]
 
 	; make sure the value is not zero
 	or a
