@@ -2,7 +2,7 @@
 # global
 ########################################
 
-projects = minesweep bustout
+projects = minesweep pong
 configurations = debug release
 default_target = all
 
@@ -33,12 +33,12 @@ minesweep_link_options = --dmg --tiny --wramx
 minesweep_debug_compile_options = -DSHOW_MINES
 
 ########################################
-# bustout
+# pong
 ########################################
 
-bustout_description = a brick breaker game
-bustout_sources = $(wildcard bustout/*.rgbasm)
-bustout_link_options = --dmg --tiny --wramx
+pong_description = a brick breaker game
+pong_sources = $(wildcard pong/*.rgbasm)
+pong_link_options = --dmg --tiny --wramx
 
 ########################################
 # resource rules
