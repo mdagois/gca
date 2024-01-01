@@ -48,18 +48,18 @@ def SERIAL_NO_DATA					equ ($FF)
 
 rsset _RAM
 
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-WRAM_IS_VBLANK					rb 1
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_IS_VBLANK					rb 1
 
-WRAM_ROLE						rb 1
-WRAM_DATA_RECV					rb SERIAL_BYTES_COUNT
-WRAM_DATA_SEND					rb SERIAL_BYTES_COUNT
-WRAM_DATA_IS_ERROR				rb 1
-WRAM_DATA_INDEX					rb 1
+def WRAM_ROLE						rb 1
+def WRAM_DATA_RECV					rb SERIAL_BYTES_COUNT
+def WRAM_DATA_SEND					rb SERIAL_BYTES_COUNT
+def WRAM_DATA_IS_ERROR				rb 1
+def WRAM_DATA_INDEX					rb 1
 
-WRAM_TRANSFER_COUNTER			rb 1
+def WRAM_TRANSFER_COUNTER			rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

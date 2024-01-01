@@ -25,10 +25,10 @@ def COIN_FRAME_COUNT				equ (6)
 
 rsset _RAM
 
-WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
-WRAM_COIN_FRAME					rb 1
+def WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
+def WRAM_COIN_FRAME					rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

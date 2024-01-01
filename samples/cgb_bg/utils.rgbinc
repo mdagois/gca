@@ -38,11 +38,11 @@ endm
 
 ; struct to hold the pad input (dpad + buttons)
 rsreset
-PAD_INPUT_CURRENT	rb 1
-PAD_INPUT_PREVIOUS	rb 1
-PAD_INPUT_PRESSED	rb 1
-PAD_INPUT_RELEASED	rb 1
-sizeof_PAD_INPUT	rb 0
+def PAD_INPUT_CURRENT	rb 1
+def PAD_INPUT_PREVIOUS	rb 1
+def PAD_INPUT_PRESSED	rb 1
+def PAD_INPUT_RELEASED	rb 1
+def sizeof_PAD_INPUT	rb 0
 
 ; init a pad input struct at address \1
 ; expected to be used only once at initialization

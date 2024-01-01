@@ -53,15 +53,15 @@ def TRANSFER_LIST_MAX_SIZE			equ (16)
 assert (TRANSFER_LIST_MAX_SIZE & (TRANSFER_LIST_MAX_SIZE - 1)) == 0, "TRANSFER_LIST_MAX_SIZE should be a power of two"
 
 rsreset
-TRANSFER_TILEMAP_ADDRESS		rw 1
-TRANSFER_TILE_INDEX				rb 1
-sizeof_TRANSFER					rb 0
+def TRANSFER_TILEMAP_ADDRESS		rw 1
+def TRANSFER_TILE_INDEX				rb 1
+def sizeof_TRANSFER					rb 0
 
 rsreset
-TRANSFER_LIST_LEN				rb 1
-TRANSFER_LIST_NEXT				rw 1
-TRANSFER_LIST_DATA				rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
-sizeof_TRANSFER_LIST			rb 0
+def TRANSFER_LIST_LEN				rb 1
+def TRANSFER_LIST_NEXT				rw 1
+def TRANSFER_LIST_DATA				rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
+def sizeof_TRANSFER_LIST			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -77,9 +77,9 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-PUSH_TRANSFER_PARAM_TILEMAP_PTR	rw 1
-PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
-sizeof_PUSH_TRANSFER_PARAM		rb 0
+def PUSH_TRANSFER_PARAM_TILEMAP_PTR	rw 1
+def PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
+def sizeof_PUSH_TRANSFER_PARAM		rb 0
 
 ; push a single transfer into the transfer list
 _PushTransferFunc:
@@ -437,10 +437,10 @@ InitializeSgbDevice:
 	WaitFrames 60
 	SendCommand SgbPacket_MaskEn_Freeze
 
-COMMAND_INDEX = 0
+def COMMAND_INDEX = 0
 rept ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
 	SendCommand SgbPackets_CoreInit + COMMAND_INDEX
-COMMAND_INDEX += SGB_BYTES_PER_PACKET
+def COMMAND_INDEX += SGB_BYTES_PER_PACKET
 endr
 
 	call PerformCustomInitialization
@@ -455,24 +455,24 @@ endr
 
 rsset _RAM
 
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 
-WRAM_SELECTION_INDEX			rb 1
-WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
+def WRAM_SELECTION_INDEX			rb 1
+def WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
 
-WRAM_EFFECT_A_ID				rb 1
-WRAM_EFFECT_A_PITCH				rb 1
-WRAM_EFFECT_A_VOLUME			rb 1
+def WRAM_EFFECT_A_ID				rb 1
+def WRAM_EFFECT_A_PITCH				rb 1
+def WRAM_EFFECT_A_VOLUME			rb 1
 
-WRAM_EFFECT_B_ID				rb 1
-WRAM_EFFECT_B_PITCH				rb 1
-WRAM_EFFECT_B_VOLUME			rb 1
+def WRAM_EFFECT_B_ID				rb 1
+def WRAM_EFFECT_B_PITCH				rb 1
+def WRAM_EFFECT_B_VOLUME			rb 1
 
-WRAM_BGM_ID						rb 1
+def WRAM_BGM_ID						rb 1
 
-WRAM_SOUND_COMMAND				rb SGB_BYTES_PER_PACKET
+def WRAM_SOUND_COMMAND				rb SGB_BYTES_PER_PACKET
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -544,14 +544,14 @@ def LINE_BGM						equ (10)
 
 ; selection indices
 rsreset
-SELECTION_EFFECT_A				rb 1
-SELECTION_PITCH_A				rb 1
-SELECTION_VOLUME_A				rb 1
-SELECTION_EFFECT_B				rb 1
-SELECTION_PITCH_B				rb 1
-SELECTION_VOLUME_B				rb 1
-SELECTION_BGM					rb 1
-SELECTIONS_COUNT				rb 0
+def SELECTION_EFFECT_A				rb 1
+def SELECTION_PITCH_A				rb 1
+def SELECTION_VOLUME_A				rb 1
+def SELECTION_EFFECT_B				rb 1
+def SELECTION_PITCH_B				rb 1
+def SELECTION_VOLUME_B				rb 1
+def SELECTION_BGM					rb 1
+def SELECTIONS_COUNT				rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
 section "update", rom0

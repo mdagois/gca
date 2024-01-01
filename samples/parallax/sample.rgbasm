@@ -27,10 +27,10 @@ endm
 
 rsset _RAM
 
-WRAM_IS_VBLANK					rb 1
-WRAM_BG_SCROLL_X				rb 3
+def WRAM_IS_VBLANK					rb 1
+def WRAM_BG_SCROLL_X				rb 3
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

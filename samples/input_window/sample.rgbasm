@@ -37,16 +37,16 @@ endm
 rsset _RAM
 
 ; input struct
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 
 ; background scrolling
-WRAM_BG_SCX						rb 1
-WRAM_BG_SCY						rb 1
+def WRAM_BG_SCX						rb 1
+def WRAM_BG_SCY						rb 1
 
 ; window control
-WRAM_WIN_ENABLE_FLAG			rb 1
+def WRAM_WIN_ENABLE_FLAG			rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

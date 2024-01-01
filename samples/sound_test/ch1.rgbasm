@@ -5,10 +5,10 @@ include "shared.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-NOTE_FREQUENCY_CH124			rb 2
-NOTE_FREQUENCY_CH3				rb 2
-NOTE_TILE_INDICES				rb 3
-sizeof_NOTE						rb 0
+def NOTE_FREQUENCY_CH124			rb 2
+def NOTE_FREQUENCY_CH3				rb 2
+def NOTE_TILE_INDICES				rb 3
+def sizeof_NOTE						rb 0
 
 def LENGTH_COUNT					equ 65
 def OCTAVE_NOTES_COUNT				equ 12
@@ -19,25 +19,25 @@ def NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-CONTROL_FLAG_PLAY_SOUND			rb 1
-CONTROL_FLAGS_COUNT				rb 0
+def CONTROL_FLAG_PLAY_SOUND			rb 1
+def CONTROL_FLAGS_COUNT				rb 0
 assert CONTROL_FLAGS_COUNT < 8, "Too many control flags declared"
 
 rsset WRAM_CHANNEL_START
-WRAM_CONTROL_FLAGS				rb 1
-WRAM_SELECTION_INDEX			rb 1
-WRAM_CH1_REGISTER				rb 5
+def WRAM_CONTROL_FLAGS				rb 1
+def WRAM_SELECTION_INDEX			rb 1
+def WRAM_CH1_REGISTER				rb 5
 
-WRAM_NOTE_NUMBER				rb 1
-WRAM_DUTY_INDEX					rb 1
-WRAM_LENGTH_INDEX				rb 1
-WRAM_ENV_INIT					rb 1
-WRAM_ENV_STEP					rb 1
-WRAM_ENV_DIR					rb 1
-WRAM_SWEEP_STEP					rb 1
-WRAM_SWEEP_SHIFT				rb 1
-WRAM_SWEEP_DIR					rb 1
-WRAM_END						rb 0
+def WRAM_NOTE_NUMBER				rb 1
+def WRAM_DUTY_INDEX					rb 1
+def WRAM_LENGTH_INDEX				rb 1
+def WRAM_ENV_INIT					rb 1
+def WRAM_ENV_STEP					rb 1
+def WRAM_ENV_DIR					rb 1
+def WRAM_SWEEP_STEP					rb 1
+def WRAM_SWEEP_SHIFT				rb 1
+def WRAM_SWEEP_DIR					rb 1
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -97,16 +97,16 @@ def LINE_SWEEP_DIR					equ (12)
 
 ; selection indices
 rsreset
-SELECTION_NOTE					rb 1
-SELECTION_DUTY					rb 1
-SELECTION_LENGTH				rb 1
-SELECTION_ENV_INIT				rb 1
-SELECTION_ENV_STEP				rb 1
-SELECTION_ENV_DIR				rb 1
-SELECTION_SWEEP_STEP			rb 1
-SELECTION_SWEEP_SHIFT			rb 1
-SELECTION_SWEEP_DIR				rb 1
-SELECTIONS_COUNT				rb 0
+def SELECTION_NOTE					rb 1
+def SELECTION_DUTY					rb 1
+def SELECTION_LENGTH				rb 1
+def SELECTION_ENV_INIT				rb 1
+def SELECTION_ENV_STEP				rb 1
+def SELECTION_ENV_DIR				rb 1
+def SELECTION_SWEEP_STEP			rb 1
+def SELECTION_SWEEP_SHIFT			rb 1
+def SELECTION_SWEEP_DIR				rb 1
+def SELECTIONS_COUNT				rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

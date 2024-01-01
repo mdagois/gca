@@ -40,10 +40,10 @@ def UPDATE_INTERVAL					equ (60)
 
 rsset _RAM
 
-WRAM_UPDATE_TRACKER				rb 1
-WRAM_RESULTS					rb 4
+def WRAM_UPDATE_TRACKER				rb 1
+def WRAM_RESULTS					rb 4
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
