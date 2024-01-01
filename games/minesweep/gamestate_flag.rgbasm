@@ -10,7 +10,7 @@ section "gamestate_flag", rom0
 
 GameStateFunc_PutFlag:
 	; get the state coordinate for the flag toggling
-	load16 de, vFlagCoordinate
+	load16h de, vFlagCoordinate
 
 	; return early if the coordinate is not set properly
 	ld a, d
@@ -65,7 +65,7 @@ endc
 
 	; clear the flag coordinate
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16 vFlagCoordinate, de
+	store16h vFlagCoordinate, de
 
 	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 

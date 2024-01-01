@@ -13,12 +13,12 @@ def TILE_SIDE						equ (8)
 def BYTES_PER_TILE					equ (16)
 
 rsset $0040
-INTERRUPT_ADDRESS_VBLANK		rb 8
-INTERRUPT_ADDRESS_LCD			rb 8
-INTERRUPT_ADDRESS_TIMER			rb 8
-INTERRUPT_ADDRESS_SERIAL		rb 8
-INTERRUPT_ADDRESS_JOYPAD		rb 8
-INTERRUPT_ADDRESS_END			rb 0
+def INTERRUPT_ADDRESS_VBLANK		rb 8
+def INTERRUPT_ADDRESS_LCD			rb 8
+def INTERRUPT_ADDRESS_TIMER			rb 8
+def INTERRUPT_ADDRESS_SERIAL		rb 8
+def INTERRUPT_ADDRESS_JOYPAD		rb 8
+def INTERRUPT_ADDRESS_END			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions
@@ -71,6 +71,15 @@ macro load16
 	ld high(\1), a
 endm
 
+; load (using ldh) 2 bytes at address \2 into 16-bit register \1
+; example: load16 de, $FF82
+macro load16h
+	ldh a, [\2 + 0]
+	ld low(\1), a
+	ldh a, [\2 + 1]
+	ld high(\1), a
+endm
+
 ; load the content of 16-bit register \2 into two bytes at address \1
 ; example: store16 $FF82, hl
 macro store16
@@ -78,6 +87,15 @@ macro store16
 	ld [\1 + 0], a
 	ld a, high(\2)
 	ld [\1 + 1], a
+endm
+
+; load (using ldh) the content of 16-bit register \2 into two bytes at address \1
+; example: store16 $FF82, hl
+macro store16h
+	ld a, low(\2)
+	ldh [\1 + 0], a
+	ld a, high(\2)
+	ldh [\1 + 1], a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -428,11 +446,11 @@ endm
 
 ; struct to hold the pad input (dpad + buttons)
 rsreset
-PAD_INPUT_CURRENT	rb 1
-PAD_INPUT_PREVIOUS	rb 1
-PAD_INPUT_PRESSED	rb 1
-PAD_INPUT_RELEASED	rb 1
-sizeof_PAD_INPUT	rb 0
+def PAD_INPUT_CURRENT	rb 1
+def PAD_INPUT_PREVIOUS	rb 1
+def PAD_INPUT_PRESSED	rb 1
+def PAD_INPUT_RELEASED	rb 1
+def sizeof_PAD_INPUT	rb 0
 
 ; init a pad input struct at address \1
 ; expected to be used only once at initialization

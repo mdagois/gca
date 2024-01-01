@@ -36,10 +36,10 @@ macro InitWindowActionDescriptionLine
 	endr
 
 	; action
-REPT_TILE_INDEX = 0
+def REPT_TILE_INDEX = 0
 	rept \2
 		ld_hli_v8 \1 + REPT_TILE_INDEX
-REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
+def REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
 	endr
 
 	; space between action and description
@@ -48,10 +48,10 @@ REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
 	endr
 
 	; description
-REPT_TILE_INDEX = 0
+def REPT_TILE_INDEX = 0
 	rept \4
 		ld_hli_v8 \3 + REPT_TILE_INDEX
-REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
+def REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
 	endr
 
 	; right margin and border
@@ -76,10 +76,10 @@ section "window", rom0
 _Window_Initialize:
 	; position the window
 	ld a, WINDOW_X
-	ld [rWX], a
+	ldh [rWX], a
 	ld a, WINDOW_HIDE_Y
-	ld [rWY], a
-	ld [vWindowTargetY], a
+	ldh [rWY], a
+	ldh [vWindowTargetY], a
 
 	; init the tiles map
 	ld hl, _SCRN1
@@ -125,7 +125,7 @@ _Window_Initialize:
 _Window_Hide:
 	Sound_Play SOUND_CLOSE_WINDOW
 	ld a, WINDOW_HIDE_Y
-	ld [vWindowTargetY], a
+	ldh [vWindowTargetY], a
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,7 +142,7 @@ _Window_Show:
 
 	Sound_Play SOUND_OPEN_WINDOW
 	ld a, WINDOW_SHOW_Y
-	ld [vWindowTargetY], a
+	ldh [vWindowTargetY], a
 
 	ret
 
@@ -152,13 +152,13 @@ _Window_Update:
 	push af
 	push bc
 
-	ld a, [rWY]
+	ldh a, [rWY]
 	ld b, a
-	ld a, [vWindowTargetY]
+	ldh a, [vWindowTargetY]
 	sub a, b
 	rra
 	add a, b
-	ld [rWY], a
+	ldh [rWY], a
 
 	pop bc
 	pop af
