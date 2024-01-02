@@ -8,9 +8,13 @@ include "utils.rgbinc"
 ; OAM addresses
 rsset _OAMRAM
 
-def vDummyOAM						rb 1
+def vBallOam				rb sizeof_OAM_ATTRS
+def vLeftPadTopOam			rb sizeof_OAM_ATTRS
+def vLeftPadBottomOam		rb sizeof_OAM_ATTRS
+def vRightPadTopOam			rb sizeof_OAM_ATTRS
+def vRightPadBottomOam		rb sizeof_OAM_ATTRS
 
-def OAM_END							rb 0
+def OAM_END					rb 0
 
 def OAM_USAGE				equ (OAM_END - _OAMRAM)
 
@@ -19,10 +23,10 @@ def OAM_USAGE				equ (OAM_END - _OAMRAM)
 rsset _HRAM
 
 ; input
-def vPadInput						rb sizeof_PAD_INPUT
-def vScore							rb 2
+def vPadInput				rb sizeof_PAD_INPUT
+def vScore					rb 2
 
-def HRAM_END						rb 0
+def HRAM_END				rb 0
 
 def HRAM_USAGE equ (HRAM_END - _HRAM)
 
@@ -30,9 +34,9 @@ def HRAM_USAGE equ (HRAM_END - _HRAM)
 
 rsset _RAM
 
-def vDummyRam						rb 1
+def vDummyRam				rb 1
 
-def RAM_END							rb 0
+def RAM_END					rb 0
 
 def RAM_USAGE equ (RAM_END - _RAM)
 

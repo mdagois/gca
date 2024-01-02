@@ -1,0 +1,65 @@
+include "data.rgbinc"
+include "memory.rgbinc"
+
+export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
+
+section "game", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ResetScore:
+	xor a
+	ldh [vScore + 0], a
+	ldh [vScore + 1], a
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_Game_Initialize:
+	call ResetScore
+
+	; set sprite tile IDs
+		copy [vBallOam + OAMA_TILEID], TILE_ID_BALL
+
+		ld a, TILE_ID_PADS
+		ld [vLeftPadTopOam + OAMA_TILEID], a
+		inc a
+		ld [vLeftPadBottomOam + OAMA_TILEID], a
+		inc a
+		ld [vRightPadTopOam + OAMA_TILEID], a
+		inc a
+		ld [vRightPadBottomOam + OAMA_TILEID], a
+
+	; set sprite initial positions
+		copy [vBallOam + OAMA_X], (SCRN_X + OAM_X_OFS) / 2 + 2
+		copy [vBallOam + OAMA_Y], (SCRN_Y + OAM_Y_OFS) / 2 - 2
+
+		ld a, OAM_X_OFS
+		ld [vLeftPadTopOam + OAMA_X], a
+		ld [vLeftPadBottomOam + OAMA_X], a
+
+		ld a, SCRN_X
+		ld [vRightPadTopOam + OAMA_X], a
+		ld [vRightPadBottomOam + OAMA_X], a
+
+		ld a, ((SCRN_Y + OAM_Y_OFS) / 2) - 8
+		ld [vLeftPadTopOam + OAMA_Y], a
+		ld [vRightPadTopOam + OAMA_Y], a
+		add a, 8
+		ld [vLeftPadBottomOam + OAMA_Y], a
+		ld [vRightPadBottomOam + OAMA_Y], a
+
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_Game_Update:
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; update the game graphics
+; must be used during vblank
+_Game_UpdateGraphics:
+	ret
+

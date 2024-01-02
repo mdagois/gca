@@ -1,4 +1,5 @@
 include "data.rgbinc"
+include "game.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
@@ -8,6 +9,7 @@ section "pong", rom0
 InitGraphics:
 	ld a, %11100100
 	ldh [rBGP], a
+	ld a, %00100100
 	ldh [rOBP0], a
 	xor a, $FF
 	ldh [rOBP1], a
@@ -47,22 +49,26 @@ Initialize:
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
+	OamHideAll
 
 	call InitGraphics
 
+	Game_Initialize
 	Score_Initialize
 
 	copy [rIE], IEF_VBLANK
 	ei
 
-	copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJOFF | LCDCF_BGON
+	copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ8 | LCDCF_BGON
 
 	ret
 
 Update:
 	halt
+	Game_UpdateGraphics
 	Score_UpdateGraphics
 
 	PadInput_Update vPadInput
+	Game_Update
 	ret
 
