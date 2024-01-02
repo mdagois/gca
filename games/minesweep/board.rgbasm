@@ -132,14 +132,14 @@ _Board_RequestBoardTileChange:
 	; set the tile address
 	ld de, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
 	add hl, de
-	store16h vBoardTileRequestAddress, hl
+	store16 vBoardTileRequestAddress, hl
 
 	ret
 
 ; perform the tile change if any is requested (high byte is non-zero)
 ; must be called during vblank
 _Board_ProcessBoardTileChangeRequest:
-	load16h hl, vBoardTileRequestAddress
+	load16 hl, vBoardTileRequestAddress
 	ld a, h
 	or a
 	jr z, .no_tile_operation

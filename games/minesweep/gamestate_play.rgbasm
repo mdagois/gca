@@ -66,7 +66,7 @@ macro CheckActions
 	PadInput_TestPressed vPadInput, PADF_A
 	jr nz, .no_flag_action\@
 		Board_ConvertOamToBoardStateCoordinate vCursorOam
-		store16h vFlagCoordinate, hl
+		store16 vFlagCoordinate, hl
 		GameState_SetFuncId GAMESTATE_FUNC_ID_FLAG
 		jr .actions_check_done\@
 	.no_flag_action\@

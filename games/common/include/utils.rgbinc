@@ -58,37 +58,33 @@ endm
 ; load 2 bytes at address \2 into 16-bit register \1
 ; example: load16 de, $FF82
 macro load16
-	ld a, [\2 + 0]
-	ld low(\1), a
-	ld a, [\2 + 1]
-	ld high(\1), a
-endm
-
-; load (using ldh) 2 bytes at address \2 into 16-bit register \1
-; example: load16 de, $FF82
-macro load16h
+if high(\2) == $FF
 	ldh a, [\2 + 0]
 	ld low(\1), a
 	ldh a, [\2 + 1]
 	ld high(\1), a
+else
+	ld a, [\2 + 0]
+	ld low(\1), a
+	ld a, [\2 + 1]
+	ld high(\1), a
+endc
 endm
 
 ; load the content of 16-bit register \2 into two bytes at address \1
 ; example: store16 $FF82, hl
 macro store16
-	ld a, low(\2)
-	ld [\1 + 0], a
-	ld a, high(\2)
-	ld [\1 + 1], a
-endm
-
-; load (using ldh) the content of 16-bit register \2 into two bytes at address \1
-; example: store16 $FF82, hl
-macro store16h
+if high(\1) == $FF
 	ld a, low(\2)
 	ldh [\1 + 0], a
 	ld a, high(\2)
 	ldh [\1 + 1], a
+else
+	ld a, low(\2)
+	ld [\1 + 0], a
+	ld a, high(\2)
+	ld [\1 + 1], a
+endc
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

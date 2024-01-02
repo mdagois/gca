@@ -141,7 +141,7 @@ macro ResetBoardVariables
 
 	; clear the flag coordinate used by the flag toggling mechanics
 	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16h vFlagCoordinate, de
+	store16 vFlagCoordinate, de
 endm
 
 ; initialize the board graphics
