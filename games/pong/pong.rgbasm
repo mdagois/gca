@@ -1,20 +1,53 @@
+include "data.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
 
 section "bustout", rom0
+
+InitGraphics:
+	ld a, %11100100
+	ldh [rBGP], a
+	ldh [rOBP0], a
+	xor a, $FF
+	ldh [rOBP1], a
+
+	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
+	ClearMemory _SCRN0, (_SCRN1 - _SCRN0) * 2
+
+	; draw the walls
+	ld hl, _SCRN0
+	ld de, _SCRN0 + SCRN_VX_B * (SCRN_Y_B - 1)
+	ld c, SCRN_X_B
+	.walls
+		ld a, TILE_ID_TOP_WALL
+		ld [hli], a
+		ld a, TILE_ID_BOTTOM_WALL
+		ld [de], a
+		inc de
+		dec c
+		jr nz, .walls
+
+	; draw the midline
+	ld hl, _SCRN0 + SCRN_VX_B + (SCRN_X_B / 2) - 1
+	ld de, SCRN_VX_B - 2
+	ld c, SCRN_Y_B - 2
+	.midline
+		ld a, TILE_ID_MIDLINE_LEFT
+		ld [hli], a
+		ld a, TILE_ID_MIDLINE_RIGHT
+		ld [hli], a
+		add hl, de
+		dec c
+		jr nz, .midline
+
+	ret
 
 Initialize:
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
 	ClearMemory _RAM, RAM_USAGE
 
-	ld a, %11100100
-	ld [rBGP], a
-	ld [rOBP0], a
-	xor a, $FF
-	ld [rOBP1], a
-
-	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
+	call InitGraphics
 
 	copy [rIE], IEF_VBLANK
 	ei
