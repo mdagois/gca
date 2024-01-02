@@ -26,19 +26,17 @@ rsset _HRAM
 def vPadInput				rb sizeof_PAD_INPUT
 def vScore					rb 2
 
+; ball position
+def vBallX					rb 1
+def vBallY					rb 1
+
+; pads Y
+def vLeftPadY				rb 1
+def vRightPadY				rb 1
+
 def HRAM_END				rb 0
 
 def HRAM_USAGE equ (HRAM_END - _HRAM)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-rsset _RAM
-
-def vDummyRam				rb 1
-
-def RAM_END					rb 0
-
-def RAM_USAGE equ (RAM_END - _RAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

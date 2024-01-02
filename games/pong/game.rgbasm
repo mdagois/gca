@@ -31,8 +31,10 @@ _Game_Initialize:
 		ld [vRightPadBottomOam + OAMA_TILEID], a
 
 	; set sprite initial positions
-		copy [vBallOam + OAMA_X], (SCRN_X + OAM_X_OFS) / 2 + 2
-		copy [vBallOam + OAMA_Y], (SCRN_Y + OAM_Y_OFS) / 2 - 2
+		ld a, (SCRN_X + OAM_X_OFS) / 2 + 2
+		ldh [vBallX], a
+		ld a, (SCRN_Y + OAM_Y_OFS) / 2 - 2
+		ldh [vBallY], a
 
 		ld a, OAM_X_OFS
 		ld [vLeftPadTopOam + OAMA_X], a
@@ -43,11 +45,8 @@ _Game_Initialize:
 		ld [vRightPadBottomOam + OAMA_X], a
 
 		ld a, ((SCRN_Y + OAM_Y_OFS) / 2) - 8
-		ld [vLeftPadTopOam + OAMA_Y], a
-		ld [vRightPadTopOam + OAMA_Y], a
-		add a, 8
-		ld [vLeftPadBottomOam + OAMA_Y], a
-		ld [vRightPadBottomOam + OAMA_Y], a
+		ldh [vLeftPadY], a
+		ldh [vRightPadY], a
 
 	ret
 
@@ -61,5 +60,20 @@ _Game_Update:
 ; update the game graphics
 ; must be used during vblank
 _Game_UpdateGraphics:
+	ldh a, [vBallX]
+	ld [vBallOam + OAMA_X], a
+	ldh a, [vBallY]
+	ld [vBallOam + OAMA_Y], a
+
+	ldh a, [vLeftPadY]
+	ld [vLeftPadTopOam + OAMA_Y], a
+	add a, 8
+	ld [vLeftPadBottomOam + OAMA_Y], a
+
+	ldh a, [vRightPadY]
+	ld [vRightPadTopOam + OAMA_Y], a
+	add a, 8
+	ld [vRightPadBottomOam + OAMA_Y], a
+
 	ret
 

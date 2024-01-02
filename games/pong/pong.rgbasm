@@ -48,7 +48,6 @@ InitGraphics:
 Initialize:
 	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
 	ClearMemory _HRAM, HRAM_USAGE
-	ClearMemory _RAM, RAM_USAGE
 	OamHideAll
 
 	call InitGraphics
