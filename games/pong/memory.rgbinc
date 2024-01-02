@@ -20,6 +20,7 @@ rsset _HRAM
 
 ; input
 def vPadInput						rb sizeof_PAD_INPUT
+def vScore							rb 2
 
 def HRAM_END						rb 0
 

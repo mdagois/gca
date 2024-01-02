@@ -1,8 +1,9 @@
 include "data.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
+include "score.rgbinc"
 
-section "bustout", rom0
+section "pong", rom0
 
 InitGraphics:
 	ld a, %11100100
@@ -49,6 +50,8 @@ Initialize:
 
 	call InitGraphics
 
+	Score_Initialize
+
 	copy [rIE], IEF_VBLANK
 	ei
 
@@ -57,6 +60,9 @@ Initialize:
 	ret
 
 Update:
+	halt
+	Score_UpdateGraphics
+
 	PadInput_Update vPadInput
 	ret
 
