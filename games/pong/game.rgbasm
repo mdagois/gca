@@ -10,7 +10,7 @@ section "game", rom0
 def REAL_FRACTION_PART	equ (0)
 def REAL_INTEGER_PART	equ (1)
 
-; set the value of a 16-bit integer
+; set the 16-bit number at address \1 to value \2
 macro Set16
 	ld a, low(\2)
 	ldh [\1 + REAL_FRACTION_PART], a
@@ -18,7 +18,7 @@ macro Set16
 	ldh [\1 + REAL_INTEGER_PART], a
 endm
 
-; perform a 16-bit add at addresses \1 and \2
+; perform a 16-bit add for numbers at addresses \1 and \2
 ; the result is stored back at address \1
 macro Add16
 	ldh a, [\1 + REAL_FRACTION_PART]
@@ -31,6 +31,25 @@ macro Add16
 	ld b, a
 	ldh a, [\2 + REAL_INTEGER_PART]
 	adc a, b
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+; negate the 16-bit number at address \1
+macro Negate16
+	ldh a, [\1 + REAL_FRACTION_PART]
+	xor a, $FF
+	ld l, a
+	ldh a, [\1 + REAL_INTEGER_PART]
+	xor a, $FF
+	ld h, a
+
+	ld d, 0
+	ld e, 1
+	add hl, de
+
+	ld a, l
+	ldh [\1 + REAL_FRACTION_PART], a
+	ld a, h
 	ldh [\1 + REAL_INTEGER_PART], a
 endm
 
@@ -152,8 +171,30 @@ endc
 	ldh a, [vBallSpeed]
 	ld c, a
 	.ball_update
+		; move the ball
 		Add16 vBallX, vBallDirectionX
 		Add16 vBallY, vBallDirectionY
+
+		; check for top wall collision
+		ldh a, [vBallY + REAL_INTEGER_PART]
+		cp a, BALL_MIN_Y
+		jr nc, .top_wall_collision
+			; apply constraint
+			Set16 vBallY, BALL_MIN_Y << 8
+			; reverse Y direction
+			Negate16 vBallDirectionY
+		.top_wall_collision
+
+		; check for bottom wall collision
+		ldh a, [vBallY + REAL_INTEGER_PART]
+		cp a, BALL_MAX_Y
+		jr c, .bottom_wall_collision
+			; apply constraint
+			Set16 vBallY, BALL_MAX_Y << 8
+			; reverse Y direction
+			Negate16 vBallDirectionY
+		.bottom_wall_collision
+
 		; TODO Collision detection
 		; TODO Collision response
 		; TODO Update score
