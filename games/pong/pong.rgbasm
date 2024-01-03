@@ -50,6 +50,7 @@ Initialize:
 	ClearMemory _HRAM, HRAM_USAGE
 	OamHideAll
 
+	PadInput_Initialize vPadInput
 	call InitGraphics
 
 	Game_Initialize

@@ -39,6 +39,7 @@ minesweep_debug_compile_options = -DSHOW_MINES
 pong_description = a brick breaker game
 pong_sources = $(wildcard pong/*.rgbasm)
 pong_link_options = --dmg --tiny --wramx
+pong_debug_compile_options = -DDEBUG_CONTROL_RIGHT_PAD
 
 ########################################
 # resource rules

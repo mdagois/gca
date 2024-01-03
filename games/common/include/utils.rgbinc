@@ -509,7 +509,7 @@ endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
 ; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
-macro PadInput_TestHeldAll
+macro PadInput_TestHeld
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2
 endm

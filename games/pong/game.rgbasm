@@ -19,40 +19,91 @@ _Game_Initialize:
 	call ResetScore
 
 	; set sprite tile IDs
-		copy [vBallOam + OAMA_TILEID], TILE_ID_BALL
+	copy [vBallOam + OAMA_TILEID], TILE_ID_BALL
+	ld a, TILE_ID_PADS
+	ld [vLeftPadTopOam + OAMA_TILEID], a
+	inc a
+	ld [vLeftPadBottomOam + OAMA_TILEID], a
+	inc a
+	ld [vRightPadTopOam + OAMA_TILEID], a
+	inc a
+	ld [vRightPadBottomOam + OAMA_TILEID], a
 
-		ld a, TILE_ID_PADS
-		ld [vLeftPadTopOam + OAMA_TILEID], a
-		inc a
-		ld [vLeftPadBottomOam + OAMA_TILEID], a
-		inc a
-		ld [vRightPadTopOam + OAMA_TILEID], a
-		inc a
-		ld [vRightPadBottomOam + OAMA_TILEID], a
+	; set ball sprite initial positions
+	ld a, (SCRN_X + OAM_X_OFS) / 2 + 2
+	ldh [vBallX], a
+	ld a, (SCRN_Y + OAM_Y_OFS) / 2 - 2
+	ldh [vBallY], a
 
-	; set sprite initial positions
-		ld a, (SCRN_X + OAM_X_OFS) / 2 + 2
-		ldh [vBallX], a
-		ld a, (SCRN_Y + OAM_Y_OFS) / 2 - 2
-		ldh [vBallY], a
+	; set pad fixed position
+	ld a, OAM_X_OFS
+	ld [vLeftPadTopOam + OAMA_X], a
+	ld [vLeftPadBottomOam + OAMA_X], a
+	ld a, SCRN_X
+	ld [vRightPadTopOam + OAMA_X], a
+	ld [vRightPadBottomOam + OAMA_X], a
 
-		ld a, OAM_X_OFS
-		ld [vLeftPadTopOam + OAMA_X], a
-		ld [vLeftPadBottomOam + OAMA_X], a
-
-		ld a, SCRN_X
-		ld [vRightPadTopOam + OAMA_X], a
-		ld [vRightPadBottomOam + OAMA_X], a
-
-		ld a, ((SCRN_Y + OAM_Y_OFS) / 2) - 8
-		ldh [vLeftPadY], a
-		ldh [vRightPadY], a
+	; set pad variable positions
+	ld a, ((SCRN_Y + OAM_Y_OFS) / 2) - 8
+	ldh [vLeftPadY], a
+	ldh [vRightPadY], a
 
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def WALL_WIDTH			equ (8)
+def PAD_WIDTH			equ (16)
+def PAD_MIN_Y			equ (OAM_Y_OFS + WALL_WIDTH)
+def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_WIDTH - PAD_WIDTH)
+
 _Game_Update:
+	; move and apply constraint to left pad
+	PadInput_TestHeld vPadInput, PADF_UP
+	jr nz, .left_up
+		ldh a, [vLeftPadY]
+		dec a
+		cp a, PAD_MIN_Y
+		jr nc, .left_underflow
+			ld a, PAD_MIN_Y
+		.left_underflow
+		ldh [vLeftPadY], a
+	.left_up
+	PadInput_TestHeld vPadInput, PADF_DOWN
+	jr nz, .left_down
+		ldh a, [vLeftPadY]
+		inc a
+		cp a, PAD_MAX_Y
+		jr c, .left_overflow
+			ld a, PAD_MAX_Y
+		.left_overflow
+		ldh [vLeftPadY], a
+	.left_down
+
+if def(DEBUG_CONTROL_RIGHT_PAD)
+	; move and apply constraint to right pad
+	PadInput_TestHeld vPadInput, PADF_LEFT
+	jr nz, .right_up
+		ldh a, [vRightPadY]
+		dec a
+		cp a, PAD_MIN_Y
+		jr nc, .right_underflow
+			ld a, PAD_MIN_Y
+		.right_underflow
+		ldh [vRightPadY], a
+	.right_up
+	PadInput_TestHeld vPadInput, PADF_RIGHT
+	jr nz, .right_down
+		ldh a, [vRightPadY]
+		inc a
+		cp a, PAD_MAX_Y
+		jr c, .right_overflow
+			ld a, PAD_MAX_Y
+		.right_overflow
+		ldh [vRightPadY], a
+	.right_down
+endc
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
