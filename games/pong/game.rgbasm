@@ -198,8 +198,55 @@ endc
 		; TODO Collision detection
 		; TODO Collision response
 		; TODO Update score
+
+		; check scoring condition
+		ldh a, [vBallDirectionX + REAL_INTEGER_PART]
+		bit 7, a
+		ldh a, [vBallX + REAL_INTEGER_PART]
+		jr z, .score_check
+			; check left
+			cp a, SCRN_X + OAM_X_OFS
+			jr c, .score_check_left
+				; update score
+				ldh a, [vScore + 0]
+				inc a
+				ldh [vScore + 0], a
+
+				; TODO right scoring
+				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
+				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
+				Set16 vBallDirectionX, $0080
+
+				; check win condition
+				cp a, 9
+				jr nz, .score_check_left
+					; TODO right win
+
+			.score_check_left
+			jr .score_check_done
+		.score_check
+			; check right
+			cp a, SCRN_X + OAM_X_OFS
+			jr c, .score_check_right
+				; update score
+				ldh a, [vScore + 1]
+				inc a
+				ldh [vScore + 1], a
+
+				; TODO left scoring
+				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
+				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
+				Set16 vBallDirectionX, $FF80
+
+				; check win condition
+				cp a, 9
+				jr nz, .score_check_right
+					; TODO left win
+			.score_check_right
+		.score_check_done
+
 		dec c
-		jr nz, .ball_update
+		jp nz, .ball_update
 
 	ret
 
