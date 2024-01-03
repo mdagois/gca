@@ -7,6 +7,35 @@ section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def REAL_FRACTION_PART	equ (0)
+def REAL_INTEGER_PART	equ (1)
+
+; set the value of a 16-bit integer
+macro Set16
+	ld a, low(\2)
+	ldh [\1 + REAL_FRACTION_PART], a
+	ld a, high(\2)
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+; perform a 16-bit add at addresses \1 and \2
+; the result is stored back at address \1
+macro Add16
+	ldh a, [\1 + REAL_FRACTION_PART]
+	ld b, a
+	ldh a, [\2 + REAL_FRACTION_PART]
+	add a, b
+	ldh [\1 + REAL_FRACTION_PART], a
+
+	ldh a, [\1 + REAL_INTEGER_PART]
+	ld b, a
+	ldh a, [\2 + REAL_INTEGER_PART]
+	adc a, b
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ResetScore:
 	xor a
 	ldh [vScore + 0], a
@@ -14,6 +43,10 @@ ResetScore:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def BALL_INITIAL_SPEED		equ (1)
+def BALL_INITIAL_DIR_X		equ ($0080)
+def BALL_INITIAL_DIR_Y		equ ($0080)
 
 _Game_Initialize:
 	call ResetScore
@@ -31,9 +64,9 @@ _Game_Initialize:
 
 	; set ball sprite initial positions
 	ld a, (SCRN_X + OAM_X_OFS) / 2 + 2
-	ldh [vBallX], a
+	ldh [vBallX + REAL_INTEGER_PART], a
 	ld a, (SCRN_Y + OAM_Y_OFS) / 2 - 2
-	ldh [vBallY], a
+	ldh [vBallY + REAL_INTEGER_PART], a
 
 	; set pad fixed position
 	ld a, OAM_X_OFS
@@ -48,14 +81,25 @@ _Game_Initialize:
 	ldh [vLeftPadY], a
 	ldh [vRightPadY], a
 
+	; set initial ball dynamics
+	Set16 vBallDirectionX, BALL_INITIAL_DIR_X
+	Set16 vBallDirectionY, BALL_INITIAL_DIR_Y
+	ld a, BALL_INITIAL_SPEED
+	ldh [vBallSpeed], a
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WALL_WIDTH			equ (8)
-def PAD_WIDTH			equ (16)
-def PAD_MIN_Y			equ (OAM_Y_OFS + WALL_WIDTH)
-def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_WIDTH - PAD_WIDTH)
+def WALL_HEIGHT			equ (8)
+def PAD_HEIGHT			equ (16)
+def BALL_HEIGHT			equ (4)
+
+def PAD_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
+def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
+
+def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
+def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
 _Game_Update:
 	; move and apply constraint to left pad
@@ -104,6 +148,18 @@ if def(DEBUG_CONTROL_RIGHT_PAD)
 	.right_down
 endc
 
+	; update ball
+	ldh a, [vBallSpeed]
+	ld c, a
+	.ball_update
+		Add16 vBallX, vBallDirectionX
+		Add16 vBallY, vBallDirectionY
+		; TODO Collision detection
+		; TODO Collision response
+		; TODO Update score
+		dec c
+		jr nz, .ball_update
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -111,9 +167,9 @@ endc
 ; update the game graphics
 ; must be used during vblank
 _Game_UpdateGraphics:
-	ldh a, [vBallX]
+	ldh a, [vBallX + REAL_INTEGER_PART]
 	ld [vBallOam + OAMA_X], a
-	ldh a, [vBallY]
+	ldh a, [vBallY + REAL_INTEGER_PART]
 	ld [vBallOam + OAMA_Y], a
 
 	ldh a, [vLeftPadY]

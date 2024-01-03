@@ -27,8 +27,11 @@ def vPadInput				rb sizeof_PAD_INPUT
 def vScore					rb 2
 
 ; ball position
-def vBallX					rb 1
-def vBallY					rb 1
+def vBallX					rb 2
+def vBallY					rb 2
+def vBallDirectionX			rb 2
+def vBallDirectionY			rb 2
+def vBallSpeed				rb 1
 
 ; pads Y
 def vLeftPadY				rb 1
