@@ -125,7 +125,7 @@ def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
-direction_table:
+direction_table_left:
 ; 22.5 degrees
 dw $0062, $FF14
 dw $0062, $FF14
@@ -152,8 +152,38 @@ dw $00B4, $00B4
 ; 157.5 degrees
 dw $0062, $00EC
 dw $0062, $00EC
-direction_table_end:
-assert (direction_table_end - direction_table) / 4, "There must be 19 directions defined in the table"
+direction_table_left_end:
+assert (direction_table_left_end - direction_table_left) / 4 == 19, "There must be 19 directions defined in the table"
+
+direction_table_right:
+; 22.5 degrees
+dw $FF9E, $FF14
+dw $FF9E, $FF14
+; 45.0 degrees
+dw $FF4C, $FF4C
+dw $FF4C, $FF4C
+dw $FF4C, $FF4C
+; 67.5 degrees
+dw $FF14, $FF9E
+dw $FF14, $FF9E
+dw $FF14, $FF9E
+; 90.0 degrees
+dw $FF01, $0000
+dw $FF01, $0000
+dw $FF01, $0000
+; 112.5 degrees
+dw $FF14, $0062
+dw $FF14, $0062
+dw $FF14, $0062
+; 135.0 degrees
+dw $FF4C, $00B4
+dw $FF4C, $00B4
+dw $FF4C, $00B4
+; 157.5 degrees
+dw $FF9E, $00EC
+dw $FF9E, $00EC
+direction_table_right_end:
+assert (direction_table_right_end - direction_table_right) == (direction_table_left_end - direction_table_left), "The right direction table size must be the same size as the left direction table"
 
 _Game_Update:
 	; move and apply constraint to left pad
@@ -235,7 +265,7 @@ endc
 		bit 7, a
 		ldh a, [vBallX + REAL_INTEGER_PART]
 		jr z, .score_check
-			; check if left pad hit the ball
+			; check if the left pad hit the ball
 			cp a, OAM_X_OFS + PAD_WIDTH
 			jr nz, .left_pad_collision
 				ldh a, [vBallY + REAL_INTEGER_PART]
@@ -262,12 +292,12 @@ endc
 				sub a, d
 
 				; get a pointer to the new direction entries
-				; hl = direction_table + (4 * a)
+				; hl = direction_table_left + (4 * a)
 				add a, a
 				add a, a
 				ld h, 0
 				ld l, a
-				ld de, direction_table
+				ld de, direction_table_left
 				add hl, de
 
 				; update the direction
@@ -280,7 +310,7 @@ endc
 				ld a, [hli]
 				ldh [vBallDirY + REAL_INTEGER_PART], a
 
-				jr .score_check_done
+				jp .score_check_done
 			.left_pad_collision
 
 			; check if left goal reached
@@ -307,6 +337,54 @@ endc
 			.score_check_left
 			jr .score_check_done
 		.score_check
+			; check if the right pad hit the ball
+			cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
+			jr nz, .right_pad_collision
+				ldh a, [vBallY + REAL_INTEGER_PART]
+				ld b, a
+				ldh a, [vRightPadY]
+
+				; check if ball is too low
+				add a, PAD_HEIGHT - 1
+				cp a, b
+				jr c, .right_pad_collision
+
+				; check if ball is too high
+				sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+				cp a, b
+				jr nc, .right_pad_collision
+
+				; NOTE: the ball hit the pad
+
+				; determine the relative position of the ball to the pad
+				; a = vBallY - (vPadY - 3)
+				ld d, a
+				inc d
+				ld a, b
+				sub a, d
+
+				; get a pointer to the new direction entries
+				; hl = direction_table_right + (4 * a)
+				add a, a
+				add a, a
+				ld h, 0
+				ld l, a
+				ld de, direction_table_right
+				add hl, de
+
+				; update the direction
+				ld a, [hli]
+				ldh [vBallDirX + REAL_FRACTION_PART], a
+				ld a, [hli]
+				ldh [vBallDirX + REAL_INTEGER_PART], a
+				ld a, [hli]
+				ldh [vBallDirY + REAL_FRACTION_PART], a
+				ld a, [hli]
+				ldh [vBallDirY + REAL_INTEGER_PART], a
+
+				jr .score_check_done
+			.right_pad_collision
+
 			; check if right goal reached
 			cp a, SCRN_X + OAM_X_OFS
 			jr nz, .score_check_right
