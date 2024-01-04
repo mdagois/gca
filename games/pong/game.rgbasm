@@ -114,6 +114,7 @@ _Game_Initialize:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def WALL_HEIGHT			equ (8)
+def PAD_WIDTH			equ (8)
 def PAD_HEIGHT			equ (16)
 def BALL_WIDTH			equ (4)
 def BALL_HEIGHT			equ (4)
@@ -123,6 +124,29 @@ def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
 def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
+
+direction_table:
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+dw $0080, $0080
+direction_table_end:
+assert (direction_table_end - direction_table) / 4, "There must be 19 directions defined in the table"
 
 _Game_Update:
 	; move and apply constraint to left pad
@@ -204,6 +228,54 @@ endc
 		bit 7, a
 		ldh a, [vBallX + REAL_INTEGER_PART]
 		jr z, .score_check
+			; check if left pad hit the ball
+			cp a, OAM_X_OFS + PAD_WIDTH
+			jr nz, .left_pad_collision
+				ldh a, [vBallY + REAL_INTEGER_PART]
+				ld b, a
+				ldh a, [vLeftPadY]
+
+				; check if ball is too low
+				add a, PAD_HEIGHT - 1
+				cp a, b
+				jr c, .left_pad_collision
+
+				; check if ball is too high
+				sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+				cp a, b
+				jr nc, .left_pad_collision
+
+				; NOTE: the ball hit the pad
+
+				; determine the relative position of the ball to the pad
+				; a = vBallY - (vPadY - 3)
+				ld d, a
+				inc d
+				ld a, b
+				sub a, d
+
+				; get a pointer to the new direction entries
+				; hl = direction_table + (4 * a)
+				add a, a
+				add a, a
+				ld h, 0
+				ld l, a
+				ld de, direction_table
+				add hl, de
+
+				; update the direction
+				ld a, [hli]
+				ldh [vBallDirX + REAL_FRACTION_PART], a
+				ld a, [hli]
+				ldh [vBallDirX + REAL_INTEGER_PART], a
+				ld a, [hli]
+				ldh [vBallDirY + REAL_FRACTION_PART], a
+				ld a, [hli]
+				ldh [vBallDirY + REAL_INTEGER_PART], a
+
+				jr .score_check_done
+			.left_pad_collision
+
 			; check if left goal reached
 			cp a, OAM_X_OFS - BALL_WIDTH
 			jr nz, .score_check_left
@@ -212,7 +284,7 @@ endc
 				inc a
 				ldh [vScore + SCORE_RIGHT_INDEX], a
 
-				; TODO right scoring
+				; TODO reset ball after right score
 				Set16 vBallX, BALL_INITIAL_POS_X
 				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, BALL_INITIAL_DIR_X
@@ -220,6 +292,8 @@ endc
 				; check win condition
 				cp a, 9
 				jr nz, .score_check_left
+					ld a, 1
+					ldh [vBallSpeed], a
 					; TODO right win
 
 			.score_check_left
@@ -233,7 +307,7 @@ endc
 				inc a
 				ldh [vScore + SCORE_LEFT_INDEX], a
 
-				; TODO left scoring
+				; TODO reset ball after left score
 				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
 				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
 				Set16 vBallDirX, -BALL_INITIAL_DIR_X
@@ -241,6 +315,8 @@ endc
 				; check win condition
 				cp a, 9
 				jr nz, .score_check_right
+					ld a, 1
+					ldh [vBallSpeed], a
 					; TODO left win
 
 			.score_check_right
