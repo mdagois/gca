@@ -69,8 +69,8 @@ ResetScore:
 def BALL_INITIAL_SPEED		equ (1)
 def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
 def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
-def BALL_INITIAL_DIR_X		equ ($0080)
-def BALL_INITIAL_DIR_Y		equ ($0080)
+def BALL_INITIAL_DIR_X		equ ($00FF)
+def BALL_INITIAL_DIR_Y		equ ($0000)
 
 _Game_Initialize:
 	call ResetScore
@@ -126,25 +126,32 @@ def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
 direction_table:
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
-dw $0080, $0080
+; 22.5 degrees
+dw $0062, $FF14
+dw $0062, $FF14
+; 45.0 degrees
+dw $00B4, $FF4C
+dw $00B4, $FF4C
+dw $00B4, $FF4C
+; 67.5 degrees
+dw $00EC, $FF9E
+dw $00EC, $FF9E
+dw $00EC, $FF9E
+; 90.0 degrees
+dw $00FF, $0000
+dw $00FF, $0000
+dw $00FF, $0000
+; 112.5 degrees
+dw $00EC, $0062
+dw $00EC, $0062
+dw $00EC, $0062
+; 135.0 degrees
+dw $00B4, $00B4
+dw $00B4, $00B4
+dw $00B4, $00B4
+; 157.5 degrees
+dw $0062, $00EC
+dw $0062, $00EC
 direction_table_end:
 assert (direction_table_end - direction_table) / 4, "There must be 19 directions defined in the table"
 
@@ -288,6 +295,7 @@ endc
 				Set16 vBallX, BALL_INITIAL_POS_X
 				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, BALL_INITIAL_DIR_X
+				Set16 vBallDirY, BALL_INITIAL_DIR_Y
 
 				; check win condition
 				cp a, 9
@@ -311,6 +319,7 @@ endc
 				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
 				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
 				Set16 vBallDirX, -BALL_INITIAL_DIR_X
+				Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
 				; check win condition
 				cp a, 9
