@@ -55,10 +55,13 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def SCORE_LEFT_INDEX	equ (0)
+def SCORE_RIGHT_INDEX	equ (1)
+
 ResetScore:
 	xor a
-	ldh [vScore + 0], a
-	ldh [vScore + 1], a
+	ldh [vScore + SCORE_LEFT_INDEX], a
+	ldh [vScore + SCORE_RIGHT_INDEX], a
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -204,10 +207,10 @@ endc
 			; check if left goal reached
 			cp a, OAM_X_OFS - BALL_WIDTH
 			jr nz, .score_check_left
-				; update score
-				ldh a, [vScore + 0]
+				; update right score
+				ldh a, [vScore + SCORE_RIGHT_INDEX]
 				inc a
-				ldh [vScore + 0], a
+				ldh [vScore + SCORE_RIGHT_INDEX], a
 
 				; TODO right scoring
 				Set16 vBallX, BALL_INITIAL_POS_X
@@ -225,10 +228,10 @@ endc
 			; check if right goal reached
 			cp a, SCRN_X + OAM_X_OFS
 			jr nz, .score_check_right
-				; update score
-				ldh a, [vScore + 1]
+				; update left score
+				ldh a, [vScore + SCORE_LEFT_INDEX]
 				inc a
-				ldh [vScore + 1], a
+				ldh [vScore + SCORE_LEFT_INDEX], a
 
 				; TODO left scoring
 				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
@@ -239,6 +242,7 @@ endc
 				cp a, 9
 				jr nz, .score_check_right
 					; TODO left win
+
 			.score_check_right
 		.score_check_done
 
