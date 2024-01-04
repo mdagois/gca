@@ -64,6 +64,8 @@ ResetScore:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def BALL_INITIAL_SPEED		equ (1)
+def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
+def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
 def BALL_INITIAL_DIR_X		equ ($0080)
 def BALL_INITIAL_DIR_Y		equ ($0080)
 
@@ -82,10 +84,8 @@ _Game_Initialize:
 	ld [vRightPadBottomOam + OAMA_TILEID], a
 
 	; set ball sprite initial positions
-	ld a, (SCRN_X + OAM_X_OFS) / 2 + 2
-	ldh [vBallX + REAL_INTEGER_PART], a
-	ld a, (SCRN_Y + OAM_Y_OFS) / 2 - 2
-	ldh [vBallY + REAL_INTEGER_PART], a
+	Set16 vBallX, BALL_INITIAL_POS_X
+	Set16 vBallY, BALL_INITIAL_POS_Y
 
 	; set pad fixed position
 	ld a, OAM_X_OFS
@@ -101,8 +101,8 @@ _Game_Initialize:
 	ldh [vRightPadY], a
 
 	; set initial ball dynamics
-	Set16 vBallDirectionX, BALL_INITIAL_DIR_X
-	Set16 vBallDirectionY, BALL_INITIAL_DIR_Y
+	Set16 vBallDirX, BALL_INITIAL_DIR_X
+	Set16 vBallDirY, BALL_INITIAL_DIR_Y
 	ld a, BALL_INITIAL_SPEED
 	ldh [vBallSpeed], a
 
@@ -112,6 +112,7 @@ _Game_Initialize:
 
 def WALL_HEIGHT			equ (8)
 def PAD_HEIGHT			equ (16)
+def BALL_WIDTH			equ (4)
 def BALL_HEIGHT			equ (4)
 
 def PAD_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
@@ -172,8 +173,8 @@ endc
 	ld c, a
 	.ball_update
 		; move the ball
-		Add16 vBallX, vBallDirectionX
-		Add16 vBallY, vBallDirectionY
+		Add16 vBallX, vBallDirX
+		Add16 vBallY, vBallDirY
 
 		; check for top wall collision
 		ldh a, [vBallY + REAL_INTEGER_PART]
@@ -182,7 +183,7 @@ endc
 			; apply constraint
 			Set16 vBallY, BALL_MIN_Y << 8
 			; reverse Y direction
-			Negate16 vBallDirectionY
+			Negate16 vBallDirY
 		.top_wall_collision
 
 		; check for bottom wall collision
@@ -192,30 +193,26 @@ endc
 			; apply constraint
 			Set16 vBallY, BALL_MAX_Y << 8
 			; reverse Y direction
-			Negate16 vBallDirectionY
+			Negate16 vBallDirY
 		.bottom_wall_collision
 
-		; TODO Collision detection
-		; TODO Collision response
-		; TODO Update score
-
-		; check scoring condition
-		ldh a, [vBallDirectionX + REAL_INTEGER_PART]
+		; check scoring condition based on ball direction
+		ldh a, [vBallDirX + REAL_INTEGER_PART]
 		bit 7, a
 		ldh a, [vBallX + REAL_INTEGER_PART]
 		jr z, .score_check
-			; check left
-			cp a, SCRN_X + OAM_X_OFS
-			jr c, .score_check_left
+			; check if left goal reached
+			cp a, OAM_X_OFS - BALL_WIDTH
+			jr nz, .score_check_left
 				; update score
 				ldh a, [vScore + 0]
 				inc a
 				ldh [vScore + 0], a
 
 				; TODO right scoring
-				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
-				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
-				Set16 vBallDirectionX, $0080
+				Set16 vBallX, BALL_INITIAL_POS_X
+				Set16 vBallY, BALL_INITIAL_POS_Y
+				Set16 vBallDirX, BALL_INITIAL_DIR_X
 
 				; check win condition
 				cp a, 9
@@ -225,9 +222,9 @@ endc
 			.score_check_left
 			jr .score_check_done
 		.score_check
-			; check right
+			; check if right goal reached
 			cp a, SCRN_X + OAM_X_OFS
-			jr c, .score_check_right
+			jr nz, .score_check_right
 				; update score
 				ldh a, [vScore + 1]
 				inc a
@@ -236,7 +233,7 @@ endc
 				; TODO left scoring
 				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
 				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
-				Set16 vBallDirectionX, $FF80
+				Set16 vBallDirX, -BALL_INITIAL_DIR_X
 
 				; check win condition
 				cp a, 9
