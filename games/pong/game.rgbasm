@@ -217,7 +217,7 @@ _Game_Update:
 
 if def(DEBUG_CONTROL_RIGHT_PAD)
 	; move and apply constraint to right pad
-	PadInput_TestHeld vPadInput, PADF_LEFT
+	PadInput_TestHeld vPadInput, PADF_UP
 	jr nz, .right_up
 		ldh a, [vRightPadY]
 		dec a
@@ -227,7 +227,7 @@ if def(DEBUG_CONTROL_RIGHT_PAD)
 		.right_underflow
 		ldh [vRightPadY], a
 	.right_up
-	PadInput_TestHeld vPadInput, PADF_RIGHT
+	PadInput_TestHeld vPadInput, PADF_DOWN
 	jr nz, .right_down
 		ldh a, [vRightPadY]
 		inc a
