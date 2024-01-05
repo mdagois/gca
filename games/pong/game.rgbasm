@@ -71,6 +71,7 @@ def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
 def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
 def BALL_INITIAL_DIR_X		equ ($00FF)
 def BALL_INITIAL_DIR_Y		equ ($0000)
+def BALL_HIT_COUNTER		equ (5)
 
 _Game_Initialize:
 	call ResetScore
@@ -108,6 +109,10 @@ _Game_Initialize:
 	Set16 vBallDirY, BALL_INITIAL_DIR_Y
 	ld a, BALL_INITIAL_SPEED
 	ldh [vBallSpeed], a
+
+	; miscellaneous
+	ld a, BALL_HIT_COUNTER
+	ldh [vBallHitCounter], a
 
 	ret
 
@@ -310,6 +315,18 @@ endc
 				ld a, [hli]
 				ldh [vBallDirY + REAL_INTEGER_PART], a
 
+				; update ball speed
+				ldh a, [vBallHitCounter]
+				dec a
+				jr nz, .left_speed_up
+					ldh a, [vBallSpeed]
+					inc a
+					ldh [vBallSpeed], a
+
+					ld a, BALL_HIT_COUNTER
+				.left_speed_up
+				ldh [vBallHitCounter], a
+
 				jp .score_check_done
 			.left_pad_collision
 
@@ -327,11 +344,14 @@ endc
 				Set16 vBallDirX, BALL_INITIAL_DIR_X
 				Set16 vBallDirY, BALL_INITIAL_DIR_Y
 
+				ld a, BALL_INITIAL_SPEED
+				ldh [vBallSpeed], a
+				ld a, BALL_HIT_COUNTER
+				ldh [vBallHitCounter], a
+
 				; check win condition
 				cp a, 9
 				jr nz, .score_check_left
-					ld a, 1
-					ldh [vBallSpeed], a
 					; TODO right win
 
 			.score_check_left
@@ -382,6 +402,18 @@ endc
 				ld a, [hli]
 				ldh [vBallDirY + REAL_INTEGER_PART], a
 
+				; update ball speed
+				ldh a, [vBallHitCounter]
+				dec a
+				jr nz, .right_speed_up
+					ldh a, [vBallSpeed]
+					inc a
+					ldh [vBallSpeed], a
+
+					ld a, BALL_HIT_COUNTER
+				.right_speed_up
+				ldh [vBallHitCounter], a
+
 				jr .score_check_done
 			.right_pad_collision
 
@@ -399,11 +431,14 @@ endc
 				Set16 vBallDirX, -BALL_INITIAL_DIR_X
 				Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
+				ld a, BALL_INITIAL_SPEED
+				ldh [vBallSpeed], a
+				ld a, BALL_HIT_COUNTER
+				ldh [vBallHitCounter], a
+
 				; check win condition
 				cp a, 9
 				jr nz, .score_check_right
-					ld a, 1
-					ldh [vBallSpeed], a
 					; TODO left win
 
 			.score_check_right

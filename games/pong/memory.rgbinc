@@ -32,6 +32,7 @@ def vBallY					rb 2
 def vBallDirX				rb 2
 def vBallDirY				rb 2
 def vBallSpeed				rb 1
+def vBallHitCounter			rb 1
 
 ; pads Y
 def vLeftPadY				rb 1
