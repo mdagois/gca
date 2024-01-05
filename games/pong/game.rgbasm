@@ -66,10 +66,10 @@ ResetScore:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def BALL_INITIAL_SPEED		equ (1)
+def BALL_INITIAL_SPEED		equ (2)
 def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
 def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
-def BALL_INITIAL_DIR_X		equ ($00FF)
+def BALL_INITIAL_DIR_X		equ ($007F)
 def BALL_INITIAL_DIR_Y		equ ($0000)
 def BALL_HIT_COUNTER		equ (5)
 
@@ -130,63 +130,65 @@ def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
+; TODO Fix all direction to be unit size
+
 direction_table_left:
 ; 22.5 degrees
-dw $0062, $FF14
-dw $0062, $FF14
+dw $0031, $FF8A
+dw $0031, $FF8A
 ; 45.0 degrees
-dw $00B4, $FF4C
-dw $00B4, $FF4C
-dw $00B4, $FF4C
+dw $005A, $FFA6
+dw $005A, $FFA6
+dw $005A, $FFA6
 ; 67.5 degrees
-dw $00EC, $FF9E
-dw $00EC, $FF9E
-dw $00EC, $FF9E
+dw $0076, $FFCF
+dw $0076, $FFCF
+dw $0076, $FFCF
 ; 90.0 degrees
-dw $00FF, $0000
-dw $00FF, $0000
-dw $00FF, $0000
+dw $007F, $0000
+dw $007F, $0000
+dw $007F, $0000
 ; 112.5 degrees
-dw $00EC, $0062
-dw $00EC, $0062
-dw $00EC, $0062
+dw $0076, $0031
+dw $0076, $0031
+dw $0076, $0031
 ; 135.0 degrees
-dw $00B4, $00B4
-dw $00B4, $00B4
-dw $00B4, $00B4
+dw $005A, $005A
+dw $005A, $005A
+dw $005A, $005A
 ; 157.5 degrees
-dw $0062, $00EC
-dw $0062, $00EC
+dw $0031, $0076
+dw $0031, $0076
 direction_table_left_end:
 assert (direction_table_left_end - direction_table_left) / 4 == 19, "There must be 19 directions defined in the table"
 
 direction_table_right:
 ; 22.5 degrees
-dw $FF9E, $FF14
-dw $FF9E, $FF14
+dw $FFCF, $FF8A
+dw $FFCF, $FF8A
 ; 45.0 degrees
-dw $FF4C, $FF4C
-dw $FF4C, $FF4C
-dw $FF4C, $FF4C
+dw $FFA6, $FFA6
+dw $FFA6, $FFA6
+dw $FFA6, $FFA6
 ; 67.5 degrees
-dw $FF14, $FF9E
-dw $FF14, $FF9E
-dw $FF14, $FF9E
+dw $FF8A, $FFCF
+dw $FF8A, $FFCF
+dw $FF8A, $FFCF
 ; 90.0 degrees
-dw $FF01, $0000
-dw $FF01, $0000
-dw $FF01, $0000
+dw $FF81, $0000
+dw $FF81, $0000
+dw $FF81, $0000
 ; 112.5 degrees
-dw $FF14, $0062
-dw $FF14, $0062
-dw $FF14, $0062
+dw $FF8A, $0031
+dw $FF8A, $0031
+dw $FF8A, $0031
 ; 135.0 degrees
-dw $FF4C, $00B4
-dw $FF4C, $00B4
-dw $FF4C, $00B4
+dw $FFA6, $005A
+dw $FFA6, $005A
+dw $FFA6, $005A
 ; 157.5 degrees
-dw $FF9E, $00EC
-dw $FF9E, $00EC
+dw $FFCF, $0076
+dw $FFCF, $0076
 direction_table_right_end:
 assert (direction_table_right_end - direction_table_right) == (direction_table_left_end - direction_table_left), "The right direction table size must be the same size as the left direction table"
 
@@ -338,22 +340,26 @@ endc
 				inc a
 				ldh [vScore + SCORE_RIGHT_INDEX], a
 
+				; check win condition
+				cp a, 9
+				jr nz, .score_right_win
+					; TODO right win
+					xor a
+					ldh [vScore + SCORE_LEFT_INDEX], a
+					ldh [vScore + SCORE_RIGHT_INDEX], a
+				.score_right_win
+
 				; reset ball after right score
 				Set16 vBallX, BALL_INITIAL_POS_X
 				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, BALL_INITIAL_DIR_X
 				Set16 vBallDirY, BALL_INITIAL_DIR_Y
 
+				; reset ball speed
 				ld a, BALL_INITIAL_SPEED
 				ldh [vBallSpeed], a
 				ld a, BALL_HIT_COUNTER
 				ldh [vBallHitCounter], a
-
-				; check win condition
-				cp a, 9
-				jr nz, .score_check_left
-					; TODO right win
-
 			.score_check_left
 			jr .score_check_done
 		.score_check
@@ -425,22 +431,26 @@ endc
 				inc a
 				ldh [vScore + SCORE_LEFT_INDEX], a
 
+				; check win condition
+				cp a, 9
+				jr nz, .score_left_win
+					; TODO right win
+					xor a
+					ldh [vScore + SCORE_LEFT_INDEX], a
+					ldh [vScore + SCORE_RIGHT_INDEX], a
+				.score_left_win
+
 				; reset ball after left score
 				Set16 vBallX, BALL_INITIAL_POS_X
 				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, -BALL_INITIAL_DIR_X
 				Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
+				; reset ball speed
 				ld a, BALL_INITIAL_SPEED
 				ldh [vBallSpeed], a
 				ld a, BALL_HIT_COUNTER
 				ldh [vBallHitCounter], a
-
-				; check win condition
-				cp a, 9
-				jr nz, .score_check_right
-					; TODO left win
-
 			.score_check_right
 		.score_check_done
 
