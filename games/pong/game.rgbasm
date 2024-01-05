@@ -338,7 +338,7 @@ endc
 				inc a
 				ldh [vScore + SCORE_RIGHT_INDEX], a
 
-				; TODO reset ball after right score
+				; reset ball after right score
 				Set16 vBallX, BALL_INITIAL_POS_X
 				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, BALL_INITIAL_DIR_X
@@ -425,9 +425,9 @@ endc
 				inc a
 				ldh [vScore + SCORE_LEFT_INDEX], a
 
-				; TODO reset ball after left score
-				Set16 vBallX, ((SCRN_X + OAM_X_OFS) / 2 + 2) << 8
-				Set16 vBallY, ((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8
+				; reset ball after left score
+				Set16 vBallX, BALL_INITIAL_POS_X
+				Set16 vBallY, BALL_INITIAL_POS_Y
 				Set16 vBallDirX, -BALL_INITIAL_DIR_X
 				Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
