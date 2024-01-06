@@ -26,7 +26,7 @@ rsset _HRAM
 def vPadInput				rb sizeof_PAD_INPUT
 def vScore					rb 2
 
-; ball position
+; ball
 def vBallX					rb 2
 def vBallY					rb 2
 def vBallDirX				rb 2
@@ -34,9 +34,8 @@ def vBallDirY				rb 2
 def vBallSpeed				rb 1
 def vBallHitCounter			rb 1
 
-; pads Y
-def vLeftPadY				rb 1
-def vRightPadY				rb 1
+; pads
+def vPadsY					rb 2
 
 def HRAM_END				rb 0
 

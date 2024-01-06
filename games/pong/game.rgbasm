@@ -55,13 +55,13 @@ endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SCORE_LEFT_INDEX	equ (0)
-def SCORE_RIGHT_INDEX	equ (1)
+def LEFT_INDEX		equ (0)
+def RIGHT_INDEX		equ (1)
 
 ResetScore:
 	xor a
-	ldh [vScore + SCORE_LEFT_INDEX], a
-	ldh [vScore + SCORE_RIGHT_INDEX], a
+	ldh [vScore + LEFT_INDEX], a
+	ldh [vScore + RIGHT_INDEX], a
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,8 +102,8 @@ _Game_Initialize:
 
 	; set pad variable positions
 	ld a, ((SCRN_Y + OAM_Y_OFS) / 2) - 8
-	ldh [vLeftPadY], a
-	ldh [vRightPadY], a
+	ldh [vPadsY + LEFT_INDEX], a
+	ldh [vPadsY + RIGHT_INDEX], a
 
 	; set initial ball dynamics
 	Set16 vBallDirX, BALL_INITIAL_DIR_X
@@ -195,46 +195,46 @@ UpdatePads:
 	; move and apply constraint to left pad
 	PadInput_TestHeld vPadInput, PADF_UP
 	jr nz, .left_up
-		ldh a, [vLeftPadY]
+		ldh a, [vPadsY + LEFT_INDEX]
 		dec a
 		cp a, PAD_MIN_Y
 		jr nc, .left_underflow
 			ld a, PAD_MIN_Y
 		.left_underflow
-		ldh [vLeftPadY], a
+		ldh [vPadsY + LEFT_INDEX], a
 	.left_up
 	PadInput_TestHeld vPadInput, PADF_DOWN
 	jr nz, .left_down
-		ldh a, [vLeftPadY]
+		ldh a, [vPadsY + LEFT_INDEX]
 		inc a
 		cp a, PAD_MAX_Y
 		jr c, .left_overflow
 			ld a, PAD_MAX_Y
 		.left_overflow
-		ldh [vLeftPadY], a
+		ldh [vPadsY + LEFT_INDEX], a
 	.left_down
 
 if def(DEBUG_CONTROL_RIGHT_PAD)
 	; move and apply constraint to right pad
 	PadInput_TestHeld vPadInput, PADF_UP
 	jr nz, .right_up
-		ldh a, [vRightPadY]
+		ldh a, [vPadsY + RIGHT_INDEX]
 		dec a
 		cp a, PAD_MIN_Y
 		jr nc, .right_underflow
 			ld a, PAD_MIN_Y
 		.right_underflow
-		ldh [vRightPadY], a
+		ldh [vPadsY + RIGHT_INDEX], a
 	.right_up
 	PadInput_TestHeld vPadInput, PADF_DOWN
 	jr nz, .right_down
-		ldh a, [vRightPadY]
+		ldh a, [vPadsY + RIGHT_INDEX]
 		inc a
 		cp a, PAD_MAX_Y
 		jr c, .right_overflow
 			ld a, PAD_MAX_Y
 		.right_overflow
-		ldh [vRightPadY], a
+		ldh [vPadsY + RIGHT_INDEX], a
 	.right_down
 endc
 
@@ -302,6 +302,8 @@ UpdateBall:
 	ldh a, [vBallSpeed]
 	ld c, a
 	.ball_update
+		push bc
+
 		; move the ball
 		Add16 vBallX, vBallDirX
 		Add16 vBallY, vBallDirY
@@ -319,7 +321,7 @@ UpdateBall:
 			jr nz, .left_pad_collision
 				ldh a, [vBallY + REAL_INTEGER_PART]
 				ld b, a
-				ldh a, [vLeftPadY]
+				ldh a, [vPadsY + LEFT_INDEX]
 
 				; check if ball is too low
 				add a, PAD_HEIGHT - 1
@@ -369,17 +371,17 @@ UpdateBall:
 			cp a, OAM_X_OFS - BALL_WIDTH
 			jr nz, .score_check_left
 				; update right score
-				ldh a, [vScore + SCORE_RIGHT_INDEX]
+				ldh a, [vScore + RIGHT_INDEX]
 				inc a
-				ldh [vScore + SCORE_RIGHT_INDEX], a
+				ldh [vScore + RIGHT_INDEX], a
 
 				; check win condition
 				cp a, 9
 				jr nz, .score_right_win
 					; TODO right win
 					xor a
-					ldh [vScore + SCORE_LEFT_INDEX], a
-					ldh [vScore + SCORE_RIGHT_INDEX], a
+					ldh [vScore + LEFT_INDEX], a
+					ldh [vScore + RIGHT_INDEX], a
 				.score_right_win
 
 				; reset ball after right score
@@ -401,7 +403,7 @@ UpdateBall:
 			jr nz, .right_pad_collision
 				ldh a, [vBallY + REAL_INTEGER_PART]
 				ld b, a
-				ldh a, [vRightPadY]
+				ldh a, [vPadsY + RIGHT_INDEX]
 
 				; check if ball is too low
 				add a, PAD_HEIGHT - 1
@@ -451,17 +453,17 @@ UpdateBall:
 			cp a, SCRN_X + OAM_X_OFS
 			jr nz, .score_check_right
 				; update left score
-				ldh a, [vScore + SCORE_LEFT_INDEX]
+				ldh a, [vScore + LEFT_INDEX]
 				inc a
-				ldh [vScore + SCORE_LEFT_INDEX], a
+				ldh [vScore + LEFT_INDEX], a
 
 				; check win condition
 				cp a, 9
 				jr nz, .score_left_win
 					; TODO right win
 					xor a
-					ldh [vScore + SCORE_LEFT_INDEX], a
-					ldh [vScore + SCORE_RIGHT_INDEX], a
+					ldh [vScore + LEFT_INDEX], a
+					ldh [vScore + RIGHT_INDEX], a
 				.score_left_win
 
 				; reset ball after left score
@@ -478,6 +480,7 @@ UpdateBall:
 			.score_check_right
 		.score_check_done
 
+		pop bc
 		dec c
 		jp nz, .ball_update
 
@@ -500,13 +503,13 @@ _Game_UpdateGraphics:
 	ld [vBallOam + OAMA_Y], a
 
 	; update left pad sprite
-	ldh a, [vLeftPadY]
+	ldh a, [vPadsY + LEFT_INDEX]
 	ld [vLeftPadTopOam + OAMA_Y], a
 	add a, 8
 	ld [vLeftPadBottomOam + OAMA_Y], a
 
 	; update right pad sprite
-	ldh a, [vRightPadY]
+	ldh a, [vPadsY + RIGHT_INDEX]
 	ld [vRightPadTopOam + OAMA_Y], a
 	add a, 8
 	ld [vRightPadBottomOam + OAMA_Y], a
