@@ -311,12 +311,14 @@ UpdateBall:
 		; check wall collisions
 		call HandleBallWallCollision
 
-		; check scoring condition based on ball direction
+		; perform checks based on the ball current direction
 		ldh a, [vBallDirX + REAL_INTEGER_PART]
 		bit 7, a
-		ldh a, [vBallX + REAL_INTEGER_PART]
-		jr z, .score_check
+		jp z, .ball_goes_right
+
+		.ball_goes_left
 			; check if the left pad hit the ball
+			ldh a, [vBallX + REAL_INTEGER_PART]
 			cp a, OAM_X_OFS + PAD_WIDTH
 			jr nz, .left_pad_collision
 				ldh a, [vBallY + REAL_INTEGER_PART]
@@ -364,10 +366,11 @@ UpdateBall:
 				; update ball speed
 				call UpdateBallSpeed
 
-				jp .score_check_done
+				jp .ball_checks_done
 			.left_pad_collision
 
-			; check if left goal reached
+			; check whether the ball reached the left goal
+			ldh a, [vBallX + REAL_INTEGER_PART]
 			cp a, OAM_X_OFS - BALL_WIDTH
 			jr nz, .score_check_left
 				; update right score
@@ -395,10 +398,56 @@ UpdateBall:
 				ldh [vBallSpeed], a
 				ld a, BALL_HIT_COUNTER
 				ldh [vBallHitCounter], a
+
+				jp .ball_checks_done
 			.score_check_left
-			jr .score_check_done
-		.score_check
+
+			; check whether the ball collides with the top or bottom of the pad
+			ldh a, [vBallX + REAL_INTEGER_PART]
+			cp a, OAM_X_OFS + PAD_WIDTH
+			jr nc, .left_pad_border_collision
+				ldh a, [vBallY + REAL_INTEGER_PART]
+				ld b, a
+				ldh a, [vPadsY + LEFT_INDEX]
+
+				; check if ball is too low
+				add a, PAD_HEIGHT - 1
+				cp a, b
+				jr c, .left_pad_border_collision
+
+				; check if ball is too high
+				sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+				cp a, b
+				jr nc, .left_pad_border_collision
+
+				; NOTE: the ball hit the pad
+
+				; determine the relative position of the ball to the pad
+				; a = vBallY - (vPadY - 3)
+				ld d, a
+				inc d
+				ld a, b
+				sub a, d
+
+				cp a, 9
+				jr nc, .left_hit_bottom
+				.left_hit_top
+					Set16 vBallDirX, $FFA6
+					Set16 vBallDirY, $FFA6
+					jr .left_pad_border_collision_done
+				.left_hit_bottom
+					Set16 vBallDirX, $FFA6
+					Set16 vBallDirY, $005A
+				.left_pad_border_collision_done
+
+				jp .ball_checks_done
+			.left_pad_border_collision
+
+			jp .ball_checks_done
+
+		.ball_goes_right
 			; check if the right pad hit the ball
+			ldh a, [vBallX + REAL_INTEGER_PART]
 			cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
 			jr nz, .right_pad_collision
 				ldh a, [vBallY + REAL_INTEGER_PART]
@@ -446,10 +495,11 @@ UpdateBall:
 				; update ball speed
 				call UpdateBallSpeed
 
-				jr .score_check_done
+				jr .ball_checks_done
 			.right_pad_collision
 
-			; check if right goal reached
+			; check whether the ball reached the right goal
+			ldh a, [vBallX + REAL_INTEGER_PART]
 			cp a, SCRN_X + OAM_X_OFS
 			jr nz, .score_check_right
 				; update left score
@@ -477,8 +527,52 @@ UpdateBall:
 				ldh [vBallSpeed], a
 				ld a, BALL_HIT_COUNTER
 				ldh [vBallHitCounter], a
+
+				jr .ball_checks_done
 			.score_check_right
-		.score_check_done
+
+			; check whether the ball collides with the top or bottom of the pad
+			ldh a, [vBallX + REAL_INTEGER_PART]
+			cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH + 1
+			jr c, .right_pad_border_collision
+				ldh a, [vBallY + REAL_INTEGER_PART]
+				ld b, a
+				ldh a, [vPadsY + RIGHT_INDEX]
+
+				; check if ball is too low
+				add a, PAD_HEIGHT - 1
+				cp a, b
+				jr c, .right_pad_border_collision
+
+				; check if ball is too high
+				sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+				cp a, b
+				jr nc, .right_pad_border_collision
+
+				; NOTE: the ball hit the pad
+
+				; determine the relative position of the ball to the pad
+				; a = vBallY - (vPadY - 3)
+				ld d, a
+				inc d
+				ld a, b
+				sub a, d
+
+				cp a, 9
+				jr nc, .right_hit_bottom
+				.right_hit_top
+					Set16 vBallDirX, $005A
+					Set16 vBallDirY, $FFA6
+					jr .right_pad_border_collision_done
+				.right_hit_bottom
+					Set16 vBallDirX, $005A
+					Set16 vBallDirY, $005A
+				.right_pad_border_collision_done
+
+				jr .ball_checks_done
+			.right_pad_border_collision
+
+		.ball_checks_done
 
 		pop bc
 		dec c

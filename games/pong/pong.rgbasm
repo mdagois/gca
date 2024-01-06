@@ -5,8 +5,6 @@ include "memory.rgbinc"
 include "score.rgbinc"
 
 ; TODO Code clean up
-; TODO Border collision
-; TODO Use A/B to speed pad
 ; TODO Score animation
 ; TODO Win animation
 ; TODO Sound
