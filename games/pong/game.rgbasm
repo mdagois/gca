@@ -191,30 +191,7 @@ dw $FFCF, $0076
 direction_table_right_end:
 assert (direction_table_right_end - direction_table_right) == (direction_table_left_end - direction_table_left), "The right direction table size must be the same size as the left direction table"
 
-; accelerate the ball each time the hit counter runs out
-UpdateBallSpeed:
-	; update the counter
-	ldh a, [vBallHitCounter]
-	dec a
-	ldh [vBallHitCounter], a
-	ret nz
-
-	; check whether the ball already reached max speed
-	ldh a, [vBallSpeed]
-	cp a, BALL_MAX_SPEED
-	ret z
-
-	; increase the ball speed
-	inc a
-	ldh [vBallSpeed], a
-
-	; reset the counter
-	ld a, BALL_HIT_COUNTER
-	ldh [vBallHitCounter], a
-
-	ret
-
-_Game_Update:
+UpdatePads:
 	; move and apply constraint to left pad
 	PadInput_TestHeld vPadInput, PADF_UP
 	jr nz, .left_up
@@ -261,6 +238,66 @@ if def(DEBUG_CONTROL_RIGHT_PAD)
 	.right_down
 endc
 
+	ret
+
+; accelerate the ball each time the hit counter runs out
+UpdateBallSpeed:
+	; update the counter
+	ldh a, [vBallHitCounter]
+	dec a
+	ldh [vBallHitCounter], a
+	ret nz
+
+	; check whether the ball already reached max speed
+	ldh a, [vBallSpeed]
+	cp a, BALL_MAX_SPEED
+	ret z
+
+	; increase the ball speed
+	inc a
+	ldh [vBallSpeed], a
+
+	; reset the counter
+	ld a, BALL_HIT_COUNTER
+	ldh [vBallHitCounter], a
+
+	ret
+
+; apply collision constraints of the ball with the walls
+HandleBallWallCollision:
+	; check for top wall collision
+	.check_top_wall
+		ldh a, [vBallY + REAL_INTEGER_PART]
+		cp a, BALL_MIN_Y
+		; jump if no collision
+		jr nc, .check_bottom_wall
+
+	; handle the top wall collision
+	.handle_top_wall
+		; apply constraint
+		Set16 vBallY, BALL_MIN_Y << 8
+		; reverse Y direction
+		Negate16 vBallDirY
+		; return early as there cannot be a collision with both walls
+		ret
+
+	; check for bottom wall collision
+	.check_bottom_wall
+		ldh a, [vBallY + REAL_INTEGER_PART]
+		cp a, BALL_MAX_Y
+		; return if no collision
+		ret c
+
+	; handle the bottom wall collision
+	.handle_bottom_wall
+		; apply constraint
+		Set16 vBallY, BALL_MAX_Y << 8
+		; reverse Y direction
+		Negate16 vBallDirY
+
+	ret
+
+UpdateBall:
 	; update ball
 	ldh a, [vBallSpeed]
 	ld c, a
@@ -269,25 +306,8 @@ endc
 		Add16 vBallX, vBallDirX
 		Add16 vBallY, vBallDirY
 
-		; check for top wall collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		cp a, BALL_MIN_Y
-		jr nc, .top_wall_collision
-			; apply constraint
-			Set16 vBallY, BALL_MIN_Y << 8
-			; reverse Y direction
-			Negate16 vBallDirY
-		.top_wall_collision
-
-		; check for bottom wall collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		cp a, BALL_MAX_Y
-		jr c, .bottom_wall_collision
-			; apply constraint
-			Set16 vBallY, BALL_MAX_Y << 8
-			; reverse Y direction
-			Negate16 vBallDirY
-		.bottom_wall_collision
+		; check wall collisions
+		call HandleBallWallCollision
 
 		; check scoring condition based on ball direction
 		ldh a, [vBallDirX + REAL_INTEGER_PART]
@@ -463,21 +483,29 @@ endc
 
 	ret
 
+_Game_Update:
+	call UpdatePads
+	call UpdateBall
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; update the game graphics
 ; must be used during vblank
 _Game_UpdateGraphics:
+	; update ball sprite
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	ld [vBallOam + OAMA_X], a
 	ldh a, [vBallY + REAL_INTEGER_PART]
 	ld [vBallOam + OAMA_Y], a
 
+	; update left pad sprite
 	ldh a, [vLeftPadY]
 	ld [vLeftPadTopOam + OAMA_Y], a
 	add a, 8
 	ld [vLeftPadBottomOam + OAMA_Y], a
 
+	; update right pad sprite
 	ldh a, [vRightPadY]
 	ld [vRightPadTopOam + OAMA_Y], a
 	add a, 8
