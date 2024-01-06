@@ -4,11 +4,11 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
 
+; TODO Code clean up
+; TODO Border collision
 ; TODO Use A/B to speed pad
-; TODO Limit maximum ball speed
 ; TODO Score animation
 ; TODO Win animation
-; TODO Border collision
 ; TODO Sound
 ; TODO AI
 ; TODO Network

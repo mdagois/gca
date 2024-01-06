@@ -67,11 +67,12 @@ ResetScore:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def BALL_INITIAL_SPEED		equ (2)
+def BALL_MAX_SPEED			equ (6)
+def BALL_HIT_COUNTER		equ (5)
 def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
 def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
 def BALL_INITIAL_DIR_X		equ ($007F)
 def BALL_INITIAL_DIR_Y		equ ($0000)
-def BALL_HIT_COUNTER		equ (5)
 
 _Game_Initialize:
 	call ResetScore
@@ -129,8 +130,6 @@ def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
 def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
-
-; TODO Fix all direction to be unit size
 
 direction_table_left:
 ; 22.5 degrees
@@ -321,10 +320,14 @@ endc
 				ldh a, [vBallHitCounter]
 				dec a
 				jr nz, .left_speed_up
+					; check whether the ball already reach max speed
 					ldh a, [vBallSpeed]
+					cp a, BALL_MAX_SPEED
+					jr z, .left_speed_up
+					; increase the ball speed
 					inc a
 					ldh [vBallSpeed], a
-
+					; reset the counter
 					ld a, BALL_HIT_COUNTER
 				.left_speed_up
 				ldh [vBallHitCounter], a
@@ -413,9 +416,13 @@ endc
 				dec a
 				jr nz, .right_speed_up
 					ldh a, [vBallSpeed]
+					; check whether the ball already reach max speed
+					cp a, BALL_MAX_SPEED
+					jr z, .right_speed_up
+					; increase the ball speed
 					inc a
 					ldh [vBallSpeed], a
-
+					; reset the counter
 					ld a, BALL_HIT_COUNTER
 				.right_speed_up
 				ldh [vBallHitCounter], a
