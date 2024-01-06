@@ -7,6 +7,11 @@ section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def LEFT_INDEX		equ (0)
+def RIGHT_INDEX		equ (1)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 def REAL_FRACTION_PART	equ (0)
 def REAL_INTEGER_PART	equ (1)
 
@@ -54,9 +59,6 @@ macro Negate16
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-def LEFT_INDEX		equ (0)
-def RIGHT_INDEX		equ (1)
 
 ResetScore:
 	xor a
@@ -309,7 +311,7 @@ HandleLeftEvents:
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
-	jr nz, .left_pad_collision
+	jr nz, .pad_collision
 		ldh a, [vBallY + REAL_INTEGER_PART]
 		ld b, a
 		ldh a, [vPadsY + LEFT_INDEX]
@@ -317,12 +319,12 @@ HandleLeftEvents:
 		; check if ball is too low
 		add a, PAD_HEIGHT - 1
 		cp a, b
-		jr c, .left_pad_collision
+		jr c, .pad_collision
 
 		; check if ball is too high
 		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
 		cp a, b
-		jr nc, .left_pad_collision
+		jr nc, .pad_collision
 
 		; NOTE: the ball hit the pad
 
@@ -357,12 +359,12 @@ HandleLeftEvents:
 
 		scf
 		ret
-	.left_pad_collision
+	.pad_collision
 
 	; check whether the ball reached the goal
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS - BALL_WIDTH
-	jr nz, .score_check_left
+	jr nz, .score_check
 		; update right score
 		ldh a, [vScore + RIGHT_INDEX]
 		inc a
@@ -370,14 +372,14 @@ HandleLeftEvents:
 
 		; check win condition
 		cp a, SCORE_MAX
-		jr nz, .score_right_win
+		jr nz, .right_win
 			; TODO right win
 			xor a
 			ldh [vScore + LEFT_INDEX], a
 			ldh [vScore + RIGHT_INDEX], a
-		.score_right_win
+		.right_win
 
-		; reset ball after right score
+		; reset ball after scoring
 		Set16 vBallX, BALL_INITIAL_POS_X
 		Set16 vBallY, BALL_INITIAL_POS_Y
 		Set16 vBallDirX, BALL_INITIAL_DIR_X
@@ -391,12 +393,12 @@ HandleLeftEvents:
 
 		scf
 		ret
-	.score_check_left
+	.score_check
 
 	; check whether the ball collided with the top or bottom of the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
-	jr nc, .left_pad_border_collision
+	jr nc, .pad_border_collision
 		ldh a, [vBallY + REAL_INTEGER_PART]
 		ld b, a
 		ldh a, [vPadsY + LEFT_INDEX]
@@ -404,12 +406,12 @@ HandleLeftEvents:
 		; check if ball is too low
 		add a, PAD_HEIGHT - 1
 		cp a, b
-		jr c, .left_pad_border_collision
+		jr c, .pad_border_collision
 
 		; check if ball is too high
 		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
 		cp a, b
-		jr nc, .left_pad_border_collision
+		jr nc, .pad_border_collision
 
 		; NOTE: the ball hit the pad
 
@@ -421,19 +423,19 @@ HandleLeftEvents:
 		sub a, d
 
 		cp a, PAD_HEIGHT + BALL_HEIGHT - 1
-		jr nc, .left_hit_bottom
-		.left_hit_top
+		jr nc, .hit_bottom
+		.hit_top
 			Set16 vBallDirX, $FFA6
 			Set16 vBallDirY, $FFA6
-			jr .left_pad_border_collision_done
-		.left_hit_bottom
+			jr .pad_border_collision_done
+		.hit_bottom
 			Set16 vBallDirX, $FFA6
 			Set16 vBallDirY, $005A
-		.left_pad_border_collision_done
+		.pad_border_collision_done
 
 		scf
 		ret
-	.left_pad_border_collision
+	.pad_border_collision
 
 	rcf
 	ret
@@ -448,7 +450,7 @@ HandleRightEvents:
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
-	jr nz, .right_pad_collision
+	jr nz, .pad_collision
 		ldh a, [vBallY + REAL_INTEGER_PART]
 		ld b, a
 		ldh a, [vPadsY + RIGHT_INDEX]
@@ -456,12 +458,12 @@ HandleRightEvents:
 		; check if ball is too low
 		add a, PAD_HEIGHT - 1
 		cp a, b
-		jr c, .right_pad_collision
+		jr c, .pad_collision
 
 		; check if ball is too high
 		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
 		cp a, b
-		jr nc, .right_pad_collision
+		jr nc, .pad_collision
 
 		; NOTE: the ball hit the pad
 
@@ -496,12 +498,12 @@ HandleRightEvents:
 
 		scf
 		ret
-	.right_pad_collision
+	.pad_collision
 
 	; check whether the ball reached the goal
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, SCRN_X + OAM_X_OFS
-	jr nz, .score_check_right
+	jr nz, .score_check
 		; update left score
 		ldh a, [vScore + LEFT_INDEX]
 		inc a
@@ -509,14 +511,14 @@ HandleRightEvents:
 
 		; check win condition
 		cp a, SCORE_MAX
-		jr nz, .score_left_win
+		jr nz, .left_win
 			; TODO right win
 			xor a
 			ldh [vScore + LEFT_INDEX], a
 			ldh [vScore + RIGHT_INDEX], a
-		.score_left_win
+		.left_win
 
-		; reset ball after left score
+		; reset ball after scoring
 		Set16 vBallX, BALL_INITIAL_POS_X
 		Set16 vBallY, BALL_INITIAL_POS_Y
 		Set16 vBallDirX, -BALL_INITIAL_DIR_X
@@ -530,12 +532,12 @@ HandleRightEvents:
 
 		scf
 		ret
-	.score_check_right
+	.score_check
 
 	; check whether the ball collided with the top or bottom of the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH + 1
-	jr c, .right_pad_border_collision
+	jr c, .pad_border_collision
 		ldh a, [vBallY + REAL_INTEGER_PART]
 		ld b, a
 		ldh a, [vPadsY + RIGHT_INDEX]
@@ -543,12 +545,12 @@ HandleRightEvents:
 		; check if ball is too low
 		add a, PAD_HEIGHT - 1
 		cp a, b
-		jr c, .right_pad_border_collision
+		jr c, .pad_border_collision
 
 		; check if ball is too high
 		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
 		cp a, b
-		jr nc, .right_pad_border_collision
+		jr nc, .pad_border_collision
 
 		; NOTE: the ball hit the pad
 
@@ -560,19 +562,19 @@ HandleRightEvents:
 		sub a, d
 
 		cp a, PAD_HEIGHT + BALL_HEIGHT - 1
-		jr nc, .right_hit_bottom
-		.right_hit_top
+		jr nc, .hit_bottom
+		.hit_top
 			Set16 vBallDirX, $005A
 			Set16 vBallDirY, $FFA6
-			jr .right_pad_border_collision_done
-		.right_hit_bottom
+			jr .pad_border_collision_done
+		.hit_bottom
 			Set16 vBallDirX, $005A
 			Set16 vBallDirY, $005A
-		.right_pad_border_collision_done
+		.pad_border_collision_done
 
 		scf
 		ret
-	.right_pad_border_collision
+	.pad_border_collision
 
 	rcf
 	ret
