@@ -191,6 +191,29 @@ dw $FFCF, $0076
 direction_table_right_end:
 assert (direction_table_right_end - direction_table_right) == (direction_table_left_end - direction_table_left), "The right direction table size must be the same size as the left direction table"
 
+; accelerate the ball each time the hit counter runs out
+UpdateBallSpeed:
+	; update the counter
+	ldh a, [vBallHitCounter]
+	dec a
+	ldh [vBallHitCounter], a
+	ret nz
+
+	; check whether the ball already reached max speed
+	ldh a, [vBallSpeed]
+	cp a, BALL_MAX_SPEED
+	ret z
+
+	; increase the ball speed
+	inc a
+	ldh [vBallSpeed], a
+
+	; reset the counter
+	ld a, BALL_HIT_COUNTER
+	ldh [vBallHitCounter], a
+
+	ret
+
 _Game_Update:
 	; move and apply constraint to left pad
 	PadInput_TestHeld vPadInput, PADF_UP
@@ -317,20 +340,7 @@ endc
 				ldh [vBallDirY + REAL_INTEGER_PART], a
 
 				; update ball speed
-				ldh a, [vBallHitCounter]
-				dec a
-				jr nz, .left_speed_up
-					; check whether the ball already reach max speed
-					ldh a, [vBallSpeed]
-					cp a, BALL_MAX_SPEED
-					jr z, .left_speed_up
-					; increase the ball speed
-					inc a
-					ldh [vBallSpeed], a
-					; reset the counter
-					ld a, BALL_HIT_COUNTER
-				.left_speed_up
-				ldh [vBallHitCounter], a
+				call UpdateBallSpeed
 
 				jp .score_check_done
 			.left_pad_collision
@@ -412,20 +422,7 @@ endc
 				ldh [vBallDirY + REAL_INTEGER_PART], a
 
 				; update ball speed
-				ldh a, [vBallHitCounter]
-				dec a
-				jr nz, .right_speed_up
-					ldh a, [vBallSpeed]
-					; check whether the ball already reach max speed
-					cp a, BALL_MAX_SPEED
-					jr z, .right_speed_up
-					; increase the ball speed
-					inc a
-					ldh [vBallSpeed], a
-					; reset the counter
-					ld a, BALL_HIT_COUNTER
-				.right_speed_up
-				ldh [vBallHitCounter], a
+				call UpdateBallSpeed
 
 				jr .score_check_done
 			.right_pad_collision
