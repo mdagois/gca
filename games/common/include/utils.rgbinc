@@ -24,6 +24,12 @@ def INTERRUPT_ADDRESS_END			rb 0
 ; Macro-instructions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; reset the carry flag
+macro rcf
+	scf
+	ccf
+endm
+
 ; copy \2 into \1 through (a)
 ; example: copy [$FF84], 10
 macro copy
