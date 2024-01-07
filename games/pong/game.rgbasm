@@ -7,11 +7,13 @@ export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
 section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def LEFT_INDEX						equ (0)
 def RIGHT_INDEX						equ (1)
 
-def SCORE_MAX						equ (2)
+def SCORE_MAX						equ (9)
 def GAME_OVER_MESSAGE_TILE_LEFT		equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
 def GAME_OVER_MESSAGE_TILE_RIGHT	equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)
 def GAME_OVER_WAIT_TIME				equ (180)
@@ -161,6 +163,7 @@ _Game_Initialize:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; update the pads' positions
 UpdatePads:
 	; move and apply constraint to left pad
 	PadInput_TestHeld vPadInput, PADF_UP
@@ -273,9 +276,12 @@ HandleBallAndWallCollision:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; \1 -> pad index
-; \2 -> label to jump to when ball does not hit
+; get the position of the ball relative to a given pad
+; the relative position goes from 0 to 18
+; \1 = pad index
+; \2 = label to jump to when ball does not hit
 macro GetRelativeBallYToPadY
+	; load ball and pad Y
 	ldh a, [vBallY + REAL_INTEGER_PART]
 	ld b, a
 	ldh a, [vPadsY + \1]
@@ -300,11 +306,12 @@ macro GetRelativeBallYToPadY
 	sub a, d
 endm
 
+; update the ball direction based on the position it hit a given pad
 ; a = ball Y relative to the pad Y
-; \1 -> pad index
+; \1 = pad index
 macro UpdateBallDirection
 	; register a contains the ball Y relative to the pad Y (0 to 18) 
-	; get a pointer to the new direction entries for X and Y
+	; get a pointer to the new direction
 	add a, a
 	add a, a
 	ld h, 0
@@ -323,8 +330,9 @@ macro UpdateBallDirection
 	ldh [vBallDirY + REAL_INTEGER_PART], a
 endm
 
+; update the ball direction when it hit a given pad border
 ; a = ball Y relative to the pad Y
-; \1 -> pad index
+; \1 = pad index
 macro SetBallDirectionFromBorderCollision
 	cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
 	jr nc, .hit_bottom\@
@@ -334,21 +342,24 @@ if \1 == LEFT_INDEX
 elif \1 == RIGHT_INDEX
 		Set16 vBallDirX, $005A
 else
-	assert false, "Invalid parameter"
+	assert 0, "Invalid parameter"
 endc
 		Set16 vBallDirY, $FFA6
 		jr .pad_border_collision_done\@
 	.hit_bottom\@
 if \1 == LEFT_INDEX
 		Set16 vBallDirX, $FFA6
-else
+elif \1 == RIGHT_INDEX
 		Set16 vBallDirX, $005A
+else
+	assert 0, "Invalid parameter"
 endc
 		Set16 vBallDirY, $005A
 	.pad_border_collision_done\@
 endm
 
-HandleLeftEvents:
+; handle collisions that happens when the ball move toward the left
+HandleLeftSideCollisions:
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
@@ -382,7 +393,8 @@ HandleLeftEvents:
 
 	ret
 
-HandleRightEvents:
+; handle collisions that happens when the ball move toward the right
+HandleRightSideCollisions:
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
@@ -435,10 +447,10 @@ UpdateBall:
 		bit 7, a
 		jr z, .ball_goes_right
 		.ball_goes_left
-			call HandleLeftEvents
+			call HandleLeftSideCollisions
 			jr .events_done
 		.ball_goes_right
-			call HandleRightEvents
+			call HandleRightSideCollisions
 		.events_done
 
 		pop bc
@@ -449,9 +461,11 @@ UpdateBall:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; \1 -> tilemap address
-; \2 -> first tile id
-; \3 -> second tile id
+; set the game over message tilemap tiles
+; a message covers two tiles
+; \1 = message's tilemap starting address
+; \2 = first tile id
+; \3 = second tile id
 macro SetGameOverMessage
 	ld hl, \1
 	ld a, \2
@@ -460,6 +474,7 @@ macro SetGameOverMessage
 	ld [hli], a
 endm
 
+; handle scoring and game over
 UpdateScore:
 	ldh a, [vScoreFlag]
 	or a
@@ -493,6 +508,7 @@ UpdateScore:
 	jr nz, .win
 		halt
 
+		; set the game over messages
 		ldh a, [vScoreFlag]
 		cp a, 1 << LEFT_INDEX
 		jr z, .left_win
@@ -505,16 +521,19 @@ UpdateScore:
 			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_LOSE, TILE_ID_LOSE + 1
 		.win_updated
 
+		; wait a bit
 		ld c, GAME_OVER_WAIT_TIME
 		.wait
 			halt
 			dec c
 			jr nz, .wait
 
+		; clear the game over messages
 		halt
 		SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
 		SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
 
+		; reset score for a new game
 		xor a
 		ldh [vScore + LEFT_INDEX], a
 		ldh [vScore + RIGHT_INDEX], a
@@ -531,6 +550,7 @@ UpdateScore:
 	ld a, BALL_HIT_COUNTER
 	ldh [vBallHitCounter], a
 
+	; reset score flag
 	xor a
 	ldh [vScoreFlag], a
 

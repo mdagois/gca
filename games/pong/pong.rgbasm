@@ -4,7 +4,6 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
 
-; TODO Code comments
 ; TODO Sound
 ;		- ball hits wall
 ;		- ball hits pad
@@ -13,11 +12,11 @@ include "score.rgbinc"
 ;		- ball gets faster
 ;		- game over
 ; TODO AI
-; TODO Network
 
 section "pong", rom0
 
 InitGraphics:
+	; palettes
 	ld a, %11100100
 	ldh [rBGP], a
 	ld a, %00100100
@@ -25,34 +24,38 @@ InitGraphics:
 	xor a, $FF
 	ldh [rOBP1], a
 
+	; load the tileset
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
-	ClearMemory _SCRN0, (_SCRN1 - _SCRN0) * 2
 
-	; draw the walls
-	ld hl, _SCRN0
-	ld de, _SCRN0 + SCRN_VX_B * (SCRN_Y_B - 1)
-	ld c, SCRN_X_B
-	.walls
-		ld a, TILE_ID_TOP_WALL
-		ld [hli], a
-		ld a, TILE_ID_BOTTOM_WALL
-		ld [de], a
-		inc de
-		dec c
-		jr nz, .walls
+	; initialize the tilemap
+		; clear the tilemap
+		ClearMemory _SCRN0, (_SCRN1 - _SCRN0) * 2
 
-	; draw the midline
-	ld hl, _SCRN0 + SCRN_VX_B + (SCRN_X_B / 2) - 1
-	ld de, SCRN_VX_B - 2
-	ld c, SCRN_Y_B - 2
-	.midline
-		ld a, TILE_ID_MIDLINE_LEFT
-		ld [hli], a
-		ld a, TILE_ID_MIDLINE_RIGHT
-		ld [hli], a
-		add hl, de
-		dec c
-		jr nz, .midline
+		; draw the walls
+		ld hl, _SCRN0
+		ld de, _SCRN0 + SCRN_VX_B * (SCRN_Y_B - 1)
+		ld c, SCRN_X_B
+		.walls
+			ld a, TILE_ID_TOP_WALL
+			ld [hli], a
+			ld a, TILE_ID_BOTTOM_WALL
+			ld [de], a
+			inc de
+			dec c
+			jr nz, .walls
+
+		; draw the midline
+		ld hl, _SCRN0 + SCRN_VX_B + (SCRN_X_B / 2) - 1
+		ld de, SCRN_VX_B - 2
+		ld c, SCRN_Y_B - 2
+		.midline
+			ld a, TILE_ID_MIDLINE_LEFT
+			ld [hli], a
+			ld a, TILE_ID_MIDLINE_RIGHT
+			ld [hli], a
+			add hl, de
+			dec c
+			jr nz, .midline
 
 	ret
 
@@ -75,11 +78,14 @@ Initialize:
 	ret
 
 Update:
+	; vblank
 	halt
 	Game_UpdateGraphics
 	Score_UpdateGraphics
 
+	; logic
 	PadInput_Update vPadInput
 	Game_Update
+
 	ret
 

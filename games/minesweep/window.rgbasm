@@ -24,10 +24,10 @@ def WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; init an action description line in the window
-; \1 -> action start tile
-; \2 -> action tile's count
-; \3 -> description start tile
-; \4 -> description tile's count
+; \1 = action start tile
+; \2 = action tile's count
+; \3 = description start tile
+; \4 = description tile's count
 macro InitWindowActionDescriptionLine
 	; left border and margin
 	ld_hli_v8 TILE_WINDOW_LEFT

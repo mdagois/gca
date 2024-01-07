@@ -17,5 +17,7 @@ macro Score_UpdateGraphics
 	call _Score_UpdateGraphics
 endm
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 endc
 

@@ -4,11 +4,15 @@ def MEMORY_RGBINC equ 1
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; oam addresses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; OAM addresses
 rsset _OAMRAM
 
+; ball
 def vBallOam				rb sizeof_OAM_ATTRS
+
+; pads
 def vLeftPadTopOam			rb sizeof_OAM_ATTRS
 def vLeftPadBottomOam		rb sizeof_OAM_ATTRS
 def vRightPadTopOam			rb sizeof_OAM_ATTRS
@@ -18,6 +22,8 @@ def OAM_END					rb 0
 
 def OAM_USAGE				equ (OAM_END - _OAMRAM)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; hram addresses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _HRAM
