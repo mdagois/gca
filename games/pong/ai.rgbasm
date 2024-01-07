@@ -1,4 +1,5 @@
 include "ai.rgbinc"
+include "math16.rgbinc"
 include "memory.rgbinc"
 
 export _AI_GetNextMove
@@ -7,7 +8,35 @@ section "ai", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def BALL_HEIGHT				equ (4)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 _AI_GetNextMove:
-	ld a, AI_MOVE_NONE
-	ret
+	; set the target offset from the ball
+	ld e, 9
+
+	; compute the relative Y of the ball to the pad Y
+	; a = ball Y - pad Y
+	ldh a, [vPadsY + RIGHT_INDEX]
+	ld b, a
+	ldh a, [vBallY + REAL_INTEGER_PART]
+	add a, BALL_HEIGHT - 1
+	sub a, b
+	jp c, .move_up
+
+	; determine how to minize distance to target
+	cp a, e
+	jr z, .move_none
+	jr nc, .move_down
+
+	.move_up
+		ld a, AI_MOVE_UP
+		ret
+	.move_down
+		ld a, AI_MOVE_DOWN
+		ret
+	.move_none
+		ld a, AI_MOVE_NONE
+		ret
 

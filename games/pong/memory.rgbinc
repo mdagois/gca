@@ -26,6 +26,9 @@ def OAM_USAGE				equ (OAM_END - _OAMRAM)
 ; hram addresses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+def LEFT_INDEX				equ (0)
+def RIGHT_INDEX				equ (1)
+
 rsset _HRAM
 
 ; input

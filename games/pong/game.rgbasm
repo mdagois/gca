@@ -11,9 +11,6 @@ section "game", rom0
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def LEFT_INDEX						equ (0)
-def RIGHT_INDEX						equ (1)
-
 def SCORE_MAX						equ (9)
 def GAME_OVER_MESSAGE_TILE_LEFT		equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
 def GAME_OVER_MESSAGE_TILE_RIGHT	equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)

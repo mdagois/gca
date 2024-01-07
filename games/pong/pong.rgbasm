@@ -4,6 +4,8 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
 
+; TODO AI set random target
+; TODO Fix score bug at the end
 ; TODO Sound
 ;		- ball hits wall
 ;		- ball hits pad
