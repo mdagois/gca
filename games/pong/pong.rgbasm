@@ -5,13 +5,13 @@ include "memory.rgbinc"
 include "score.rgbinc"
 
 ; TODO Code comments
-; TODO Win animation
 ; TODO Sound
 ;		- ball hits wall
 ;		- ball hits pad
 ;		- ball hits border
 ;		- goal
 ;		- ball gets faster
+;		- game over
 ; TODO AI
 ; TODO Network
 

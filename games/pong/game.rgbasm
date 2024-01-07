@@ -474,6 +474,62 @@ UpdateScore:
 		ldh [vScore + RIGHT_INDEX], a
 	.score_updated
 
+	; check win condition
+	cp a, SCORE_MAX
+	jr nz, .win
+		halt
+
+		ldh a, [vScoreFlag]
+		cp a, 1 << LEFT_INDEX
+		jr z, .left_win
+		.right_win
+			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
+			ld a, TILE_ID_LOSE
+			ld [hli], a
+			inc a
+			ld [hli], a
+
+			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
+			ld a, TILE_ID_WIN
+			ld [hli], a
+			inc a
+			ld [hli], a
+
+			jr .win_updated
+		.left_win
+			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
+			ld a, TILE_ID_WIN
+			ld [hli], a
+			inc a
+			ld [hli], a
+
+			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
+			ld a, TILE_ID_LOSE
+			ld [hli], a
+			inc a
+			ld [hli], a
+		.win_updated
+
+		ld c, 180
+		.wait
+			halt
+			dec c
+			jr nz, .wait
+
+		halt
+		ld a, TILE_ID_BACKGROUND
+		ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
+		ld [hli], a
+		ld [hli], a
+		ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
+		ld [hli], a
+		ld [hli], a
+			
+		xor a
+		ldh [vScore + LEFT_INDEX], a
+		ldh [vScore + RIGHT_INDEX], a
+	.win
+
 	; reset pads position
 	ld a, PAD_INITIAL_POS_Y
 	ldh [vPadsY + LEFT_INDEX], a
@@ -484,15 +540,6 @@ UpdateScore:
 	ldh [vBallSpeed], a
 	ld a, BALL_HIT_COUNTER
 	ldh [vBallHitCounter], a
-
-	; check win condition
-	cp a, SCORE_MAX
-	jr nz, .win
-		; TODO
-		xor a
-		ldh [vScore + LEFT_INDEX], a
-		ldh [vScore + RIGHT_INDEX], a
-	.win
 
 	xor a
 	ldh [vScoreFlag], a

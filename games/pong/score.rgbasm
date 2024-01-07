@@ -14,8 +14,8 @@ _Score_Initialize:
 
 def SCORE_LINE				equ (2)
 def SCORE_GAP_X				equ (1)
-def SCORE_LEFT_START_TILE	equ(_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) - SCORE_GAP_X - 2)
-def SCORE_RIGHT_START_TILE	equ(_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) + SCORE_GAP_X)
+def SCORE_LEFT_START_TILE	equ (_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) - SCORE_GAP_X - 2)
+def SCORE_RIGHT_START_TILE	equ (_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) + SCORE_GAP_X)
 
 ; update one digit of the score
 ; \1 = starting address in the tilemap
