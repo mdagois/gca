@@ -8,38 +8,41 @@ section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def LEFT_INDEX					equ (0)
-def RIGHT_INDEX					equ (1)
+def LEFT_INDEX						equ (0)
+def RIGHT_INDEX						equ (1)
 
-def SCORE_MAX					equ (9)
+def SCORE_MAX						equ (2)
+def GAME_OVER_MESSAGE_TILE_LEFT		equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
+def GAME_OVER_MESSAGE_TILE_RIGHT	equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)
+def GAME_OVER_WAIT_TIME				equ (180)
 
-def WALL_HEIGHT					equ (8)
+def WALL_HEIGHT						equ (8)
 
-def BALL_WIDTH					equ (4)
-def BALL_HEIGHT					equ (4)
-def BALL_INITIAL_SPEED			equ (2)
-def BALL_MAX_SPEED				equ (6)
-def BALL_HIT_COUNTER			equ (5)
-def BALL_INITIAL_RIGHT_GAP_X	equ (40 << 8)
-def BALL_INITIAL_LEFT_GAP_X		equ (-BALL_INITIAL_RIGHT_GAP_X)
-def BALL_INITIAL_POS_X			equ (((SCRN_X + OAM_X_OFS) / 2 + (BALL_WIDTH / 2)) << 8)
-def BALL_INITIAL_POS_Y			equ (((SCRN_Y + OAM_Y_OFS) / 2 - (BALL_WIDTH / 2)) << 8)
-def BALL_INITIAL_DIR_X			equ ($FF81)
-def BALL_INITIAL_DIR_Y			equ ($0000)
-def BALL_MIN_Y					equ (OAM_Y_OFS + WALL_HEIGHT)
-def BALL_MAX_Y					equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
+def BALL_WIDTH						equ (4)
+def BALL_HEIGHT						equ (4)
+def BALL_INITIAL_SPEED				equ (2)
+def BALL_MAX_SPEED					equ (6)
+def BALL_HIT_COUNTER				equ (5)
+def BALL_INITIAL_RIGHT_GAP_X		equ (40 << 8)
+def BALL_INITIAL_LEFT_GAP_X			equ (-BALL_INITIAL_RIGHT_GAP_X)
+def BALL_INITIAL_POS_X				equ (((SCRN_X + OAM_X_OFS) / 2 + (BALL_WIDTH / 2)) << 8)
+def BALL_INITIAL_POS_Y				equ (((SCRN_Y + OAM_Y_OFS) / 2 - (BALL_WIDTH / 2)) << 8)
+def BALL_INITIAL_DIR_X				equ ($FF81)
+def BALL_INITIAL_DIR_Y				equ ($0000)
+def BALL_MIN_Y						equ (OAM_Y_OFS + WALL_HEIGHT)
+def BALL_MAX_Y						equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
-def PAD_WIDTH					equ (8)
-def PAD_HEIGHT					equ (16)
-def PAD_INITIAL_POS_Y			equ (((SCRN_Y + OAM_Y_OFS) / 2) - (PAD_HEIGHT / 2))
-def PAD_MIN_Y					equ (OAM_Y_OFS + WALL_HEIGHT)
-def PAD_MAX_Y					equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
+def PAD_WIDTH						equ (8)
+def PAD_HEIGHT						equ (16)
+def PAD_INITIAL_POS_Y				equ (((SCRN_Y + OAM_Y_OFS) / 2) - (PAD_HEIGHT / 2))
+def PAD_MIN_Y						equ (OAM_Y_OFS + WALL_HEIGHT)
+def PAD_MAX_Y						equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def DIRECTIONS_PER_PAD			equ (19)
-def BYTES_PER_DIRECTION			equ (4)
-def PADS_COUNT					equ (2)
+def DIRECTIONS_PER_PAD				equ (19)
+def BYTES_PER_DIRECTION				equ (4)
+def PADS_COUNT						equ (2)
 
 ; table used to determine the speed of the ball after it hits a pad
 ball_direction_table:
@@ -446,6 +449,17 @@ UpdateBall:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; \1 -> tilemap address
+; \2 -> first tile id
+; \3 -> second tile id
+macro SetGameOverMessage
+	ld hl, \1
+	ld a, \2
+	ld [hli], a
+	ld a, \3
+	ld [hli], a
+endm
+
 UpdateScore:
 	ldh a, [vScoreFlag]
 	or a
@@ -454,7 +468,7 @@ UpdateScore:
 	cp a, 1 << LEFT_INDEX
 	jr z, .left_score
 	.right_score
-		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
+		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_LEFT_GAP_X
 		Set16 vBallY, BALL_INITIAL_POS_Y
 		Set16 vBallDirX, -BALL_INITIAL_DIR_X
 		Set16 vBallDirY, -BALL_INITIAL_DIR_Y
@@ -464,7 +478,7 @@ UpdateScore:
 		ldh [vScore + LEFT_INDEX], a
 		jr .score_updated
 	.left_score
-		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_LEFT_GAP_X
+		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
 		Set16 vBallY, BALL_INITIAL_POS_Y
 		Set16 vBallDirX, BALL_INITIAL_DIR_X
 		Set16 vBallDirY, BALL_INITIAL_DIR_Y
@@ -483,48 +497,24 @@ UpdateScore:
 		cp a, 1 << LEFT_INDEX
 		jr z, .left_win
 		.right_win
-			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
-			ld a, TILE_ID_LOSE
-			ld [hli], a
-			inc a
-			ld [hli], a
-
-			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
-			ld a, TILE_ID_WIN
-			ld [hli], a
-			inc a
-			ld [hli], a
-
+			SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_LOSE, TILE_ID_LOSE + 1
+			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_WIN, TILE_ID_WIN + 1
 			jr .win_updated
 		.left_win
-			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
-			ld a, TILE_ID_WIN
-			ld [hli], a
-			inc a
-			ld [hli], a
-
-			ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
-			ld a, TILE_ID_LOSE
-			ld [hli], a
-			inc a
-			ld [hli], a
+			SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_WIN, TILE_ID_WIN + 1
+			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_LOSE, TILE_ID_LOSE + 1
 		.win_updated
 
-		ld c, 180
+		ld c, GAME_OVER_WAIT_TIME
 		.wait
 			halt
 			dec c
 			jr nz, .wait
 
 		halt
-		ld a, TILE_ID_BACKGROUND
-		ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2
-		ld [hli], a
-		ld [hli], a
-		ld hl, _SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1
-		ld [hli], a
-		ld [hli], a
-			
+		SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
+		SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
+
 		xor a
 		ldh [vScore + LEFT_INDEX], a
 		ldh [vScore + RIGHT_INDEX], a
