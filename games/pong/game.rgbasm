@@ -509,9 +509,9 @@ UpdateScore:
 		Set16 vBallDirX, -BALL_INITIAL_DIR_X
 		Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
-		ldh a, [vScore + LEFT_INDEX]
+		ldh a, [vScore + RIGHT_INDEX]
 		inc a
-		ldh [vScore + LEFT_INDEX], a
+		ldh [vScore + RIGHT_INDEX], a
 		jr .score_updated
 	.left_score
 		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
@@ -519,9 +519,9 @@ UpdateScore:
 		Set16 vBallDirX, BALL_INITIAL_DIR_X
 		Set16 vBallDirY, BALL_INITIAL_DIR_Y
 
-		ldh a, [vScore + RIGHT_INDEX]
+		ldh a, [vScore + LEFT_INDEX]
 		inc a
-		ldh [vScore + RIGHT_INDEX], a
+		ldh [vScore + LEFT_INDEX], a
 	.score_updated
 
 	; save the latest score
