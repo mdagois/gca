@@ -24,7 +24,7 @@ def BALL_INITIAL_RIGHT_GAP_X	equ (40 << 8)
 def BALL_INITIAL_LEFT_GAP_X		equ (-BALL_INITIAL_RIGHT_GAP_X)
 def BALL_INITIAL_POS_X			equ (((SCRN_X + OAM_X_OFS) / 2 + (BALL_WIDTH / 2)) << 8)
 def BALL_INITIAL_POS_Y			equ (((SCRN_Y + OAM_Y_OFS) / 2 - (BALL_WIDTH / 2)) << 8)
-def BALL_INITIAL_DIR_X			equ ($007F)
+def BALL_INITIAL_DIR_X			equ ($FF81)
 def BALL_INITIAL_DIR_Y			equ ($0000)
 def BALL_MIN_Y					equ (OAM_Y_OFS + WALL_HEIGHT)
 def BALL_MAX_Y					equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
@@ -35,7 +35,7 @@ def PAD_INITIAL_POS_Y			equ (((SCRN_Y + OAM_Y_OFS) / 2) - (PAD_HEIGHT / 2))
 def PAD_MIN_Y					equ (OAM_Y_OFS + WALL_HEIGHT)
 def PAD_MAX_Y					equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 def DIRECTIONS_PER_PAD			equ (19)
 def BYTES_PER_DIRECTION			equ (4)
@@ -128,7 +128,7 @@ _Game_Initialize:
 	ld [vRightPadBottomOam + OAMA_TILEID], a
 
 	; set ball sprite initial positions
-	Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_LEFT_GAP_X
+	Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
 	Set16 vBallY, BALL_INITIAL_POS_Y
 
 	; set pad fixed position
@@ -207,6 +207,8 @@ endc
 
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; accelerate the ball each time the hit counter runs out
 UpdateBallSpeed:
 	; update the counter
@@ -229,6 +231,8 @@ UpdateBallSpeed:
 	ldh [vBallHitCounter], a
 
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; apply collision constraints of the ball with the walls
 HandleBallAndWallCollision:
@@ -264,52 +268,90 @@ HandleBallAndWallCollision:
 
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; \1 -> pad index
+; \2 -> label to jump to when ball does not hit
+macro GetRelativeBallYToPadY
+	ldh a, [vBallY + REAL_INTEGER_PART]
+	ld b, a
+	ldh a, [vPadsY + \1]
+
+	; check if ball is too low
+	add a, PAD_HEIGHT - 1
+	cp a, b
+	jr c, \2
+
+	; check if ball is too high
+	sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+	cp a, b
+	jr nc, \2
+
+	; NOTE: the ball hit the pad
+
+	; determine the relative position of the ball to the pad
+	; a = vBallY - (vPadY - 3)
+	ld d, a
+	inc d
+	ld a, b
+	sub a, d
+endm
+
+; a = ball Y relative to the pad Y
+; \1 -> pad index
+macro UpdateBallDirection
+	; register a contains the ball Y relative to the pad Y (0 to 18) 
+	; get a pointer to the new direction entries for X and Y
+	add a, a
+	add a, a
+	ld h, 0
+	ld l, a
+	ld de, ball_direction_table + (\1 * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
+	add hl, de
+
+	; update the direction
+	ld a, [hli]
+	ldh [vBallDirX + REAL_FRACTION_PART], a
+	ld a, [hli]
+	ldh [vBallDirX + REAL_INTEGER_PART], a
+	ld a, [hli]
+	ldh [vBallDirY + REAL_FRACTION_PART], a
+	ld a, [hli]
+	ldh [vBallDirY + REAL_INTEGER_PART], a
+endm
+
+; a = ball Y relative to the pad Y
+; \1 -> pad index
+macro SetBallDirectionFromBorderCollision
+	cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
+	jr nc, .hit_bottom\@
+	.hit_top\@
+if \1 == LEFT_INDEX
+		Set16 vBallDirX, $FFA6
+elif \1 == RIGHT_INDEX
+		Set16 vBallDirX, $005A
+else
+	assert false, "Invalid parameter"
+endc
+		Set16 vBallDirY, $FFA6
+		jr .pad_border_collision_done\@
+	.hit_bottom\@
+if \1 == LEFT_INDEX
+		Set16 vBallDirX, $FFA6
+else
+		Set16 vBallDirX, $005A
+endc
+		Set16 vBallDirY, $005A
+	.pad_border_collision_done\@
+endm
+
 HandleLeftEvents:
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
 	jr nz, .pad_collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		ld b, a
-		ldh a, [vPadsY + LEFT_INDEX]
-
-		; check if ball is too low
-		add a, PAD_HEIGHT - 1
-		cp a, b
-		jr c, .pad_collision
-
-		; check if ball is too high
-		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
-		cp a, b
-		jr nc, .pad_collision
-
-		; NOTE: the ball hit the pad
-
-		; determine the relative position of the ball to the pad
-		; a = vBallY - (vPadY - 3)
-		ld d, a
-		inc d
-		ld a, b
-		sub a, d
-
-		; get a pointer to the new direction entries
-		; hl = ball_direction_table_left + (4 * a)
-		add a, a
-		add a, a
-		ld h, 0
-		ld l, a
-		ld de, ball_direction_table + (LEFT_INDEX * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
-		add hl, de
-
-		; update the direction
-		ld a, [hli]
-		ldh [vBallDirX + REAL_FRACTION_PART], a
-		ld a, [hli]
-		ldh [vBallDirX + REAL_INTEGER_PART], a
-		ld a, [hli]
-		ldh [vBallDirY + REAL_FRACTION_PART], a
-		ld a, [hli]
-		ldh [vBallDirY + REAL_INTEGER_PART], a
+		GetRelativeBallYToPadY LEFT_INDEX, .pad_collision
+		UpdateBallDirection LEFT_INDEX
 
 		; update ball speed
 		call UpdateBallSpeed
@@ -330,40 +372,8 @@ HandleLeftEvents:
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
 	jr nc, .pad_border_collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		ld b, a
-		ldh a, [vPadsY + LEFT_INDEX]
-
-		; check if ball is too low
-		add a, PAD_HEIGHT - 1
-		cp a, b
-		jr c, .pad_border_collision
-
-		; check if ball is too high
-		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
-		cp a, b
-		jr nc, .pad_border_collision
-
-		; NOTE: the ball hit the pad
-
-		; determine the relative position of the ball to the pad
-		; a = vBallY - (vPadY - 3)
-		ld d, a
-		inc d
-		ld a, b
-		sub a, d
-
-		cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
-		jr nc, .hit_bottom
-		.hit_top
-			Set16 vBallDirX, $FFA6
-			Set16 vBallDirY, $FFA6
-			jr .pad_border_collision_done
-		.hit_bottom
-			Set16 vBallDirX, $FFA6
-			Set16 vBallDirY, $005A
-		.pad_border_collision_done
-
+		GetRelativeBallYToPadY LEFT_INDEX, .pad_border_collision
+		SetBallDirectionFromBorderCollision LEFT_INDEX
 		ret
 	.pad_border_collision
 
@@ -374,47 +384,8 @@ HandleRightEvents:
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
 	jr nz, .pad_collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		ld b, a
-		ldh a, [vPadsY + RIGHT_INDEX]
-
-		; check if ball is too low
-		add a, PAD_HEIGHT - 1
-		cp a, b
-		jr c, .pad_collision
-
-		; check if ball is too high
-		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
-		cp a, b
-		jr nc, .pad_collision
-
-		; NOTE: the ball hit the pad
-
-		; determine the relative position of the ball to the pad
-		; a = vBallY - (vPadY - 3)
-		ld d, a
-		inc d
-		ld a, b
-		sub a, d
-
-		; get a pointer to the new direction entries
-		; hl = ball_direction_table_right + (4 * a)
-		add a, a
-		add a, a
-		ld h, 0
-		ld l, a
-		ld de, ball_direction_table + (RIGHT_INDEX * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
-		add hl, de
-
-		; update the direction
-		ld a, [hli]
-		ldh [vBallDirX + REAL_FRACTION_PART], a
-		ld a, [hli]
-		ldh [vBallDirX + REAL_INTEGER_PART], a
-		ld a, [hli]
-		ldh [vBallDirY + REAL_FRACTION_PART], a
-		ld a, [hli]
-		ldh [vBallDirY + REAL_INTEGER_PART], a
+		GetRelativeBallYToPadY RIGHT_INDEX, .pad_collision
+		UpdateBallDirection RIGHT_INDEX
 
 		; update ball speed
 		call UpdateBallSpeed
@@ -435,44 +406,14 @@ HandleRightEvents:
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH + 1
 	jr c, .pad_border_collision
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		ld b, a
-		ldh a, [vPadsY + RIGHT_INDEX]
-
-		; check if ball is too low
-		add a, PAD_HEIGHT - 1
-		cp a, b
-		jr c, .pad_border_collision
-
-		; check if ball is too high
-		sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
-		cp a, b
-		jr nc, .pad_border_collision
-
-		; NOTE: the ball hit the pad
-
-		; determine the relative position of the ball to the pad
-		; a = vBallY - (vPadY - 3)
-		ld d, a
-		inc d
-		ld a, b
-		sub a, d
-
-		cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
-		jr nc, .hit_bottom
-		.hit_top
-			Set16 vBallDirX, $005A
-			Set16 vBallDirY, $FFA6
-			jr .pad_border_collision_done
-		.hit_bottom
-			Set16 vBallDirX, $005A
-			Set16 vBallDirY, $005A
-		.pad_border_collision_done
-
+		GetRelativeBallYToPadY RIGHT_INDEX, .pad_border_collision
+		SetBallDirectionFromBorderCollision RIGHT_INDEX
 		ret
 	.pad_border_collision
 
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateBall:
 	; update ball
@@ -502,6 +443,8 @@ UpdateBall:
 		jp nz, .ball_update
 
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateScore:
 	ldh a, [vScoreFlag]
@@ -555,6 +498,8 @@ UpdateScore:
 	ldh [vScoreFlag], a
 
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Game_Update:
 	call UpdatePads

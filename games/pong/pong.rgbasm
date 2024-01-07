@@ -4,7 +4,6 @@ include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
 
-; TODO Code clean up
 ; TODO Code comments
 ; TODO Win animation
 ; TODO Sound
