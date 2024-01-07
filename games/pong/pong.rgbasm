@@ -5,7 +5,7 @@ include "memory.rgbinc"
 include "score.rgbinc"
 
 ; TODO Code clean up
-; TODO Score animation
+; TODO Code comments
 ; TODO Win animation
 ; TODO Sound
 ;		- ball hits wall

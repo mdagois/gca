@@ -24,6 +24,9 @@ rsset _HRAM
 
 ; input
 def vPadInput				rb sizeof_PAD_INPUT
+
+; score
+def vScoreFlag				rb 1
 def vScore					rb 2
 
 ; ball
