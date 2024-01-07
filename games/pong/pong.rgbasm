@@ -8,6 +8,11 @@ include "score.rgbinc"
 ; TODO Score animation
 ; TODO Win animation
 ; TODO Sound
+;		- ball hits wall
+;		- ball hits pad
+;		- ball hits border
+;		- goal
+;		- ball gets faster
 ; TODO AI
 ; TODO Network
 

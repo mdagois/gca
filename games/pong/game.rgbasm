@@ -1,4 +1,5 @@
 include "data.rgbinc"
+include "math16.rgbinc"
 include "memory.rgbinc"
 
 export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
@@ -7,56 +8,100 @@ section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def LEFT_INDEX		equ (0)
-def RIGHT_INDEX		equ (1)
+def LEFT_INDEX				equ (0)
+def RIGHT_INDEX				equ (1)
+
+def SCORE_MAX				equ (9)
+
+def WALL_HEIGHT				equ (8)
+
+def BALL_WIDTH				equ (4)
+def BALL_HEIGHT				equ (4)
+def BALL_INITIAL_SPEED		equ (2)
+def BALL_MAX_SPEED			equ (6)
+def BALL_HIT_COUNTER		equ (5)
+def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
+def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
+def BALL_INITIAL_DIR_X		equ ($007F)
+def BALL_INITIAL_DIR_Y		equ ($0000)
+def BALL_MIN_Y				equ (OAM_Y_OFS + WALL_HEIGHT)
+def BALL_MAX_Y				equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
+
+def PAD_WIDTH				equ (8)
+def PAD_HEIGHT				equ (16)
+def PAD_MIN_Y				equ (OAM_Y_OFS + WALL_HEIGHT)
+def PAD_MAX_Y				equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def REAL_FRACTION_PART	equ (0)
-def REAL_INTEGER_PART	equ (1)
+def DIRECTIONS_PER_PAD		equ (19)
+def BYTES_PER_DIRECTION		equ (4)
+def PADS_COUNT				equ (2)
 
-; set the 16-bit number at address \1 to value \2
-macro Set16
-	ld a, low(\2)
-	ldh [\1 + REAL_FRACTION_PART], a
-	ld a, high(\2)
-	ldh [\1 + REAL_INTEGER_PART], a
-endm
+; table used to determine the speed of the ball after it hits a pad
+ball_direction_table:
+;;;;;;;;;;;;;;;;;;;;
+; left pad
+;;;;;;;;;;;;;;;;;;;;
+; 22.5 degrees
+dw $0031, $FF8A
+dw $0031, $FF8A
+; 45.0 degrees
+dw $005A, $FFA6
+dw $005A, $FFA6
+dw $005A, $FFA6
+; 67.5 degrees
+dw $0076, $FFCF
+dw $0076, $FFCF
+dw $0076, $FFCF
+; 90.0 degrees
+dw $007F, $0000
+dw $007F, $0000
+dw $007F, $0000
+; 112.5 degrees
+dw $0076, $0031
+dw $0076, $0031
+dw $0076, $0031
+; 135.0 degrees
+dw $005A, $005A
+dw $005A, $005A
+dw $005A, $005A
+; 157.5 degrees
+dw $0031, $0076
+dw $0031, $0076
 
-; perform a 16-bit add for numbers at addresses \1 and \2
-; the result is stored back at address \1
-macro Add16
-	ldh a, [\1 + REAL_FRACTION_PART]
-	ld b, a
-	ldh a, [\2 + REAL_FRACTION_PART]
-	add a, b
-	ldh [\1 + REAL_FRACTION_PART], a
+;;;;;;;;;;;;;;;;;;;;
+; right pad
+;;;;;;;;;;;;;;;;;;;;
+; 22.5 degrees
+dw $FFCF, $FF8A
+dw $FFCF, $FF8A
+; 45.0 degrees
+dw $FFA6, $FFA6
+dw $FFA6, $FFA6
+dw $FFA6, $FFA6
+; 67.5 degrees
+dw $FF8A, $FFCF
+dw $FF8A, $FFCF
+dw $FF8A, $FFCF
+; 90.0 degrees
+dw $FF81, $0000
+dw $FF81, $0000
+dw $FF81, $0000
+; 112.5 degrees
+dw $FF8A, $0031
+dw $FF8A, $0031
+dw $FF8A, $0031
+; 135.0 degrees
+dw $FFA6, $005A
+dw $FFA6, $005A
+dw $FFA6, $005A
+; 157.5 degrees
+dw $FFCF, $0076
+dw $FFCF, $0076
+ball_direction_table_end:
 
-	ldh a, [\1 + REAL_INTEGER_PART]
-	ld b, a
-	ldh a, [\2 + REAL_INTEGER_PART]
-	adc a, b
-	ldh [\1 + REAL_INTEGER_PART], a
-endm
-
-; negate the 16-bit number at address \1
-macro Negate16
-	ldh a, [\1 + REAL_FRACTION_PART]
-	xor a, $FF
-	ld l, a
-	ldh a, [\1 + REAL_INTEGER_PART]
-	xor a, $FF
-	ld h, a
-
-	ld d, 0
-	ld e, 1
-	add hl, de
-
-	ld a, l
-	ldh [\1 + REAL_FRACTION_PART], a
-	ld a, h
-	ldh [\1 + REAL_INTEGER_PART], a
-endm
+assert (ball_direction_table_end - ball_direction_table) / BYTES_PER_DIRECTION / PADS_COUNT == DIRECTIONS_PER_PAD, "There must be 19 directions per pad defined in the table"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -67,14 +112,6 @@ ResetScore:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-def BALL_INITIAL_SPEED		equ (2)
-def BALL_MAX_SPEED			equ (6)
-def BALL_HIT_COUNTER		equ (5)
-def BALL_INITIAL_POS_X		equ (((SCRN_X + OAM_X_OFS) / 2 + 2) << 8)
-def BALL_INITIAL_POS_Y		equ (((SCRN_Y + OAM_Y_OFS) / 2 - 2) << 8)
-def BALL_INITIAL_DIR_X		equ ($007F)
-def BALL_INITIAL_DIR_Y		equ ($0000)
 
 _Game_Initialize:
 	call ResetScore
@@ -120,80 +157,6 @@ _Game_Initialize:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-def SCORE_MAX			equ (9)
-
-def WALL_HEIGHT			equ (8)
-def PAD_WIDTH			equ (8)
-def PAD_HEIGHT			equ (16)
-def BALL_WIDTH			equ (4)
-def BALL_HEIGHT			equ (4)
-
-def PAD_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
-def PAD_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
-
-def BALL_MIN_Y			equ (OAM_Y_OFS + WALL_HEIGHT)
-def BALL_MAX_Y			equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
-
-direction_table_left:
-; 22.5 degrees
-dw $0031, $FF8A
-dw $0031, $FF8A
-; 45.0 degrees
-dw $005A, $FFA6
-dw $005A, $FFA6
-dw $005A, $FFA6
-; 67.5 degrees
-dw $0076, $FFCF
-dw $0076, $FFCF
-dw $0076, $FFCF
-; 90.0 degrees
-dw $007F, $0000
-dw $007F, $0000
-dw $007F, $0000
-; 112.5 degrees
-dw $0076, $0031
-dw $0076, $0031
-dw $0076, $0031
-; 135.0 degrees
-dw $005A, $005A
-dw $005A, $005A
-dw $005A, $005A
-; 157.5 degrees
-dw $0031, $0076
-dw $0031, $0076
-direction_table_left_end:
-assert (direction_table_left_end - direction_table_left) / 4 == 19, "There must be 19 directions defined in the table"
-
-direction_table_right:
-; 22.5 degrees
-dw $FFCF, $FF8A
-dw $FFCF, $FF8A
-; 45.0 degrees
-dw $FFA6, $FFA6
-dw $FFA6, $FFA6
-dw $FFA6, $FFA6
-; 67.5 degrees
-dw $FF8A, $FFCF
-dw $FF8A, $FFCF
-dw $FF8A, $FFCF
-; 90.0 degrees
-dw $FF81, $0000
-dw $FF81, $0000
-dw $FF81, $0000
-; 112.5 degrees
-dw $FF8A, $0031
-dw $FF8A, $0031
-dw $FF8A, $0031
-; 135.0 degrees
-dw $FFA6, $005A
-dw $FFA6, $005A
-dw $FFA6, $005A
-; 157.5 degrees
-dw $FFCF, $0076
-dw $FFCF, $0076
-direction_table_right_end:
-assert (direction_table_right_end - direction_table_right) == (direction_table_left_end - direction_table_left), "The right direction table size must be the same size as the left direction table"
 
 UpdatePads:
 	; move and apply constraint to left pad
@@ -302,12 +265,6 @@ HandleBallWallCollision:
 	ret
 
 HandleLeftEvents:
-	; return early if the ball is not going left
-	ldh a, [vBallDirX + REAL_INTEGER_PART]
-	bit 7, a
-	rcf
-	ret z
-
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + PAD_WIDTH
@@ -336,12 +293,12 @@ HandleLeftEvents:
 		sub a, d
 
 		; get a pointer to the new direction entries
-		; hl = direction_table_left + (4 * a)
+		; hl = ball_direction_table_left + (4 * a)
 		add a, a
 		add a, a
 		ld h, 0
 		ld l, a
-		ld de, direction_table_left
+		ld de, ball_direction_table + (LEFT_INDEX * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
 		add hl, de
 
 		; update the direction
@@ -357,7 +314,6 @@ HandleLeftEvents:
 		; update ball speed
 		call UpdateBallSpeed
 
-		scf
 		ret
 	.pad_collision
 
@@ -391,7 +347,6 @@ HandleLeftEvents:
 		ld a, BALL_HIT_COUNTER
 		ldh [vBallHitCounter], a
 
-		scf
 		ret
 	.score_check
 
@@ -422,7 +377,7 @@ HandleLeftEvents:
 		ld a, b
 		sub a, d
 
-		cp a, PAD_HEIGHT + BALL_HEIGHT - 1
+		cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
 		jr nc, .hit_bottom
 		.hit_top
 			Set16 vBallDirX, $FFA6
@@ -433,20 +388,12 @@ HandleLeftEvents:
 			Set16 vBallDirY, $005A
 		.pad_border_collision_done
 
-		scf
 		ret
 	.pad_border_collision
 
-	rcf
 	ret
 
 HandleRightEvents:
-	; return early if the ball is not going left
-	ldh a, [vBallDirX + REAL_INTEGER_PART]
-	bit 7, a
-	rcf
-	ret nz
-
 	; check whether the ball hit the pad
 	ldh a, [vBallX + REAL_INTEGER_PART]
 	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
@@ -475,12 +422,12 @@ HandleRightEvents:
 		sub a, d
 
 		; get a pointer to the new direction entries
-		; hl = direction_table_right + (4 * a)
+		; hl = ball_direction_table_right + (4 * a)
 		add a, a
 		add a, a
 		ld h, 0
 		ld l, a
-		ld de, direction_table_right
+		ld de, ball_direction_table + (RIGHT_INDEX * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
 		add hl, de
 
 		; update the direction
@@ -496,7 +443,6 @@ HandleRightEvents:
 		; update ball speed
 		call UpdateBallSpeed
 
-		scf
 		ret
 	.pad_collision
 
@@ -530,7 +476,6 @@ HandleRightEvents:
 		ld a, BALL_HIT_COUNTER
 		ldh [vBallHitCounter], a
 
-		scf
 		ret
 	.score_check
 
@@ -561,7 +506,7 @@ HandleRightEvents:
 		ld a, b
 		sub a, d
 
-		cp a, PAD_HEIGHT + BALL_HEIGHT - 1
+		cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
 		jr nc, .hit_bottom
 		.hit_top
 			Set16 vBallDirX, $005A
@@ -572,11 +517,9 @@ HandleRightEvents:
 			Set16 vBallDirY, $005A
 		.pad_border_collision_done
 
-		scf
 		ret
 	.pad_border_collision
 
-	rcf
 	ret
 
 UpdateBall:
@@ -591,11 +534,16 @@ UpdateBall:
 		Add16 vBallY, vBallDirY
 
 		call HandleBallWallCollision
-		call HandleLeftEvents
-		; right checks can be skipped if at least one left checks succeeded
-		jr c, .skip_right_events
-		call HandleRightEvents
-		.skip_right_events
+
+		ldh a, [vBallDirX + REAL_INTEGER_PART]
+		bit 7, a
+		jr z, .ball_goes_right
+		.ball_goes_left
+			call HandleLeftEvents
+			jr .events_done
+		.ball_goes_right
+			call HandleRightEvents
+		.events_done
 
 		pop bc
 		dec c
