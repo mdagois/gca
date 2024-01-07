@@ -10,6 +10,16 @@ def AI_MOVE_NONE		equ (0)
 def AI_MOVE_UP			equ (1)
 def AI_MOVE_DOWN		equ (2)
 
+; initialize AI
+macro AI_Initialize
+	call _AI_Initialize
+endm
+
+; tell the AI to pick its next target when catching the ball
+macro AI_PickNextTarget
+	call _AI_PickNextTarget
+endm
+
 ; get the next move from the AI
 ; the move is stored in register a
 macro AI_GetNextMove

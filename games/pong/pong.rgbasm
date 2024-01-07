@@ -1,10 +1,10 @@
+include "ai.rgbinc"
 include "data.rgbinc"
 include "game.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
 
-; TODO AI set random target
 ; TODO Fix score bug at the end
 ; TODO Sound
 ;		- ball hits wall
@@ -58,6 +58,10 @@ InitGraphics:
 			dec c
 			jr nz, .midline
 
+	; initialize the random seed
+	LFSR8_PickSeed
+	ldh [vRandomSeed], a
+
 	ret
 
 Initialize:
@@ -70,6 +74,7 @@ Initialize:
 
 	Game_Initialize
 	Score_Initialize
+	AI_Initialize
 
 	copy [rIE], IEF_VBLANK
 	ei

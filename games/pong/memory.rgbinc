@@ -49,6 +49,12 @@ def vBallHitCounter			rb 1
 ; pads
 def vPadsY					rb 2
 
+; random
+def vRandomSeed				rb 1
+
+; AI
+def vAiTarget				rb 1
+
 def HRAM_END				rb 0
 
 def HRAM_USAGE equ (HRAM_END - _HRAM)

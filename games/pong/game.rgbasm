@@ -409,6 +409,9 @@ HandleRightSideCollisions:
 		GetRelativeBallYToPadY RIGHT_INDEX, .pad_collision
 		UpdateBallDirection RIGHT_INDEX
 
+		; pick a new target after each pad collision
+		AI_PickNextTarget
+
 		; update ball speed
 		call UpdateBallSpeed
 
