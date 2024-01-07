@@ -1,0 +1,22 @@
+if !def(AI_RGBINC)
+def AI_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; AI
+; A system to control the right pad.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def AI_MOVE_NONE		equ (0)
+def AI_MOVE_UP			equ (1)
+def AI_MOVE_DOWN		equ (2)
+
+; get the next move from the AI
+; the move is stored in register a
+macro AI_GetNextMove
+	call _AI_GetNextMove
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

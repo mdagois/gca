@@ -1,0 +1,13 @@
+include "ai.rgbinc"
+include "memory.rgbinc"
+
+export _AI_GetNextMove
+
+section "ai", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_AI_GetNextMove:
+	ld a, AI_MOVE_NONE
+	ret
+

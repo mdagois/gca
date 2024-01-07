@@ -1,3 +1,4 @@
+include "ai.rgbinc"
 include "data.rgbinc"
 include "math16.rgbinc"
 include "memory.rgbinc"
@@ -163,53 +164,62 @@ _Game_Initialize:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; update the pads' positions
-UpdatePads:
+; move a given pad up
+; \1 = pad index
+macro MovePadUp
+	ldh a, [vPadsY + \1]
+	dec a
+	cp a, PAD_MIN_Y
+	jr nc, .underflow\@
+		ld a, PAD_MIN_Y
+	.underflow\@
+	ldh [vPadsY + \1], a
+endm
+
+; move a given pad down
+; \1 = pad index
+macro MovePadDown
+	ldh a, [vPadsY + \1]
+	inc a
+	cp a, PAD_MAX_Y
+	jr c, .overflow\@
+		ld a, PAD_MAX_Y
+	.overflow\@
+	ldh [vPadsY + \1], a
+endm
+
+; update the player-controlled pad position
+UpdatePlayerPad:
 	; move and apply constraint to left pad
 	PadInput_TestHeld vPadInput, PADF_UP
 	jr nz, .left_up
-		ldh a, [vPadsY + LEFT_INDEX]
-		dec a
-		cp a, PAD_MIN_Y
-		jr nc, .left_underflow
-			ld a, PAD_MIN_Y
-		.left_underflow
-		ldh [vPadsY + LEFT_INDEX], a
+		MovePadUp LEFT_INDEX
 	.left_up
 	PadInput_TestHeld vPadInput, PADF_DOWN
 	jr nz, .left_down
-		ldh a, [vPadsY + LEFT_INDEX]
-		inc a
-		cp a, PAD_MAX_Y
-		jr c, .left_overflow
-			ld a, PAD_MAX_Y
-		.left_overflow
-		ldh [vPadsY + LEFT_INDEX], a
+		MovePadDown LEFT_INDEX
 	.left_down
 
-if def(DEBUG_CONTROL_RIGHT_PAD)
-	; move and apply constraint to right pad
-	PadInput_TestHeld vPadInput, PADF_UP
-	jr nz, .right_up
-		ldh a, [vPadsY + RIGHT_INDEX]
-		dec a
-		cp a, PAD_MIN_Y
-		jr nc, .right_underflow
-			ld a, PAD_MIN_Y
-		.right_underflow
-		ldh [vPadsY + RIGHT_INDEX], a
-	.right_up
-	PadInput_TestHeld vPadInput, PADF_DOWN
-	jr nz, .right_down
-		ldh a, [vPadsY + RIGHT_INDEX]
-		inc a
-		cp a, PAD_MAX_Y
-		jr c, .right_overflow
-			ld a, PAD_MAX_Y
-		.right_overflow
-		ldh [vPadsY + RIGHT_INDEX], a
-	.right_down
-endc
+	ret
+
+; update the AI-controlled pad position
+UpdateAiPad:
+	AI_GetNextMove
+	cp a, AI_MOVE_UP
+	jr z, .ai_goes_up
+	cp a, AI_MOVE_DOWN
+	jr z, .ai_goes_down
+	jr .ai_done
+
+	.ai_goes_up
+		MovePadUp RIGHT_INDEX
+		jr .ai_done
+
+	.ai_goes_down
+		MovePadDown RIGHT_INDEX
+		jr .ai_done
+
+	.ai_done
 
 	ret
 
@@ -559,7 +569,8 @@ UpdateScore:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Game_Update:
-	call UpdatePads
+	call UpdatePlayerPad
+	call UpdateAiPad
 	call UpdateBall
 	call UpdateScore
 	ret
