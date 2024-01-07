@@ -2,6 +2,7 @@ include "ai.rgbinc"
 include "data.rgbinc"
 include "math16.rgbinc"
 include "memory.rgbinc"
+include "score.rgbinc"
 
 export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
 
@@ -14,7 +15,7 @@ section "game", rom0
 def SCORE_MAX						equ (9)
 def GAME_OVER_MESSAGE_TILE_LEFT		equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
 def GAME_OVER_MESSAGE_TILE_RIGHT	equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)
-def GAME_OVER_WAIT_TIME				equ (180)
+def GAME_OVER_WAIT_TIME				equ (255)
 
 def WALL_HEIGHT						equ (8)
 
@@ -513,7 +514,22 @@ UpdateScore:
 		ldh [vScore + RIGHT_INDEX], a
 	.score_updated
 
+	; save the latest score
+	ld e, a
+
+	; reset pads position
+	ld a, PAD_INITIAL_POS_Y
+	ldh [vPadsY + LEFT_INDEX], a
+	ldh [vPadsY + RIGHT_INDEX], a
+
+	; reset ball speed
+	ld a, BALL_INITIAL_SPEED
+	ldh [vBallSpeed], a
+	ld a, BALL_HIT_COUNTER
+	ldh [vBallHitCounter], a
+
 	; check win condition
+	ld a, e ; restore score
 	cp a, SCORE_MAX
 	jr nz, .win
 		halt
@@ -530,6 +546,9 @@ UpdateScore:
 			SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_WIN, TILE_ID_WIN + 1
 			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_LOSE, TILE_ID_LOSE + 1
 		.win_updated
+
+		; update score graphics
+		Score_UpdateGraphics
 
 		; wait a bit
 		ld c, GAME_OVER_WAIT_TIME
@@ -548,17 +567,6 @@ UpdateScore:
 		ldh [vScore + LEFT_INDEX], a
 		ldh [vScore + RIGHT_INDEX], a
 	.win
-
-	; reset pads position
-	ld a, PAD_INITIAL_POS_Y
-	ldh [vPadsY + LEFT_INDEX], a
-	ldh [vPadsY + RIGHT_INDEX], a
-
-	; reset ball speed
-	ld a, BALL_INITIAL_SPEED
-	ldh [vBallSpeed], a
-	ld a, BALL_HIT_COUNTER
-	ldh [vBallHitCounter], a
 
 	; reset score flag
 	xor a
@@ -598,5 +606,6 @@ _Game_UpdateGraphics:
 	add a, 8
 	ld [vRightPadBottomOam + OAMA_Y], a
 
+	Score_UpdateGraphics
 	ret
 
