@@ -1,0 +1,104 @@
+SUMMARY:
+	ROM0: 7748 bytes used / 25020 free
+
+ROM0 bank #0:
+	SECTION: $0000-$0001 ($0002 bytes) ["catch"]
+	         $0000 = catch_loop
+	         $0000 = catch
+	SECTION: $0002-$002b ($002a bytes) ["score"]
+	         $0002 = _Score_Initialize
+	         $0003 = _Score_UpdateGraphics
+	SECTION: $002c-$003f ($0014 bytes) ["main"]
+	         $002c = main
+	         $002f = main.wait_vblank_u1
+	         $003b = main.game_loop
+	SECTION: $0040-$004b ($000c bytes) ["vblank_interrupt"]
+	SECTION: $004c-$00c3 ($0078 bytes) ["sound"]
+	         $004c = _sound_data
+	         $006a = _sound_data_end
+	         $006a = _Sound_Initialize
+	         $007a = _Sound_Play
+	         $007f = _Sound_Update
+	         $009d = _Sound_Update.channel_1
+	         $00b2 = _Sound_Update.channel_4
+	EMPTY: $00c4-$00ff ($003c bytes)
+	SECTION: $0100-$014f ($0050 bytes) ["header"]
+	         $0100 = entrypoint
+	SECTION: $0150-$194f ($1800 bytes) ["data"]
+	         $0150 = tile_data_start
+	         $1950 = tile_data_end
+	SECTION: $1950-$1d3f ($03f0 bytes) ["game"]
+	         $1950 = ball_direction_table
+	         $19e8 = _Game_Initialize
+	         $19e8 = ball_direction_table_end
+	         $1a45 = UpdatePlayerPad
+	         $1a55 = UpdatePlayerPad.underflow_u1
+	         $1a57 = UpdatePlayerPad.left_up
+	         $1a67 = UpdatePlayerPad.overflow_u2
+	         $1a69 = UpdatePlayerPad.left_down
+	         $1a6a = UpdateAiPad
+	         $1a77 = UpdateAiPad.ai_goes_up
+	         $1a80 = UpdateAiPad.underflow_u3
+	         $1a84 = UpdateAiPad.ai_goes_down
+	         $1a8d = UpdateAiPad.overflow_u4
+	         $1a91 = UpdateAiPad.ai_done
+	         $1a92 = UpdateBallSpeed
+	         $1aac = HandleBallAndWallCollision
+	         $1aac = HandleBallAndWallCollision.check_top_wall
+	         $1ab2 = HandleBallAndWallCollision.handle_top_wall
+	         $1ad7 = HandleBallAndWallCollision.check_bottom_wall
+	         $1adc = HandleBallAndWallCollision.handle_bottom_wall
+	         $1b01 = HandleLeftSideCollisions
+	         $1b3a = HandleLeftSideCollisions.pad_collision
+	         $1b45 = HandleLeftSideCollisions.score_check
+	         $1b62 = HandleLeftSideCollisions.hit_top_u5
+	         $1b74 = HandleLeftSideCollisions.hit_bottom_u5
+	         $1b84 = HandleLeftSideCollisions.pad_border_collision_done_u5
+	         $1b85 = HandleLeftSideCollisions.pad_border_collision
+	         $1b86 = HandleRightSideCollisions
+	         $1bc2 = HandleRightSideCollisions.pad_collision
+	         $1bcd = HandleRightSideCollisions.score_check
+	         $1bea = HandleRightSideCollisions.hit_top_u6
+	         $1bfc = HandleRightSideCollisions.hit_bottom_u6
+	         $1c0c = HandleRightSideCollisions.pad_border_collision_done_u6
+	         $1c0d = HandleRightSideCollisions.pad_border_collision
+	         $1c0e = UpdateBall
+	         $1c11 = UpdateBall.ball_update
+	         $1c3b = UpdateBall.ball_goes_left
+	         $1c40 = UpdateBall.ball_goes_right
+	         $1c43 = UpdateBall.events_done
+	         $1c49 = UpdateScore
+	         $1c51 = UpdateScore.right_score
+	         $1c78 = UpdateScore.left_score
+	         $1c9d = UpdateScore.score_updated
+	         $1cc6 = UpdateScore.right_win
+	         $1cda = UpdateScore.left_win
+	         $1cec = UpdateScore.win_updated
+	         $1cf1 = UpdateScore.wait
+	         $1d0d = UpdateScore.win
+	         $1d11 = _Game_Update
+	         $1d1e = _Game_UpdateGraphics
+	SECTION: $1d40-$1e32 ($00f3 bytes) ["pong"]
+	         $1d40 = InitGraphics
+	         $1d52 = InitGraphics.copy_u2
+	         $1d62 = InitGraphics.clear_u3
+	         $1d76 = InitGraphics.walls
+	         $1d88 = InitGraphics.midline
+	         $1d98 = InitGraphics.not_zero_u4
+	         $1d9b = Initialize
+	         $1d9e = Initialize.clear_u5
+	         $1dad = Initialize.clear_u6
+	         $1dc1 = Initialize.init_oam_u7
+	         $1df0 = Update
+	SECTION: $1e33-$1e7f ($004d bytes) ["ai"]
+	         $1e33 = target_table
+	         $1e3a = target_table_end
+	         $1e3a = _AI_Initialize
+	         $1e3e = _AI_PickNextTarget.pick_random_number
+	         $1e3e = _AI_PickNextTarget
+	         $1e64 = _AI_GetNextMove
+	         $1e77 = _AI_GetNextMove.move_up
+	         $1e7a = _AI_GetNextMove.move_down
+	         $1e7d = _AI_GetNextMove.move_none
+	EMPTY: $1e80-$7fff ($6180 bytes)
+	TOTAL EMPTY: $61bc bytes
