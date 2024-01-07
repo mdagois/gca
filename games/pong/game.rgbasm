@@ -3,6 +3,7 @@ include "data.rgbinc"
 include "math16.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
+include "sound.rgbinc"
 
 export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
 
@@ -244,6 +245,9 @@ UpdateBallSpeed:
 	ld a, BALL_HIT_COUNTER
 	ldh [vBallHitCounter], a
 
+	; play the speed up sound
+	Sound_Play SOUND_BALL_SPEED_UP
+
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -263,6 +267,8 @@ HandleBallAndWallCollision:
 		Set16 vBallY, BALL_MIN_Y << 8
 		; reverse Y direction
 		Negate16 vBallDirY
+
+		Sound_Play SOUND_BALL_HIT_WALL
 		; return early as there cannot be a collision with both walls
 		ret
 
@@ -279,6 +285,8 @@ HandleBallAndWallCollision:
 		Set16 vBallY, BALL_MAX_Y << 8
 		; reverse Y direction
 		Negate16 vBallDirY
+
+		Sound_Play SOUND_BALL_HIT_WALL
 
 	ret
 
@@ -374,6 +382,7 @@ HandleLeftSideCollisions:
 	jr nz, .pad_collision
 		GetRelativeBallYToPadY LEFT_INDEX, .pad_collision
 		UpdateBallDirection LEFT_INDEX
+		Sound_Play SOUND_BALL_HIT_PAD
 
 		; update ball speed
 		call UpdateBallSpeed
@@ -409,6 +418,7 @@ HandleRightSideCollisions:
 	jr nz, .pad_collision
 		GetRelativeBallYToPadY RIGHT_INDEX, .pad_collision
 		UpdateBallDirection RIGHT_INDEX
+		Sound_Play SOUND_BALL_HIT_PAD
 
 		; pick a new target after each pad collision
 		AI_PickNextTarget
@@ -528,10 +538,15 @@ UpdateScore:
 	ld a, BALL_HIT_COUNTER
 	ldh [vBallHitCounter], a
 
+	; default sound that may be overriden if the game is over
+	Sound_Play SOUND_GOAL
+
 	; check win condition
 	ld a, e ; restore score
 	cp a, SCORE_MAX
 	jr nz, .win
+		; override the default goal sound
+		Sound_Play SOUND_GAME_OVER
 		halt
 
 		; set the game over messages

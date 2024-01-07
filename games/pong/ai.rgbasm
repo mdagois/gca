@@ -26,9 +26,9 @@ _AI_Initialize:
 _AI_PickNextTarget:
 	; pick a random number between 0 and 6
 	.pick_random_number
-		ldh a, [vRandomSeed]
+		ldh a, [vLfsrValue]
 		LFSR8_GetNextValue
-		ldh [vRandomSeed], a
+		ldh [vLfsrValue], a
 		and a, 7
 		cp a, 7
 		jr z, .pick_random_number

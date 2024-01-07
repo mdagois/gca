@@ -49,8 +49,11 @@ def vBallHitCounter			rb 1
 ; pads
 def vPadsY					rb 2
 
-; random
-def vRandomSeed				rb 1
+; rng
+def vLfsrValue				rb 1
+
+; sound
+def vSoundParameters		rb 1
 
 ; AI
 def vAiTarget				rb 1

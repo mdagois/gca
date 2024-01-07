@@ -4,14 +4,7 @@ include "game.rgbinc"
 include "main.rgbinc"
 include "memory.rgbinc"
 include "score.rgbinc"
-
-; TODO Sound
-;		- ball hits wall
-;		- ball hits pad
-;		- ball hits border
-;		- goal
-;		- ball gets faster
-;		- game over
+include "sound.rgbinc"
 
 section "pong", rom0
 
@@ -59,7 +52,7 @@ InitGraphics:
 
 	; initialize the random seed
 	LFSR8_PickSeed
-	ldh [vRandomSeed], a
+	ldh [vLfsrValue], a
 
 	ret
 
@@ -71,6 +64,7 @@ Initialize:
 	PadInput_Initialize vPadInput
 	call InitGraphics
 
+	Sound_Initialize
 	Game_Initialize
 	Score_Initialize
 	AI_Initialize
