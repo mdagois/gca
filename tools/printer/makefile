@@ -47,7 +47,7 @@ ROM_DIR=build/
 ROM_EXTENSION=gbc
 
 # rgbasm extra options
-ROM_COMPILE_OPTIONS=-Werror -Weverything -Hl
+ROM_COMPILE_OPTIONS=-Werror -Weverything
 
 # rgblink extra options
 ROM_LINK_OPTIONS=--tiny
@@ -102,5 +102,5 @@ romd: ROM_COMPILE_OPTIONS += -DBUILD_DEBUG
 romd: rombase
 
 %.o: %.$(ROM_SRC_EXTENSION)
-	@rgbasm $(ROM_COMPILE_OPTIONS) -i $(ROM_SRC_DIR) -o $@ $<
+	@rgbasm $(ROM_COMPILE_OPTIONS) -I $(ROM_SRC_DIR) -o $@ $<
 

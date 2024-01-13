@@ -241,10 +241,10 @@ db $00, $00	; coordinates
 dw $0168 ; number of indices
 db ATTR_CHR_WRITE_HORIZONTAL
 ; indices
-ROW_BYTE_OFFSET = 0
+def ROW_BYTE_OFFSET = 0
 rept 18
 incbin "sgb_center_3.atr", ROW_BYTE_OFFSET, 5
-ROW_BYTE_OFFSET += 8
+def ROW_BYTE_OFFSET += 8
 endr
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -462,10 +462,10 @@ InitializeSgbDevice:
 
 	SendCommand SgbPacket_MaskEn_Freeze
 
-COMMAND_INDEX = 0
+def COMMAND_INDEX = 0
 rept ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
 	SendCommand SgbPackets_CoreInit + COMMAND_INDEX
-COMMAND_INDEX += SGB_BYTES_PER_PACKET
+def COMMAND_INDEX += SGB_BYTES_PER_PACKET
 endr
 
 	call PerformCustomInitialization

@@ -1,0 +1,9 @@
+include "sound.rgbinc"
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+section "vblank_interrupt", rom0[INTERRUPT_ADDRESS_VBLANK]
+	Sound_Update
+	reti
+

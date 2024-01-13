@@ -5,10 +5,10 @@ include "shared.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-NOTE_FREQUENCY_CH124			rb 2
-NOTE_FREQUENCY_CH3				rb 2
-NOTE_TILE_INDICES				rb 3
-sizeof_NOTE						rb 0
+def NOTE_FREQUENCY_CH124			rb 2
+def NOTE_FREQUENCY_CH3				rb 2
+def NOTE_TILE_INDICES				rb 3
+def sizeof_NOTE						rb 0
 
 def OCTAVE_NOTES_COUNT				equ 12
 def NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
@@ -244,9 +244,9 @@ UpdateWaveformColumn:
 
 rsset _HRAM
 
-HRAM_TEMP						rb 8
+def HRAM_TEMP						rb 8
 
-HRAM_END						rb 0
+def HRAM_END						rb 0
 
 ; sanity checks
 def HRAM_USAGE						equ (HRAM_END - _HRAM)
@@ -258,26 +258,26 @@ assert HRAM_USAGE <= $0040, "Too many bytes used in HRAM"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-CONTROL_FLAG_PLAY_SOUND			rb 1
-CONTROL_FLAG_WAVEFORM_EDIT_MODE	rb 1
-CONTROL_FLAGS_COUNT				rb 0
+def CONTROL_FLAG_PLAY_SOUND			rb 1
+def CONTROL_FLAG_WAVEFORM_EDIT_MODE	rb 1
+def CONTROL_FLAGS_COUNT				rb 0
 assert CONTROL_FLAGS_COUNT < 8, "Too many control flags declared"
 
 rsset WRAM_CHANNEL_START
-WRAM_CONTROL_FLAGS				rb 1
-WRAM_SELECTION_INDEX			rb 1
-WRAM_CH3_REGISTER				rb 5
+def WRAM_CONTROL_FLAGS				rb 1
+def WRAM_SELECTION_INDEX			rb 1
+def WRAM_CH3_REGISTER				rb 5
 
-WRAM_NOTE_NUMBER				rb 1
-WRAM_LENGTH_INDEX				rb 1
-WRAM_USE_LENGTH_FLAG			rb 1
-WRAM_VOLUME						rb 1
+def WRAM_NOTE_NUMBER				rb 1
+def WRAM_LENGTH_INDEX				rb 1
+def WRAM_USE_LENGTH_FLAG			rb 1
+def WRAM_VOLUME						rb 1
 
-WRAM_WAVEFORM					rb WAVEFORM_BYTE_LENGTH
-WRAM_WAVEFORM_SELECTOR_COLUMN	rb 1
-WRAM_WAVEFORM_COLUMN_UPDATE		rb 1
+def WRAM_WAVEFORM					rb WAVEFORM_BYTE_LENGTH
+def WRAM_WAVEFORM_SELECTOR_COLUMN	rb 1
+def WRAM_WAVEFORM_COLUMN_UPDATE		rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -328,12 +328,12 @@ def LINE_WAVEFORM					equ (6)
 
 ; selection indices
 rsreset
-SELECTION_NOTE					rb 1
-SELECTION_LENGTH				rb 1
-SELECTION_USE_LENGTH			rb 1
-SELECTION_VOLUME				rb 1
-SELECTION_WAVEFORM				rb 1
-SELECTIONS_COUNT				rb 0
+def SELECTION_NOTE					rb 1
+def SELECTION_LENGTH				rb 1
+def SELECTION_USE_LENGTH			rb 1
+def SELECTION_VOLUME				rb 1
+def SELECTION_WAVEFORM				rb 1
+def SELECTIONS_COUNT				rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

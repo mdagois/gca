@@ -38,11 +38,11 @@ endm
 
 rsset _RAM
 
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-WRAM_FRAME_COUNTER				rb 1
-NOTE_INDEX						rb 1
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_FRAME_COUNTER				rb 1
+def NOTE_INDEX						rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

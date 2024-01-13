@@ -34,19 +34,19 @@ endm
 ; add \1 mines to the board
 macro GenerateMines
 	LFSR8_PickSeed
-	ld [vLfsrValue], a
+	ldh [vLfsrValue], a
 	ld c, \1
 	.generating_mine\@
 		; load the seed and generate the next lfsr
-		ld a, [vLfsrValue]
+		ldh a, [vLfsrValue]
 		LFSR8_GetNextValue
-		ld [vLfsrValue], a
+		ldh [vLfsrValue], a
 
 		; lfsr can only generate 255 values, but the board has 256 coordinates
 		; when the lfsr result is 1, allow the value to be set to 0 semi-randomly
 		cp a, 1
 		jr nz, .lfsr_not_one\@
-			ld a, [rDIV]
+			ldh a, [rDIV]
 			and a, $01
 		.lfsr_not_one\@
 
@@ -66,9 +66,9 @@ endm
 macro ComputeMineCounts
 ; temp variables on the stack
 rsreset
-mine_compute_LOGICAL_BOARD_COORDINATE	rb 1
-mine_compute_COUNT						rb 1
-sizeof_mine_compute_TEMP				rb 0
+def mine_compute_LOGICAL_BOARD_COORDINATE	rb 1
+def mine_compute_COUNT						rb 1
+def sizeof_mine_compute_TEMP				rb 0
 
 	add sp, -sizeof_mine_compute_TEMP
 
@@ -136,7 +136,7 @@ endm
 macro ResetBoardVariables
 	; reset counters
 	ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
-	ld [vUncoveredCount], a
+	ldh [vUncoveredCount], a
 	Counter_SetCount a
 
 	; clear the flag coordinate used by the flag toggling mechanics

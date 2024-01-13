@@ -108,13 +108,13 @@ def PACKET_COMPRESSION_ON				equ ($01)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-RESULT_SUCCESS						rb 1
-RESULT_ERROR_01						rb 1
-RESULT_ERROR_02						rb 1
-RESULT_ERROR_03						rb 1
-RESULT_ERROR_04						rb 1
-RESULT_IN_PROGRESS					rb 1
-RESULTS_COUNT						rb 0
+def RESULT_SUCCESS						rb 1
+def RESULT_ERROR_01						rb 1
+def RESULT_ERROR_02						rb 1
+def RESULT_ERROR_03						rb 1
+def RESULT_ERROR_04						rb 1
+def RESULT_IN_PROGRESS					rb 1
+def RESULTS_COUNT						rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; print state
@@ -123,17 +123,17 @@ RESULTS_COUNT						rb 0
 def NULL_POINTER						equ ($0000)
 
 rsreset
-PRINT_STATE_FUNCTION_ADDRESS		rb 2
+def PRINT_STATE_FUNCTION_ADDRESS		rb 2
 
-PRINT_STATE_DATA_POINTER_NEXT_BYTE	rb 2
-PRINT_STATE_DATA_POINTER_LAST_BYTE	rb 2
+def PRINT_STATE_DATA_POINTER_NEXT_BYTE	rb 2
+def PRINT_STATE_DATA_POINTER_LAST_BYTE	rb 2
 
-PRINT_STATE_RESPONSE_ACK			rb 1
-PRINT_STATE_RESPONSE_STATUS			rb 1
+def PRINT_STATE_RESPONSE_ACK			rb 1
+def PRINT_STATE_RESPONSE_STATUS			rb 1
 
-PRINT_STATE_TRANSFER_RESULT			rb 1
+def PRINT_STATE_TRANSFER_RESULT			rb 1
 
-sizeof_PRINT_STATE					rb 0
+def sizeof_PRINT_STATE					rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; packet definitions
@@ -333,11 +333,11 @@ SendPacketByte_CheckStatus:
 
 rsset _RAM
 
-WRAM_IS_VBLANK					rb 1
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
+def WRAM_IS_VBLANK					rb 1
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

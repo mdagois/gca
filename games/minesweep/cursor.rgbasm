@@ -37,7 +37,7 @@ _Cursor_Enable:
 
 	; reset the flags as they are not used
 	xor a
-	ld [vCursorOam + OAMA_FLAGS], a
+	ldh [vCursorOam + OAMA_FLAGS], a
 
 	jr _Cursor_Show
 

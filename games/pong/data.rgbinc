@@ -1,0 +1,26 @@
+if !def(DATA_RGBINC)
+def DATA_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tile id (index in vram tileset)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsreset
+
+def TILE_ID_BACKGROUND					rb 1
+def TILE_ID_TOP_WALL					rb 1
+def TILE_ID_BOTTOM_WALL					rb 1
+def TILE_ID_MIDLINE_LEFT				rb 1
+def TILE_ID_MIDLINE_RIGHT				rb 1
+def TILE_ID_PADS						rb 4
+def TILE_ID_BALL						rb 1
+def TILE_ID_NUMBERS						rb 40
+def TILE_ID_WIN							rb 2
+def TILE_ID_LOSE						rb 2
+
+def TILE_ID_COUNT						rb 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

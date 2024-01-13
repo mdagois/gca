@@ -8,30 +8,30 @@ def GAME_RGBINC equ 1
 rsreset
 
 ; wait for the player to press start to launch a new game
-GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME		rb 1
+def GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME		rb 1
 
 ; prepare the board for a new game
-GAMESTATE_FUNC_ID_NEW_GAME				rb 1
+def GAMESTATE_FUNC_ID_NEW_GAME				rb 1
 
 ; handle player's actions
-GAMESTATE_FUNC_ID_PLAY					rb 1
+def GAMESTATE_FUNC_ID_PLAY					rb 1
 
 ; the player uses a flag
-GAMESTATE_FUNC_ID_FLAG					rb 1
+def GAMESTATE_FUNC_ID_FLAG					rb 1
 
 ; show the board with all tiles uncovered at the end of the game
-GAMESTATE_FUNC_ID_SHOW_RESULTS			rb 1
+def GAMESTATE_FUNC_ID_SHOW_RESULTS			rb 1
 
 ; the player uncovers a tile
-GAMESTATE_FUNC_ID_UNCOVER				rb 1
+def GAMESTATE_FUNC_ID_UNCOVER				rb 1
 
 ; the player lost the game
-GAMESTATE_FUNC_ID_LOSE					rb 1
+def GAMESTATE_FUNC_ID_LOSE					rb 1
 
 ; the player won the game
-GAMESTATE_FUNC_ID_WIN					rb 1
+def GAMESTATE_FUNC_ID_WIN					rb 1
 
-GAMESTATE_FUNC_IDS_COUNT				rb 0
+def GAMESTATE_FUNC_IDS_COUNT				rb 0
 
 ; initialize the game states
 macro GameState_Initialize

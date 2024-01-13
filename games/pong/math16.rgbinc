@@ -1,0 +1,56 @@
+if !def(MATH16_RGBINC)
+def MATH16_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Math macros for 16-bit integers.
+; A 16-bit integer is composed of two bytes: the integer and the fraction.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def REAL_FRACTION_PART	equ (0)
+def REAL_INTEGER_PART	equ (1)
+
+; set the 16-bit number at address \1 to value \2
+macro Set16
+	ld a, low(\2)
+	ldh [\1 + REAL_FRACTION_PART], a
+	ld a, high(\2)
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+; perform a 16-bit add for numbers at addresses \1 and \2
+; the result is stored back at address \1
+macro Add16
+	ldh a, [\1 + REAL_FRACTION_PART]
+	ld b, a
+	ldh a, [\2 + REAL_FRACTION_PART]
+	add a, b
+	ldh [\1 + REAL_FRACTION_PART], a
+
+	ldh a, [\1 + REAL_INTEGER_PART]
+	ld b, a
+	ldh a, [\2 + REAL_INTEGER_PART]
+	adc a, b
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+; negate the 16-bit number at address \1
+macro Negate16
+	ldh a, [\1 + REAL_FRACTION_PART]
+	xor a, $FF
+	ld l, a
+	ldh a, [\1 + REAL_INTEGER_PART]
+	xor a, $FF
+	ld h, a
+
+	ld d, 0
+	ld e, 1
+	add hl, de
+
+	ld a, l
+	ldh [\1 + REAL_FRACTION_PART], a
+	ld a, h
+	ldh [\1 + REAL_INTEGER_PART], a
+endm
+
+endc
+

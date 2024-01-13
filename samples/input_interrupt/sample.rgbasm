@@ -86,17 +86,17 @@ endm
 
 rsset _RAM
 
-WRAM_IS_VBLANK					rb 1
+def WRAM_IS_VBLANK					rb 1
 
-WRAM_INPUT_COUNTER				rb 1
+def WRAM_INPUT_COUNTER				rb 1
 
-WRAM_HUNDREDS_TILE				rb 1
-WRAM_TENS_TILE					rb 1
-WRAM_UNITS_TILE					rb 1
+def WRAM_HUNDREDS_TILE				rb 1
+def WRAM_TENS_TILE					rb 1
+def WRAM_UNITS_TILE					rb 1
 
-WRAM_P1_BITS					rb 4
+def WRAM_P1_BITS					rb 4
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

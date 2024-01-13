@@ -34,13 +34,13 @@ def FADE_ANIM_FRAME_COUNT			equ (8)
 
 rsset _RAM
 
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 
-WRAM_FADE_CURRENT_LEVEL			rb 1
-WRAM_FADE_TARGET_LEVEL			rb 1
-WRAM_FADE_FRAME_COUNTER			rb 1
+def WRAM_FADE_CURRENT_LEVEL			rb 1
+def WRAM_FADE_TARGET_LEVEL			rb 1
+def WRAM_FADE_FRAME_COUNTER			rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -54,14 +54,14 @@ section "sample", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-FADE_LEVEL_DARKEST				rb 1
-FADE_LEVEL_DARKER				rb 1
-FADE_LEVEL_DARK					rb 1
-FADE_LEVEL_NORMAL				rb 1
-FADE_LEVEL_LIGHT				rb 1
-FADE_LEVEL_LIGHTER				rb 1
-FADE_LEVEL_LIGHTEST				rb 1
-FADE_LEVELS_COUNT				rb 0
+def FADE_LEVEL_DARKEST				rb 1
+def FADE_LEVEL_DARKER				rb 1
+def FADE_LEVEL_DARK					rb 1
+def FADE_LEVEL_NORMAL				rb 1
+def FADE_LEVEL_LIGHT				rb 1
+def FADE_LEVEL_LIGHTER				rb 1
+def FADE_LEVEL_LIGHTEST				rb 1
+def FADE_LEVELS_COUNT				rb 0
 
 palettes:
 db %11111111

@@ -28,11 +28,11 @@ macro DisableLCD
 endm
 
 rsreset
-CHANNEL_INITIALIZE		rw 1
-CHANNEL_UPDATE			rw 1
-CHANNEL_FINALIZE		rw 1
-CHANNEL_TILEMAP			rw 1
-sizeof_CHANNEL			rb 0
+def CHANNEL_INITIALIZE		rw 1
+def CHANNEL_UPDATE			rw 1
+def CHANNEL_FINALIZE		rw 1
+def CHANNEL_TILEMAP			rw 1
+def sizeof_CHANNEL			rb 0
 
 ChannelDescription:
 dw InitializeCH1

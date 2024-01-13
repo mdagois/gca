@@ -1,0 +1,68 @@
+if !def(MEMORY_RGBINC)
+def MEMORY_RGBINC equ 1
+
+include "utils.rgbinc"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; oam addresses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+rsset _OAMRAM
+
+; ball
+def vBallOam				rb sizeof_OAM_ATTRS
+
+; pads
+def vLeftPadTopOam			rb sizeof_OAM_ATTRS
+def vLeftPadBottomOam		rb sizeof_OAM_ATTRS
+def vRightPadTopOam			rb sizeof_OAM_ATTRS
+def vRightPadBottomOam		rb sizeof_OAM_ATTRS
+
+def OAM_END					rb 0
+
+def OAM_USAGE				equ (OAM_END - _OAMRAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; hram addresses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def LEFT_INDEX				equ (0)
+def RIGHT_INDEX				equ (1)
+
+rsset _HRAM
+
+; input
+def vPadInput				rb sizeof_PAD_INPUT
+
+; score
+def vScoreFlag				rb 1
+def vScore					rb 2
+
+; ball
+def vBallX					rb 2
+def vBallY					rb 2
+def vBallDirX				rb 2
+def vBallDirY				rb 2
+def vBallSpeed				rb 1
+def vBallHitCounter			rb 1
+
+; pads
+def vPadsY					rb 2
+
+; rng
+def vLfsrValue				rb 1
+
+; sound
+def vSoundParameters		rb 1
+
+; AI
+def vAiTarget				rb 1
+
+def HRAM_END				rb 0
+
+def HRAM_USAGE equ (HRAM_END - _HRAM)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

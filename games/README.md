@@ -8,7 +8,7 @@ A bunch of simple games for Game Boy.
 Check the requirements to use it.
 Note that a copy of `make` is available in the [bin](../bin) directory of the repository.
 
-A batch, `build.bat`, is also available as an additional option to build on Windows.
+Prebuilt binaries are also available in the [prebuilt](./prebuilt) directory.
 
 ## List
 
@@ -17,4 +17,10 @@ A batch, `build.bat`, is also available as an additional option to build on Wind
 A logic puzzle game in which 40 mines are hidden in a 16x16 grid.
 
 ![](images/minesweep.png)
+
+### Pong
+
+A simple pong game.
+
+![](images/pong.png)
 

@@ -34,7 +34,7 @@ _Sound_Play:
 
 	; raise the play flag and store the parameters
 	or a, PLAY_SOUND_FLAG
-	ld [vSoundParameters], a
+	ldh [vSoundParameters], a
 
 	ret
 

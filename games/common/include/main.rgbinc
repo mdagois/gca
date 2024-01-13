@@ -24,11 +24,11 @@ entrypoint:
 
 macro DisableLCD
 	.wait_vblank\@
-		ld a, [rLY]
+		ldh a, [rLY]
 		cp a, SCRN_Y
 		jr nz, .wait_vblank\@
 	xor a
-	ld [rLCDC], a
+	ldh [rLCDC], a
 endm
 
 section "main", rom0

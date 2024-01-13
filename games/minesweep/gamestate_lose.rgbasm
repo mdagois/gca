@@ -11,9 +11,9 @@ section "gamestate_lose", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _GetRandom:
-	ld a, [vLfsrValue]
+	ldh a, [vLfsrValue]
 	LFSR8_GetNextValue
-	ld [vLfsrValue], a
+	ldh [vLfsrValue], a
 
 	and a, $07
 	bit 2, a
@@ -27,7 +27,7 @@ _GetRandom:
 
 _ShakeScreen:
 	LFSR8_PickSeed
-	ld [vLfsrValue], a
+	ldh [vLfsrValue], a
 
 	ld c, 16
 	.shake
@@ -47,8 +47,8 @@ _ShakeScreen:
 		jr nz, .shake
 
 	xor a
-	ld [rSCX], a
-	ld [rSCY], a
+	ldh [rSCX], a
+	ldh [rSCY], a
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,8 +56,8 @@ _ShakeScreen:
 GameStateFunc_Lose:
 ; temp variables on the stack
 rsreset
-lose_LOGICAL_BOARD_COORDINATE	rb 1
-sizeof_lose_TEMP				rb 0
+def lose_LOGICAL_BOARD_COORDINATE	rb 1
+def sizeof_lose_TEMP				rb 0
 
 	add sp, -sizeof_lose_TEMP
 
@@ -118,7 +118,7 @@ sizeof_lose_TEMP				rb 0
 
 	; set game as lost
 	xor a
-	ld [vLastGameIsWin], a
+	ldh [vLastGameIsWin], a
 
 	halt
 	ret

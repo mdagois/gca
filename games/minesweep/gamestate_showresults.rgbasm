@@ -20,7 +20,7 @@ GameStateFunc_ShowResults:
 
 	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
 
-	ld a, [vLastGameIsWin]
+	ldh a, [vLastGameIsWin]
 	or a, a
 	jr z, .show_window_lost
 		halt

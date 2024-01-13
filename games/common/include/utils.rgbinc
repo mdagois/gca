@@ -13,28 +13,27 @@ def TILE_SIDE						equ (8)
 def BYTES_PER_TILE					equ (16)
 
 rsset $0040
-INTERRUPT_ADDRESS_VBLANK		rb 8
-INTERRUPT_ADDRESS_LCD			rb 8
-INTERRUPT_ADDRESS_TIMER			rb 8
-INTERRUPT_ADDRESS_SERIAL		rb 8
-INTERRUPT_ADDRESS_JOYPAD		rb 8
-INTERRUPT_ADDRESS_END			rb 0
+def INTERRUPT_ADDRESS_VBLANK		rb 8
+def INTERRUPT_ADDRESS_LCD			rb 8
+def INTERRUPT_ADDRESS_TIMER			rb 8
+def INTERRUPT_ADDRESS_SERIAL		rb 8
+def INTERRUPT_ADDRESS_JOYPAD		rb 8
+def INTERRUPT_ADDRESS_END			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; reset the carry flag
+macro rcf
+	scf
+	ccf
+endm
+
 ; copy \2 into \1 through (a)
 ; example: copy [$FF84], 10
 macro copy
 	ld a, \2
-	ld \1, a
-endm
-
-; set \1 to zero through (a)
-; example: reset [$FF84]
-macro reset
-	xor a
 	ld \1, a
 endm
 
@@ -65,19 +64,33 @@ endm
 ; load 2 bytes at address \2 into 16-bit register \1
 ; example: load16 de, $FF82
 macro load16
+if high(\2) == $FF
+	ldh a, [\2 + 0]
+	ld low(\1), a
+	ldh a, [\2 + 1]
+	ld high(\1), a
+else
 	ld a, [\2 + 0]
 	ld low(\1), a
 	ld a, [\2 + 1]
 	ld high(\1), a
+endc
 endm
 
 ; load the content of 16-bit register \2 into two bytes at address \1
 ; example: store16 $FF82, hl
 macro store16
+if high(\1) == $FF
+	ld a, low(\2)
+	ldh [\1 + 0], a
+	ld a, high(\2)
+	ldh [\1 + 1], a
+else
 	ld a, low(\2)
 	ld [\1 + 0], a
 	ld a, high(\2)
 	ld [\1 + 1], a
+endc
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -147,7 +160,7 @@ endm
 ; pick a seed for LFSR and put it in (a)
 macro LFSR8_PickSeed
 	; get a semi-random value from the div timer
-	ld a, [rDIV]
+	ldh a, [rDIV]
 
 	; make sure the value is not zero
 	or a
@@ -428,11 +441,11 @@ endm
 
 ; struct to hold the pad input (dpad + buttons)
 rsreset
-PAD_INPUT_CURRENT	rb 1
-PAD_INPUT_PREVIOUS	rb 1
-PAD_INPUT_PRESSED	rb 1
-PAD_INPUT_RELEASED	rb 1
-sizeof_PAD_INPUT	rb 0
+def PAD_INPUT_CURRENT	rb 1
+def PAD_INPUT_PREVIOUS	rb 1
+def PAD_INPUT_PRESSED	rb 1
+def PAD_INPUT_RELEASED	rb 1
+def sizeof_PAD_INPUT	rb 0
 
 ; init a pad input struct at address \1
 ; expected to be used only once at initialization
@@ -502,7 +515,7 @@ endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
 ; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
-macro PadInput_TestHeldAll
+macro PadInput_TestHeld
 	ld a, [\1 + PAD_INPUT_CURRENT]
 	and a, \2
 endm

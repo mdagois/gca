@@ -44,12 +44,12 @@ def OAM_BYTES_COUNT					equ (sizeof_OAM_ATTRS * OAM_COUNT)
 
 rsset _RAM
 
-WRAM_SPRITES					rb OAM_BYTES_COUNT
-WRAM_FRAME_COUNTER				rb 1
-WRAM_LINE_OFFSETS				rb SPRITE_LINES_COUNT
-WRAM_LINE_MOVE					rb 1
+def WRAM_SPRITES					rb OAM_BYTES_COUNT
+def WRAM_FRAME_COUNTER				rb 1
+def WRAM_LINE_OFFSETS				rb SPRITE_LINES_COUNT
+def WRAM_LINE_MOVE					rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -77,7 +77,7 @@ InitSample:
 
 	; place sprites on 5 lines of 8 sprites each
 	ld hl, WRAM_SPRITES
-REPT_SPRITE_NUM = 0
+def REPT_SPRITE_NUM = 0
 	REPT OAM_COUNT
 		; Y
 		ld a, ((SPRITE_FIRST_LINE + REPT_SPRITE_NUM) / 8) * 8
@@ -91,7 +91,7 @@ REPT_SPRITE_NUM = 0
 		; Flags
 		xor a
 		ld [hli], a
-REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
+def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
 	ENDR
 
 	; init graphics
@@ -115,11 +115,11 @@ UpdateSample:
 
 	; transfer the sprites to OAM
 	ld hl, _OAMRAM
-REPT_BYTE_NUM = 0
+def REPT_BYTE_NUM = 0
 	REPT OAM_BYTES_COUNT
 		ld a, [WRAM_SPRITES + REPT_BYTE_NUM]
 		ld [hli], a
-REPT_BYTE_NUM = REPT_BYTE_NUM + 1
+def REPT_BYTE_NUM = REPT_BYTE_NUM + 1
 	ENDR
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,7 +127,7 @@ REPT_BYTE_NUM = REPT_BYTE_NUM + 1
 	; update the sprite abscissas based on the line offsets
 	ld hl, WRAM_SPRITES + OAMA_X
 	ld de, 3
-REPT_SPRITE_NUM = 0
+def REPT_SPRITE_NUM = 0
 	REPT OAM_COUNT
 		; X
 		ld a, 24 + ((REPT_SPRITE_NUM & $07) * 16)
@@ -137,7 +137,7 @@ REPT_SPRITE_NUM = 0
 
 		ld [hli], a
 		add hl, de
-REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
+def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
 	ENDR
 
 	; check whether it is time to update the sprite line offsets
@@ -148,7 +148,7 @@ REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
 	copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
 	; update the line offsets
-REPT_LINE_NUM = 0
+def REPT_LINE_NUM = 0
 	REPT SPRITE_LINES_COUNT
 		ld hl, WRAM_LINE_MOVE
 		bit REPT_LINE_NUM, [hl]
@@ -176,7 +176,7 @@ REPT_LINE_NUM = 0
 				set REPT_LINE_NUM, [hl]
 			.turn_left\@
 		.move_end\@
-REPT_LINE_NUM = REPT_LINE_NUM + 1
+def REPT_LINE_NUM = REPT_LINE_NUM + 1
 	ENDR
 
 	ret

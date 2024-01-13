@@ -1,0 +1,23 @@
+if !def(SCORE_RGBINC)
+def SCORE_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Score
+; The score consists of the two number displayed in the game field
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; initialize the score
+macro Score_Initialize
+	call _Score_Initialize
+endm
+
+; update the score graphics
+; must be used during vblank
+macro Score_UpdateGraphics
+	call _Score_UpdateGraphics
+endm
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+endc
+

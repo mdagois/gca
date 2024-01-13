@@ -53,15 +53,15 @@ def TRANSFER_LIST_MAX_SIZE			equ (16)
 assert (TRANSFER_LIST_MAX_SIZE & (TRANSFER_LIST_MAX_SIZE - 1)) == 0, "TRANSFER_LIST_MAX_SIZE should be a power of two"
 
 rsreset
-TRANSFER_TILEMAP_ADDRESS		rw 1
-TRANSFER_TILE_INDEX				rb 1
-sizeof_TRANSFER					rb 0
+def TRANSFER_TILEMAP_ADDRESS		rw 1
+def TRANSFER_TILE_INDEX				rb 1
+def sizeof_TRANSFER					rb 0
 
 rsreset
-TRANSFER_LIST_LEN				rb 1
-TRANSFER_LIST_NEXT				rw 1
-TRANSFER_LIST_DATA				rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
-sizeof_TRANSFER_LIST			rb 0
+def TRANSFER_LIST_LEN				rb 1
+def TRANSFER_LIST_NEXT				rw 1
+def TRANSFER_LIST_DATA				rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
+def sizeof_TRANSFER_LIST			rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -77,9 +77,9 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-PUSH_TRANSFER_PARAM_TILEMAP_PTR	rw 1
-PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
-sizeof_PUSH_TRANSFER_PARAM		rb 0
+def PUSH_TRANSFER_PARAM_TILEMAP_PTR	rw 1
+def PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
+def sizeof_PUSH_TRANSFER_PARAM		rb 0
 
 ; push a single transfer into the transfer list
 PushTransferFunc:
@@ -187,26 +187,26 @@ include "channel_data.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-CONTROL_FLAG_PLAY_SOUND			rb 1
-CONTROL_FLAGS_COUNT				rb 0
+def CONTROL_FLAG_PLAY_SOUND			rb 1
+def CONTROL_FLAGS_COUNT				rb 0
 assert CONTROL_FLAGS_COUNT < 8, "Too many control flags declared"
 
 rsset _RAM
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-WRAM_CONTROL_FLAGS				rb 1
-WRAM_SELECTION_INDEX			rb 1
-WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
-WRAM_CH4_REGISTER				rb 4
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_CONTROL_FLAGS				rb 1
+def WRAM_SELECTION_INDEX			rb 1
+def WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
+def WRAM_CH4_REGISTER				rb 4
 
-WRAM_CLOCK_DIVIDE				rb 1
-WRAM_CLOCK_SHIFT				rb 1
-WRAM_LFSR_BITS_COUNT			rb 1
-WRAM_ENV_INIT					rb 1
-WRAM_ENV_STEP					rb 1
-WRAM_ENV_DIR					rb 1
-WRAM_LENGTH_INDEX				rb 1
+def WRAM_CLOCK_DIVIDE				rb 1
+def WRAM_CLOCK_SHIFT				rb 1
+def WRAM_LFSR_BITS_COUNT			rb 1
+def WRAM_ENV_INIT					rb 1
+def WRAM_ENV_STEP					rb 1
+def WRAM_ENV_DIR					rb 1
+def WRAM_LENGTH_INDEX				rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -262,14 +262,14 @@ def LINE_LENGTH						equ (10)
 
 ; selection indices
 rsreset
-SELECTION_CLOCK_DIVIDE			rb 1
-SELECTION_CLOCK_SHIFT			rb 1
-SELECTION_LFSR_BITS_COUNT		rb 1
-SELECTION_ENV_INIT				rb 1
-SELECTION_ENV_STEP				rb 1
-SELECTION_ENV_DIR				rb 1
-SELECTION_LENGTH				rb 1
-SELECTIONS_COUNT				rb 0
+def SELECTION_CLOCK_DIVIDE			rb 1
+def SELECTION_CLOCK_SHIFT			rb 1
+def SELECTION_LFSR_BITS_COUNT		rb 1
+def SELECTION_ENV_INIT				rb 1
+def SELECTION_ENV_STEP				rb 1
+def SELECTION_ENV_DIR				rb 1
+def SELECTION_LENGTH				rb 1
+def SELECTIONS_COUNT				rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

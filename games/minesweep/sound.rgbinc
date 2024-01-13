@@ -7,14 +7,14 @@ def SOUND_RGBINC equ 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-SOUND_OPEN_WINDOW		rb 1
-SOUND_CLOSE_WINDOW		rb 1
-SOUND_UNCOVER_TILE		rb 1
-SOUND_PUT_FLAG			rb 1
-SOUND_REMOVE_FLAG		rb 1
-SOUND_LOSE				rb 1
-SOUND_WIN				rb 1
-SOUNDS_COUNT			rb 0
+def SOUND_OPEN_WINDOW		rb 1
+def SOUND_CLOSE_WINDOW		rb 1
+def SOUND_UNCOVER_TILE		rb 1
+def SOUND_PUT_FLAG			rb 1
+def SOUND_REMOVE_FLAG		rb 1
+def SOUND_LOSE				rb 1
+def SOUND_WIN				rb 1
+def SOUNDS_COUNT			rb 0
 
 ; initialize sound
 macro Sound_Initialize

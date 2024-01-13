@@ -16,10 +16,10 @@ Initialize:
 	ClearMemory _RAM, RAM_USAGE
 
 	ld a, %11100100
-	ld [rBGP], a
-	ld [rOBP0], a
+	ldh [rBGP], a
+	ldh [rOBP0], a
 	xor a, $FF
-	ld [rOBP1], a
+	ldh [rOBP1], a
 
 	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 

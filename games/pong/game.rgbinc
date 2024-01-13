@@ -1,0 +1,26 @@
+if !def(GAME_RGBINC)
+def GAME_RGBINC equ 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Game
+; This is where most of the game state (ball, pads and scoring) is managed.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; initialize the score
+macro Game_Initialize
+	call _Game_Initialize
+endm
+
+; update the game
+macro Game_Update
+	call _Game_Update
+endm
+
+; update the game graphics
+; must be used during vblank
+macro Game_UpdateGraphics
+	call _Game_UpdateGraphics
+endm
+
+endc
+

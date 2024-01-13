@@ -24,9 +24,9 @@ graphics_tileset_sgb_end:
 
 rsset _RAM
 
-WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)
@@ -226,23 +226,23 @@ db $00, $00	; coordinates
 dw $0168 ; number of indices
 db ATTR_CHR_WRITE_HORIZONTAL
 ; indices
-ROW_BYTE_OFFSET = 0
+def ROW_BYTE_OFFSET = 0
 rept 18
 ds 5, $00
-ROW_BYTE_OFFSET += 8
+def ROW_BYTE_OFFSET += 8
 endr
 
 SgbPacket_AttrLin:
 db ATTR_LIN_2
 db 22 ; number of lines
 ; lines data
-ATTR_LINE_NUM = 0
+def ATTR_LINE_NUM = 0
 rept 4
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_0 | ATTR_LINE_NUM + 0
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_1 | ATTR_LINE_NUM + 1
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_2 | ATTR_LINE_NUM + 2
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_3 | ATTR_LINE_NUM + 3
-ATTR_LINE_NUM += 4
+def ATTR_LINE_NUM += 4
 endr
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_0 | ATTR_LINE_NUM + 0
 db ATTR_LIN_HORIZONTAL | ATTR_LIN_PALETTE_1 | ATTR_LINE_NUM + 1
@@ -427,10 +427,10 @@ InitializeSgbDevice:
 	WaitFrames 60
 	SendCommand SgbPacket_MaskEn_Freeze
 
-COMMAND_INDEX = 0
+def COMMAND_INDEX = 0
 rept ((SgbPackets_CoreInit_End - SgbPackets_CoreInit) / SGB_BYTES_PER_PACKET)
 	SendCommand SgbPackets_CoreInit + COMMAND_INDEX
-COMMAND_INDEX += SGB_BYTES_PER_PACKET
+def COMMAND_INDEX += SGB_BYTES_PER_PACKET
 endr
 
 	call PerformCustomInitialization

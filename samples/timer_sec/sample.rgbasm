@@ -61,12 +61,12 @@ def TIMER_SCALING					equ (16)
 
 rsset _RAM
 
-WRAM_IS_VBLANK					rb 1
+def WRAM_IS_VBLANK					rb 1
 
-WRAM_SECONDS					rb 1
-WRAM_TIMER_SCALER				rb 1
+def WRAM_SECONDS					rb 1
+def WRAM_TIMER_SCALER				rb 1
 
-WRAM_END						rb 0
+def WRAM_END						rb 0
 
 ; sanity checks
 def WRAM_USAGE						equ (WRAM_END - _RAM)

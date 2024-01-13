@@ -1,0 +1,55 @@
+include "data.rgbinc"
+include "memory.rgbinc"
+
+export _Score_Initialize, _Score_Reset, _Score_UpdateGraphics
+
+section "score", rom0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_Score_Initialize:
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+def SCORE_LINE				equ (2)
+def SCORE_GAP_X				equ (1)
+def SCORE_LEFT_START_TILE	equ (_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) - SCORE_GAP_X - 2)
+def SCORE_RIGHT_START_TILE	equ (_SCRN0 + SCRN_VX_B * SCORE_LINE + (SCRN_X_B / 2) + SCORE_GAP_X)
+
+; update one digit of the score in the tilemap
+; \1 = starting address in the tilemap
+; \2 = digit to write
+macro UpdateDigit
+	; get the digit and multiply it by 4
+	; as each digit uses 4 tiles
+	ldh a, \2
+	add a, a
+	add a, a
+
+	; compute the starting tile id
+	add a, TILE_ID_NUMBERS
+
+	; write the tilemap
+		; top of the digit
+		ld hl, \1
+		ld [hli], a
+		inc a
+		ld [hli], a
+		inc a
+
+		; bottom of the digit
+		ld de, SCRN_VX_B - 2
+		add hl, de
+		ld [hli], a
+		inc a
+		ld [hl], a
+endm
+
+; update the score graphics
+; must be used during vblank
+_Score_UpdateGraphics:
+	UpdateDigit SCORE_LEFT_START_TILE, [vScore + 0]
+	UpdateDigit SCORE_RIGHT_START_TILE, [vScore + 1]
+	ret
+

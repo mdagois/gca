@@ -6,9 +6,9 @@ ROM_NAME=$(basename $BASE_DIR)
 
 pushd $BASE_DIR
 
-rgbasm -Werror -Weverything -Hl -o main.o main.rgbasm
+rgbasm -Werror -Weverything -o main.o main.rgbasm
 [ $? -eq 0 ] || exit 1
-rgbasm -Werror -Weverything -Hl -o sample.o sample.rgbasm
+rgbasm -Werror -Weverything -o sample.o sample.rgbasm
 [ $? -eq 0 ] || exit 1
 rgblink --dmg --map $ROM_NAME.map --sym $ROM_NAME.sym -o $ROM_NAME.gb main.o sample.o
 [ $? -eq 0 ] || exit 1
