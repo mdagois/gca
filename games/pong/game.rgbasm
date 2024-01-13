@@ -22,7 +22,7 @@ def WALL_HEIGHT						equ (8)
 
 def BALL_WIDTH						equ (4)
 def BALL_HEIGHT						equ (4)
-def BALL_INITIAL_SPEED				equ (2)
+def BALL_INITIAL_SPEED				equ (3)
 def BALL_MAX_SPEED					equ (6)
 def BALL_HIT_COUNTER				equ (5)
 def BALL_INITIAL_RIGHT_GAP_X		equ (40 << 8)
