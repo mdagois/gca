@@ -70,19 +70,19 @@ def PRINTER_STATUS_PERSISTENT_FLAGS		equ (PRINTER_STATUS_FLAG_READY_TO_PRINT | P
 
 rsreset
 
-BYTE_MAGIC_0				rb 1
-BYTE_MAGIC_1				rb 1
-BYTE_HEADER_PACKET_TYPE		rb 1
-BYTE_HEADER_COMPRESSION		rb 1
-BYTE_HEADER_DATA_SIZE_LSB	rb 1
-BYTE_HEADER_DATA_SIZE_MSB	rb 1
-BYTE_PACKET_DATA			rb 1
-BYTE_PACKET_PRINT			rb 1
-BYTE_PACKET_CHECKSUM_LSB	rb 1
-BYTE_PACKET_CHECKSUM_MSB	rb 1
-BYTE_PACKET_ACK				rb 1
-BYTE_PACKET_STATUS			rb 1
-BYTES_COUNT					rb 0
+def BYTE_MAGIC_0				rb 1
+def BYTE_MAGIC_1				rb 1
+def BYTE_HEADER_PACKET_TYPE		rb 1
+def BYTE_HEADER_COMPRESSION		rb 1
+def BYTE_HEADER_DATA_SIZE_LSB	rb 1
+def BYTE_HEADER_DATA_SIZE_MSB	rb 1
+def BYTE_PACKET_DATA			rb 1
+def BYTE_PACKET_PRINT			rb 1
+def BYTE_PACKET_CHECKSUM_LSB	rb 1
+def BYTE_PACKET_CHECKSUM_MSB	rb 1
+def BYTE_PACKET_ACK				rb 1
+def BYTE_PACKET_STATUS			rb 1
+def BYTES_COUNT					rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Miscellaneous
@@ -203,7 +203,7 @@ RefreshPalette:
 
 ProcessChunks:
 ; decompress all chunks
-CHUNK_LOOP_COUNT = 0
+def CHUNK_LOOP_COUNT = 0
 rept 9
 	xor a
 	ld [vDecompressedSize + 0], a
@@ -314,7 +314,7 @@ rept 9
 
 	.skip_chunk_decompression\@
 
-CHUNK_LOOP_COUNT = CHUNK_LOOP_COUNT + 1
+def CHUNK_LOOP_COUNT = CHUNK_LOOP_COUNT + 1
 endr
 
 	; compute the image size
