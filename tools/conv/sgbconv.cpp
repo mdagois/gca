@@ -5,10 +5,12 @@
 #include <functional>
 #include <iostream>
 #include <map>
-#include <png.h>
 #include <set>
 #include <string>
 #include <vector>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "third_party/stb_image.h"
 
 using namespace std;
 
@@ -125,58 +127,38 @@ public:
 
 private:
 	string m_filename;
-	png_image m_png;
-	union
-	{
-		png_bytep m_buffer;
-		ColorRGBA* m_pixels;
-	};
+	ColorRGBA* m_pixels;
+	int32_t m_width;
+	int32_t m_height;
 };
 
 typedef vector<Image> ImageList;
 
 Image::Image()
-: m_buffer(nullptr)
+: m_pixels(nullptr)
+, m_width(0)
+, m_height(0)
 {
-	memset(&m_png, 0, sizeof(png_image));
+
 }
 
 Image::~Image()
 {
-	if(m_buffer)
+	if(m_pixels == nullptr)
 	{
-		free(m_buffer);
+		return;
 	}
-	png_image_free(&m_png);
+	stbi_image_free(m_pixels);
+	m_pixels = nullptr;
 }
 
 bool Image::read(const char* filename)
 {
 	assert(filename);
-
-	m_png.version = PNG_IMAGE_VERSION;
-	if(png_image_begin_read_from_file(&m_png, filename) == 0)
-	{
-		return false;
-	}
-
-	m_png.format = PNG_FORMAT_RGBA;
-	m_buffer = reinterpret_cast<png_bytep>(malloc(PNG_IMAGE_SIZE(m_png)));
-	if(m_buffer == nullptr)
-	{
-		png_image_free(&m_png);
-		return false;
-	}
-
-	if(png_image_finish_read(&m_png, nullptr, m_buffer, 0, nullptr) == 0)
-	{
-		free(m_buffer);
-		png_image_free(&m_png);
-		return false;
-	}
-
+	int32_t num_channels = 0;
+	m_pixels = reinterpret_cast<ColorRGBA*>(stbi_load(filename, &m_width, &m_height, &num_channels, 4));
 	m_filename = filename;
-	return true;
+	return m_pixels != nullptr;
 }
 
 bool Image::validateSize() const
@@ -186,12 +168,12 @@ bool Image::validateSize() const
 
 uint32_t Image::getWidth() const
 {
-	return m_png.width;
+	return m_width;
 }
 
 uint32_t Image::getHeight() const
 {
-	return m_png.height;
+	return m_height;
 }
 
 const char* Image::getFilename() const
