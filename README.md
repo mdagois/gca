@@ -181,9 +181,7 @@ For other operating systems, it is necessary to build the tools.
 
 A [cmake](https://cmake.org/) file is available in the [tools/conv](tools/conv) folder.
 As each tool's code fits into a single source file, it should be straightforward to use any other build system.
-The only dependency is [libpng](http://www.libpng.org/pub/png/libpng.html).
-One good way to manage dependencies on any operating system is [vcpkg](https://vcpkg.io/).
-It also supports `cmake` out of the box.
+The only dependency is the `stb_image.h` header, which is included in the `third_party` folder.
 
 ### Conversion script
 
