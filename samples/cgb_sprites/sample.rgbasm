@@ -2,43 +2,43 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def OAM_OFFSET_X					equ (8)
-def OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X                    equ (8)
+def OAM_OFFSET_Y                    equ (16)
 
-def COINS_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
-def COIN_0_SPRITE_X					equ (OAM_OFFSET_X + 24)
-def COIN_WIDTH						equ (16)
-def COIN_1_SPRITE_X					equ (SCRN_X + OAM_OFFSET_X - 24 - COIN_WIDTH)
+def COINS_SPRITE_Y                  equ (OAM_OFFSET_Y + 64)
+def COIN_0_SPRITE_X                 equ (OAM_OFFSET_X + 24)
+def COIN_WIDTH                      equ (16)
+def COIN_1_SPRITE_X                 equ (SCRN_X + OAM_OFFSET_X - 24 - COIN_WIDTH)
 
-def COIN_0_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
-def COIN_0_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
-def COIN_1_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 2)
-def COIN_1_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 3)
+def COIN_0_SPRITE_LEFT              equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
+def COIN_0_SPRITE_RIGHT             equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
+def COIN_1_SPRITE_LEFT              equ (_OAMRAM + sizeof_OAM_ATTRS * 2)
+def COIN_1_SPRITE_RIGHT             equ (_OAMRAM + sizeof_OAM_ATTRS * 3)
 
-def COIN_PALETTE_0					equ (0)
-def COIN_PALETTE_1					equ (1)
+def COIN_PALETTE_0                  equ (0)
+def COIN_PALETTE_1                  equ (1)
 
-def COIN_ANIM_UPDATE_PERIOD			equ (10)
-def COIN_FRAME_COUNT				equ (6)
+def COIN_ANIM_UPDATE_PERIOD         equ (10)
+def COIN_FRAME_COUNT                equ (6)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
-def WRAM_COIN_FRAME					rb 1
+def WRAM_COIN_FRAME_UPDATE_COUNTER  rb 1
+def WRAM_COIN_FRAME                 rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -69,172 +69,172 @@ coins_end:
 section "sample", rom0
 
 InitSample:
-	; set wram variables
-	copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
-	copy [WRAM_COIN_FRAME], 0
+    ; set wram variables
+    copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
+    copy [WRAM_COIN_FRAME], 0
 
-	; copy all the bg palettes
-	copy [rBCPS], 0 | BCPSF_AUTOINC
-	ld hl, palette_data
-	ld c, palette_data_end - palette_data
-	.palette_copy
-		copy [rBCPD], [hli]
-		dec c
-		jr nz, .palette_copy
+    ; copy all the bg palettes
+    copy [rBCPS], 0 | BCPSF_AUTOINC
+    ld hl, palette_data
+    ld c, palette_data_end - palette_data
+    .palette_copy
+        copy [rBCPD], [hli]
+        dec c
+        jr nz, .palette_copy
 
-	; copy the tileset
-	ld de, _VRAM8000
-	ld hl, tileset
-	.tileset_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tileset
+    ld de, _VRAM8000
+    ld hl, tileset
+    .tileset_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tileset_end)
-		jr nz, .tileset_copy
-		ld a, h
-		cp a, high(tileset_end)
-		jr nz, .tileset_copy
+        ld a, l
+        cp a, low(tileset_end)
+        jr nz, .tileset_copy
+        ld a, h
+        cp a, high(tileset_end)
+        jr nz, .tileset_copy
 
-	; copy the tile indices into VRAM bank 0
-	copy [rVBK], 0
-	ld de, _SCRN0
-	ld hl, tilemap_indices
-	.tilemap_indices_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tile indices into VRAM bank 0
+    copy [rVBK], 0
+    ld de, _SCRN0
+    ld hl, tilemap_indices
+    .tilemap_indices_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tilemap_indices_end)
-		jr nz, .tilemap_indices_copy
-		ld a, h
-		cp a, high(tilemap_indices_end)
-		jr nz, .tilemap_indices_copy
+        ld a, l
+        cp a, low(tilemap_indices_end)
+        jr nz, .tilemap_indices_copy
+        ld a, h
+        cp a, high(tilemap_indices_end)
+        jr nz, .tilemap_indices_copy
 
-	; copy the tile parameters into VRAM bank 1
-	copy [rVBK], 1
-	ld de, _SCRN0
-	ld hl, tilemap_parameters
-	.tilemap_parameters_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tile parameters into VRAM bank 1
+    copy [rVBK], 1
+    ld de, _SCRN0
+    ld hl, tilemap_parameters
+    .tilemap_parameters_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tilemap_parameters_end)
-		jr nz, .tilemap_parameters_copy
-		ld a, h
-		cp a, high(tilemap_parameters_end)
-		jr nz, .tilemap_parameters_copy
+        ld a, l
+        cp a, low(tilemap_parameters_end)
+        jr nz, .tilemap_parameters_copy
+        ld a, h
+        cp a, high(tilemap_parameters_end)
+        jr nz, .tilemap_parameters_copy
 
-	; copy the coins
-	copy [rVBK], 1
-	ld de, _VRAM8000
-	ld hl, coins
-	.coins_copy
-		copy [de], [hli]
-		inc de
+    ; copy the coins
+    copy [rVBK], 1
+    ld de, _VRAM8000
+    ld hl, coins
+    .coins_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(coins_end)
-		jr nz, .coins_copy
-		ld a, h
-		cp a, high(coins_end)
-		jr nz, .coins_copy
+        ld a, l
+        cp a, low(coins_end)
+        jr nz, .coins_copy
+        ld a, h
+        cp a, high(coins_end)
+        jr nz, .coins_copy
 
-	; set sprites palettes
-	copy [rOCPS], 0 | BCPSF_AUTOINC
+    ; set sprites palettes
+    copy [rOCPS], 0 | BCPSF_AUTOINC
 
-		; black
-		copy [rOCPD], $00
-		copy [rOCPD], $00
-		; orange
-		copy [rOCPD], $7F
-		copy [rOCPD], $02
-		; yellow
-		copy [rOCPD], $BF
-		copy [rOCPD], $1F
-		; white
-		copy [rOCPD], $FF
-		copy [rOCPD], $FF
+        ; black
+        copy [rOCPD], $00
+        copy [rOCPD], $00
+        ; orange
+        copy [rOCPD], $7F
+        copy [rOCPD], $02
+        ; yellow
+        copy [rOCPD], $BF
+        copy [rOCPD], $1F
+        ; white
+        copy [rOCPD], $FF
+        copy [rOCPD], $FF
 
-		; black
-		copy [rOCPD], $00
-		copy [rOCPD], $00
-		; red
-		copy [rOCPD], $5C
-		copy [rOCPD], $01
-		; orange
-		copy [rOCPD], $FE
-		copy [rOCPD], $09
-		; white
-		copy [rOCPD], $FF
-		copy [rOCPD], $FF
+        ; black
+        copy [rOCPD], $00
+        copy [rOCPD], $00
+        ; red
+        copy [rOCPD], $5C
+        copy [rOCPD], $01
+        ; orange
+        copy [rOCPD], $FE
+        copy [rOCPD], $09
+        ; white
+        copy [rOCPD], $FF
+        copy [rOCPD], $FF
 
-	; clear unused palettes
-	ld c, 24
-	.obj_palette_clear
-		copy [rOCPD], $00
-		copy [rOCPD], $80
-		dec c
-		jr nz, .obj_palette_clear
+    ; clear unused palettes
+    ld c, 24
+    .obj_palette_clear
+        copy [rOCPD], $00
+        copy [rOCPD], $80
+        dec c
+        jr nz, .obj_palette_clear
 
-	; clear the OAM
-	InitOAM
+    ; clear the OAM
+    InitOAM
 
-	; set coin parameters that are fixed
-	copy [COIN_0_SPRITE_LEFT + OAMA_Y], COINS_SPRITE_Y
-	copy [COIN_0_SPRITE_LEFT + OAMA_X], COIN_0_SPRITE_X
-	copy [COIN_0_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
-	copy [COIN_0_SPRITE_RIGHT + OAMA_Y], COINS_SPRITE_Y
-	copy [COIN_0_SPRITE_RIGHT + OAMA_X], COIN_0_SPRITE_X + 8
-	copy [COIN_0_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
+    ; set coin parameters that are fixed
+    copy [COIN_0_SPRITE_LEFT + OAMA_Y], COINS_SPRITE_Y
+    copy [COIN_0_SPRITE_LEFT + OAMA_X], COIN_0_SPRITE_X
+    copy [COIN_0_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
+    copy [COIN_0_SPRITE_RIGHT + OAMA_Y], COINS_SPRITE_Y
+    copy [COIN_0_SPRITE_RIGHT + OAMA_X], COIN_0_SPRITE_X + 8
+    copy [COIN_0_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE_0 | OAMF_BANK1
 
-	copy [COIN_1_SPRITE_LEFT + OAMA_Y], COINS_SPRITE_Y
-	copy [COIN_1_SPRITE_LEFT + OAMA_X], COIN_1_SPRITE_X
-	copy [COIN_1_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
-	copy [COIN_1_SPRITE_RIGHT + OAMA_Y], COINS_SPRITE_Y
-	copy [COIN_1_SPRITE_RIGHT + OAMA_X], COIN_1_SPRITE_X + 8
-	copy [COIN_1_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
+    copy [COIN_1_SPRITE_LEFT + OAMA_Y], COINS_SPRITE_Y
+    copy [COIN_1_SPRITE_LEFT + OAMA_X], COIN_1_SPRITE_X
+    copy [COIN_1_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
+    copy [COIN_1_SPRITE_RIGHT + OAMA_Y], COINS_SPRITE_Y
+    copy [COIN_1_SPRITE_RIGHT + OAMA_X], COIN_1_SPRITE_X + 8
+    copy [COIN_1_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE_1 | OAMF_BANK1 | OAMF_XFLIP
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set LCD parameters
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
+    ; set LCD parameters
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+    halt
 
-	; update the OAM parameters
-	ld a, [WRAM_COIN_FRAME]
-	sla a
-	sla a
-	ld [COIN_0_SPRITE_LEFT + OAMA_TILEID], a
-	ld [COIN_1_SPRITE_RIGHT + OAMA_TILEID], a
-	add a, 2
-	ld [COIN_0_SPRITE_RIGHT + OAMA_TILEID], a
-	ld [COIN_1_SPRITE_LEFT + OAMA_TILEID], a
+    ; update the OAM parameters
+    ld a, [WRAM_COIN_FRAME]
+    sla a
+    sla a
+    ld [COIN_0_SPRITE_LEFT + OAMA_TILEID], a
+    ld [COIN_1_SPRITE_RIGHT + OAMA_TILEID], a
+    add a, 2
+    ld [COIN_0_SPRITE_RIGHT + OAMA_TILEID], a
+    ld [COIN_1_SPRITE_LEFT + OAMA_TILEID], a
 
-	; update the coins animation frame
-	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
-	dec [hl]
-	jr nz, .update_frame
-		ld [hl], COIN_ANIM_UPDATE_PERIOD
-		ld a, [WRAM_COIN_FRAME]
-		inc a
-		cp a, COIN_FRAME_COUNT
-		jr nz, .reset_frame
-			xor a
-		.reset_frame
-		ld [WRAM_COIN_FRAME], a
-	.update_frame
+    ; update the coins animation frame
+    ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
+    dec [hl]
+    jr nz, .update_frame
+        ld [hl], COIN_ANIM_UPDATE_PERIOD
+        ld a, [WRAM_COIN_FRAME]
+        inc a
+        cp a, COIN_FRAME_COUNT
+        jr nz, .reset_frame
+            xor a
+        .reset_frame
+        ld [WRAM_COIN_FRAME], a
+    .update_frame
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

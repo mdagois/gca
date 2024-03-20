@@ -2,39 +2,39 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
-def TILEMAP_BYTE_SIZE				equ (1024)
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
+def TILEMAP_BYTE_SIZE               equ (1024)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-def WRAM_IS_VBLANK					rb 1
-def WRAM_BG_SCROLL_X				rb 3
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
+def WRAM_IS_VBLANK                  rb 1
+def WRAM_BG_SCROLL_X                rb 3
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -43,50 +43,50 @@ assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	ld a, 1
-	ld [WRAM_IS_VBLANK], a
-	pop af
-	reti
+    push af
+    ld a, 1
+    ld [WRAM_IS_VBLANK], a
+    pop af
+    reti
 
 section "lcd_interrupt", rom0[$0048]
-	push af
-	call LcdInterrupt
-	pop af
-	reti
+    push af
+    call LcdInterrupt
+    pop af
+    reti
 
 section "interrupts", rom0
 
 LcdInterrupt:
-	; check whether we are on the target line
-	ld a, [rSTAT]
-	bit 2, a
-	ret z
+    ; check whether we are on the target line
+    ld a, [rSTAT]
+    bit 2, a
+    ret z
 
-	; enable the hblank interrupt (as we are on the target line)
-	; and check if we are in hblank
-	ld b, a
-	copy [rSTAT], STATF_MODE00
-	ld a, b
-	and a, %00000011
-	ret nz
+    ; enable the hblank interrupt (as we are on the target line)
+    ; and check if we are in hblank
+    ld b, a
+    copy [rSTAT], STATF_MODE00
+    ld a, b
+    and a, %00000011
+    ret nz
 
-	; sand scrolling setup
-	ld a, [rLY]
-	cp a, 47
-	jr nz, .middle_section
-		copy [rSCX], [WRAM_BG_SCROLL_X + 1]
-		copy [rLYC], 111
-		copy [rSTAT], STATF_LYC
-		ret
-	.middle_section
+    ; sand scrolling setup
+    ld a, [rLY]
+    cp a, 47
+    jr nz, .middle_section
+        copy [rSCX], [WRAM_BG_SCROLL_X + 1]
+        copy [rLYC], 111
+        copy [rSTAT], STATF_LYC
+        ret
+    .middle_section
 
-	; wall scrolling setup
-	copy [rSCX], [WRAM_BG_SCROLL_X + 2]
-	copy [rLYC], 255
-	xor a
-	ld [rSTAT], a
-	ret
+    ; wall scrolling setup
+    copy [rSCX], [WRAM_BG_SCROLL_X + 2]
+    copy [rLYC], 255
+    xor a
+    ld [rSTAT], a
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; BANK 1
@@ -95,65 +95,65 @@ LcdInterrupt:
 section "sample_init", romx, bank[1]
 
 LoadSave:
-	; enable the ERAM
-	ld a, $0A
-	ld [rRAMG], a
+    ; enable the ERAM
+    ld a, $0A
+    ld [rRAMG], a
 
-	; check the header
-	ld hl, _SRAM
-	ld a, [hli]
-	cp a, $44
-	jr nz, .done
-	ld a, [hli]
-	cp a, $4D
-	jr nz, .done
-	ld a, [hli]
-	cp a, $47
-	jr nz, .done
+    ; check the header
+    ld hl, _SRAM
+    ld a, [hli]
+    cp a, $44
+    jr nz, .done
+    ld a, [hli]
+    cp a, $4D
+    jr nz, .done
+    ld a, [hli]
+    cp a, $47
+    jr nz, .done
 
-	; read the scrolling values in
-	ld de, WRAM_BG_SCROLL_X + 0
-	REPT 3
-		ld a, [hli]
-		ld [de], a
-		inc de
-	ENDR
+    ; read the scrolling values in
+    ld de, WRAM_BG_SCROLL_X + 0
+    REPT 3
+        ld a, [hli]
+        ld [de], a
+        inc de
+    ENDR
 
-	.done
-	; disable the ERAM
-	ld a, $00
-	ld [rRAMG], a
-	ret
+    .done
+    ; disable the ERAM
+    ld a, $00
+    ld [rRAMG], a
+    ret
 
 InitSample:
-	; init the WRAM state
-	InitPadInput WRAM_PAD_INPUT
-	xor a
-	ld [WRAM_IS_VBLANK], a
-	ld [WRAM_BG_SCROLL_X + 0], a
-	ld [WRAM_BG_SCROLL_X + 1], a
-	ld [WRAM_BG_SCROLL_X + 2], a
-	call LoadSave
+    ; init the WRAM state
+    InitPadInput WRAM_PAD_INPUT
+    xor a
+    ld [WRAM_IS_VBLANK], a
+    ld [WRAM_BG_SCROLL_X + 0], a
+    ld [WRAM_BG_SCROLL_X + 1], a
+    ld [WRAM_BG_SCROLL_X + 2], a
+    call LoadSave
 
-	; init the palette
-	ld a, %11100100
-	ld [rBGP], a
+    ; init the palette
+    ld a, %11100100
+    ld [rBGP], a
 
-	LoadGraphicsDataIntoVRAM
+    LoadGraphicsDataIntoVRAM
 
-	; setup interrupts
-	copy [rLYC], 255
-	xor a
-	ld [rSTAT], a
-	ld a, IEF_VBLANK | IEF_LCDC
-	ld [rIE], a
-	ei
+    ; setup interrupts
+    copy [rLYC], 255
+    xor a
+    ld [rSTAT], a
+    ld a, IEF_VBLANK | IEF_LCDC
+    ld [rIE], a
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-	ld [rLCDC], a
+    ; set the graphics parameters and turn back LCD on
+    ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ld [rLCDC], a
 
-	ret
+    ret
 
 export InitSample
 
@@ -168,81 +168,81 @@ incbin "parallax.tlm"
 section "sample_update", romx, bank[2]
 
 WriteSave:
-	; enable the ERAM
-	ld a, $0A
-	ld [rRAMG], a
+    ; enable the ERAM
+    ld a, $0A
+    ld [rRAMG], a
 
-	; write the header
-	ld hl, _SRAM
-	ld a, $44
-	ld [hli], a
-	ld a, $4D
-	ld [hli], a
-	ld a, $47
-	ld [hli], a
-	
-	; write the scrolling values
-	ld de, WRAM_BG_SCROLL_X + 0
-	REPT 3
-		ld a, [de]
-		inc de
-		ld [hli], a
-	ENDR
+    ; write the header
+    ld hl, _SRAM
+    ld a, $44
+    ld [hli], a
+    ld a, $4D
+    ld [hli], a
+    ld a, $47
+    ld [hli], a
+    
+    ; write the scrolling values
+    ld de, WRAM_BG_SCROLL_X + 0
+    REPT 3
+        ld a, [de]
+        inc de
+        ld [hli], a
+    ENDR
 
-	; disable the ERAM
-	ld a, $00
-	ld [rRAMG], a
-	ret
+    ; disable the ERAM
+    ld a, $00
+    ld [rRAMG], a
+    ret
 
 UpdateSample:
-	ld hl, WRAM_IS_VBLANK
-	xor a
-	.wait_vblank
-		halt
-		cp a, [hl]
-		jr z, .wait_vblank
-		ld [hl], a
+    ld hl, WRAM_IS_VBLANK
+    xor a
+    .wait_vblank
+        halt
+        cp a, [hl]
+        jr z, .wait_vblank
+        ld [hl], a
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .scroll_left
-		ld a, [WRAM_BG_SCROLL_X + 0]
-		dec a
-		ld [WRAM_BG_SCROLL_X + 0], a
-	.scroll_left
+    TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .scroll_left
+        ld a, [WRAM_BG_SCROLL_X + 0]
+        dec a
+        ld [WRAM_BG_SCROLL_X + 0], a
+    .scroll_left
 
-	TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .scroll_right
-		ld a, [WRAM_BG_SCROLL_X + 0]
-		inc a
-		ld [WRAM_BG_SCROLL_X + 0], a
-	.scroll_right
+    TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .scroll_right
+        ld a, [WRAM_BG_SCROLL_X + 0]
+        inc a
+        ld [WRAM_BG_SCROLL_X + 0], a
+    .scroll_right
 
-	TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_A
-	jr nz, .save
-		call WriteSave
-	.save
+    TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_A
+    jr nz, .save
+        call WriteSave
+    .save
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	ld a, [WRAM_BG_SCROLL_X + 0]
-	ld [rSCX], a ; set the scrolling to the sky value
+    ld a, [WRAM_BG_SCROLL_X + 0]
+    ld [rSCX], a ; set the scrolling to the sky value
 
-	ld b, a
-	sla a
-	ld [WRAM_BG_SCROLL_X + 1], a
+    ld b, a
+    sla a
+    ld [WRAM_BG_SCROLL_X + 1], a
 
-	add a, b
-	ld [WRAM_BG_SCROLL_X + 2], a
+    add a, b
+    ld [WRAM_BG_SCROLL_X + 2], a
 
-	; set up the first target line interrupt
-	copy [rLYC], 47
-	copy [rSTAT], STATF_LYC
+    ; set up the first target line interrupt
+    copy [rLYC], 47
+    copy [rSTAT], STATF_LYC
 
-	ret
+    ret
 
 export UpdateSample
 

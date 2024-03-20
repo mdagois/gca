@@ -4,43 +4,43 @@ include "utils.rgbinc"
 
 section "header", rom0[$0100]
 entrypoint:
-	di
-	jp main
-	ds ($0150 - @), 0
+    di
+    jp main
+    ds ($0150 - @), 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro DetermineHardwareModel
-	ld a, c
-	cp a, $14
-	jr nz, .sgb\@
-		ld a, HARDWARE_MODEL_SGB
-		jr .done\@
-	.sgb\@
-		ld a, HARDWARE_MODEL_DMG
-	.done\@
-	; save the hardware model
-	ld [HARDWARE_MODEL_REGISTER], a
+    ld a, c
+    cp a, $14
+    jr nz, .sgb\@
+        ld a, HARDWARE_MODEL_SGB
+        jr .done\@
+    .sgb\@
+        ld a, HARDWARE_MODEL_DMG
+    .done\@
+    ; save the hardware model
+    ld [HARDWARE_MODEL_REGISTER], a
 endm
 
 macro DisableLCD
-	; wait for the vblank
-	.wait_vblank\@
-		ld a, [rLY]
-		cp a, SCRN_Y
-		jr nz, .wait_vblank\@
+    ; wait for the vblank
+    .wait_vblank\@
+        ld a, [rLY]
+        cp a, SCRN_Y
+        jr nz, .wait_vblank\@
 
-	; turn the LCD off
-	xor a
-	ld [rLCDC], a
+    ; turn the LCD off
+    xor a
+    ld [rLCDC], a
 endm
 
 section "main", rom0
 main:
-	DetermineHardwareModel
-	DisableLCD
-	call InitSample
-	.loop
-		call UpdateSample
-		jr .loop
+    DetermineHardwareModel
+    DisableLCD
+    call InitSample
+    .loop
+        call UpdateSample
+        jr .loop
 

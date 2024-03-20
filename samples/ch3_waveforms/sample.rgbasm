@@ -3,53 +3,53 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WAVEFORM_BYTE_LENGTH			equ (16)
+def WAVEFORM_BYTE_LENGTH            equ (16)
 
 section "waveform", rom0
 
@@ -70,89 +70,89 @@ db $89, $AC, $DE, $EF, $FF, $EE, $DC, $A9
 db $86, $53, $21, $10, $00, $12, $23, $56
 
 copy_waveform_func:
-	copy [rNR30], $00
-	ld hl, _AUD3WAVERAM
-	ld c, WAVEFORM_BYTE_LENGTH
-	.ch3_data_copy
-		ld a, [de]
-		inc de
-		ld [hli], a
-		dec c
-	jr nz, .ch3_data_copy
-	ret
+    copy [rNR30], $00
+    ld hl, _AUD3WAVERAM
+    ld c, WAVEFORM_BYTE_LENGTH
+    .ch3_data_copy
+        ld a, [de]
+        inc de
+        ld [hli], a
+        dec c
+    jr nz, .ch3_data_copy
+    ret
 
 macro copy_waveform
-	ld de, \1
-	call copy_waveform_func
+    ld de, \1
+    call copy_waveform_func
 endm
 
 play_sound:
-	copy [rNR30], $00 ; stop the sound to avoid any corruption
-	copy [rNR30], $80
-	copy [rNR31], $00
-	copy [rNR32], $20
-	copy [rNR33], $06
-	copy [rNR34], $C7
-	ret
+    copy [rNR30], $00 ; stop the sound to avoid any corruption
+    copy [rNR30], $80
+    copy [rNR31], $00
+    copy [rNR32], $20
+    copy [rNR33], $06
+    copy [rNR34], $C7
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0
 
 InitSample:
-	; init the WRAM state
-	InitPadInput WRAM_PAD_INPUT
+    ; init the WRAM state
+    InitPadInput WRAM_PAD_INPUT
 
-	; init the sound
-	copy [rNR52], AUDENA_ON
-	copy [rNR50], $77
-	copy [rNR51], $FF
+    ; init the sound
+    copy [rNR52], AUDENA_ON
+    copy [rNR50], $77
+    copy [rNR51], $FF
 
-	; init graphics
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+    halt
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .play_square
-		copy_waveform ch3_square_waveform
-		call play_sound
-	.play_square
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .play_square
+        copy_waveform ch3_square_waveform
+        call play_sound
+    .play_square
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
-	jr nz, .play_triangle
-		copy_waveform ch3_triangle_waveform
-		call play_sound
-	.play_triangle
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
+    jr nz, .play_triangle
+        copy_waveform ch3_triangle_waveform
+        call play_sound
+    .play_triangle
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .play_sawtooth
-		copy_waveform ch3_sawtooth_waveform
-		call play_sound
-	.play_sawtooth
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .play_sawtooth
+        copy_waveform ch3_sawtooth_waveform
+        call play_sound
+    .play_sawtooth
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
-	jr nz, .play_sine
-		copy_waveform ch3_sine_waveform
-		call play_sound
-	.play_sine
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
+    jr nz, .play_sine
+        copy_waveform ch3_sine_waveform
+        call play_sound
+    .play_sine
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

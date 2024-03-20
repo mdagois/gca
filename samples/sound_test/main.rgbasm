@@ -7,32 +7,32 @@ include "shared.rgbinc"
 
 section "header", rom0[$0100]
 entrypoint:
-	di
-	jp main
-	ds ($0150 - @), 0
+    di
+    jp main
+    ds ($0150 - @), 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Main
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro DisableLCD
-	; wait for the vblank
-	.wait_vblank\@
-		ld a, [rLY]
-		cp a, SCRN_Y
-		jr nz, .wait_vblank\@
+    ; wait for the vblank
+    .wait_vblank\@
+        ld a, [rLY]
+        cp a, SCRN_Y
+        jr nz, .wait_vblank\@
 
-	; turn the LCD off
-	xor a
-	ld [rLCDC], a
+    ; turn the LCD off
+    xor a
+    ld [rLCDC], a
 endm
 
 rsreset
-def CHANNEL_INITIALIZE		rw 1
-def CHANNEL_UPDATE			rw 1
-def CHANNEL_FINALIZE		rw 1
-def CHANNEL_TILEMAP			rw 1
-def sizeof_CHANNEL			rb 0
+def CHANNEL_INITIALIZE      rw 1
+def CHANNEL_UPDATE          rw 1
+def CHANNEL_FINALIZE        rw 1
+def CHANNEL_TILEMAP         rw 1
+def sizeof_CHANNEL          rb 0
 
 ChannelDescription:
 dw InitializeCH1
@@ -53,133 +53,133 @@ dw FinalizeCH4
 dw TilemapCH4
 ChannelDescription_End:
 
-def CHANNEL_INDEX_MASK		equ (((ChannelDescription_End - ChannelDescription) / sizeof_CHANNEL) - 1)
+def CHANNEL_INDEX_MASK      equ (((ChannelDescription_End - ChannelDescription) / sizeof_CHANNEL) - 1)
 assert (CHANNEL_INDEX_MASK & (CHANNEL_INDEX_MASK + 1)) == 0, "The channel count must be a power of two"
 
 section "main", rom0
 main:
-	DisableLCD
-	call LoadTileset
+    DisableLCD
+    call LoadTileset
 
-	InitPadInput WRAM_PAD_INPUT
+    InitPadInput WRAM_PAD_INPUT
 
-	xor a
-	ld [WRAM_CHANNEL_CURRENT_INDEX], a
-	copy [WRAM_CHANNEL_PREVIOUS_INDEX], 1
+    xor a
+    ld [WRAM_CHANNEL_CURRENT_INDEX], a
+    copy [WRAM_CHANNEL_PREVIOUS_INDEX], 1
 
-	.loop
-		ld a, [WRAM_CHANNEL_PREVIOUS_INDEX]
-		ld b, a
-		ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-		sub a, b
-		jr z, .switch_channel
-			ld hl, rLCDC
-			bit 7, [hl]
-			jr z, .lcd_disabled
-				DisableLCD
-			.lcd_disabled
-			ResetTransferList
+    .loop
+        ld a, [WRAM_CHANNEL_PREVIOUS_INDEX]
+        ld b, a
+        ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+        sub a, b
+        jr z, .switch_channel
+            ld hl, rLCDC
+            bit 7, [hl]
+            jr z, .lcd_disabled
+                DisableLCD
+            .lcd_disabled
+            ResetTransferList
 
-			; finalize the current channel
-			ld a, [WRAM_CHANNEL_PREVIOUS_INDEX]
-			swap a
-			srl a
+            ; finalize the current channel
+            ld a, [WRAM_CHANNEL_PREVIOUS_INDEX]
+            swap a
+            srl a
 
-			ld h, 0
-			ld l, a
-			ld de, ChannelDescription + CHANNEL_FINALIZE
-			add hl, de
+            ld h, 0
+            ld l, a
+            ld de, ChannelDescription + CHANNEL_FINALIZE
+            add hl, de
 
-			ld a, [hli]
-			ld h, [hl]
-			ld l, a
+            ld a, [hli]
+            ld h, [hl]
+            ld l, a
 
-			CallHL
+            CallHL
 
-			; load the tilemap for the current channel
-			ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-			swap a
-			srl a
+            ; load the tilemap for the current channel
+            ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+            swap a
+            srl a
 
-			ld h, 0
-			ld l, a
-			ld de, ChannelDescription + CHANNEL_TILEMAP
-			add hl, de
+            ld h, 0
+            ld l, a
+            ld de, ChannelDescription + CHANNEL_TILEMAP
+            add hl, de
 
-			ld a, [hli]
-			ld h, [hl]
-			ld l, a
+            ld a, [hli]
+            ld h, [hl]
+            ld l, a
 
-			ld d, h
-			ld e, l
+            ld d, h
+            ld e, l
 
-			ld hl, _SCRN0
+            ld hl, _SCRN0
 
-			ld b, SCRN_Y_B
-			.load_tilemap_line
-				ld c, SCRN_VX_B
-				.load_tilemap_tiles
-					ld a, [de]
-					inc de
-					ld [hli], a
-					dec c
-					jr nz, .load_tilemap_tiles
+            ld b, SCRN_Y_B
+            .load_tilemap_line
+                ld c, SCRN_VX_B
+                .load_tilemap_tiles
+                    ld a, [de]
+                    inc de
+                    ld [hli], a
+                    dec c
+                    jr nz, .load_tilemap_tiles
 
-				dec b
-				jr nz, .load_tilemap_line
+                dec b
+                jr nz, .load_tilemap_line
 
-			; initialize the current channel
-			ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-			swap a
-			srl a
+            ; initialize the current channel
+            ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+            swap a
+            srl a
 
-			ld h, 0
-			ld l, a
-			ld de, ChannelDescription + CHANNEL_INITIALIZE
-			add hl, de
+            ld h, 0
+            ld l, a
+            ld de, ChannelDescription + CHANNEL_INITIALIZE
+            add hl, de
 
-			ld a, [hli]
-			ld h, [hl]
-			ld l, a
+            ld a, [hli]
+            ld h, [hl]
+            ld l, a
 
-			CallHL
+            CallHL
 
-			; update the previous channel index
-			copy [WRAM_CHANNEL_PREVIOUS_INDEX], [WRAM_CHANNEL_CURRENT_INDEX]
-		.switch_channel
+            ; update the previous channel index
+            copy [WRAM_CHANNEL_PREVIOUS_INDEX], [WRAM_CHANNEL_CURRENT_INDEX]
+        .switch_channel
 
-		; call the current update function
-		ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-		swap a
-		srl a
+        ; call the current update function
+        ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+        swap a
+        srl a
 
-		ld h, 0
-		ld l, a
-		ld de, ChannelDescription + CHANNEL_UPDATE
-		add hl, de
+        ld h, 0
+        ld l, a
+        ld de, ChannelDescription + CHANNEL_UPDATE
+        add hl, de
 
-		ld a, [hli]
-		ld h, [hl]
-		ld l, a
+        ld a, [hli]
+        ld h, [hl]
+        ld l, a
 
-		CallHL
+        CallHL
 
-		; handle switching between channels
-		TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_SELECT
-		jr nz, .go_to_previous_channel
-			ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-			dec a
-			and a, CHANNEL_INDEX_MASK
-			ld [WRAM_CHANNEL_CURRENT_INDEX], a
-		.go_to_previous_channel
+        ; handle switching between channels
+        TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_SELECT
+        jr nz, .go_to_previous_channel
+            ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+            dec a
+            and a, CHANNEL_INDEX_MASK
+            ld [WRAM_CHANNEL_CURRENT_INDEX], a
+        .go_to_previous_channel
 
-		TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_START
-		jr nz, .go_to_next_channel
-			ld a, [WRAM_CHANNEL_CURRENT_INDEX]
-			inc a
-			and a, CHANNEL_INDEX_MASK
-			ld [WRAM_CHANNEL_CURRENT_INDEX], a
-		.go_to_next_channel
+        TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_START
+        jr nz, .go_to_next_channel
+            ld a, [WRAM_CHANNEL_CURRENT_INDEX]
+            inc a
+            and a, CHANNEL_INDEX_MASK
+            ld [WRAM_CHANNEL_CURRENT_INDEX], a
+        .go_to_next_channel
 
-		jp .loop
+        jp .loop
 

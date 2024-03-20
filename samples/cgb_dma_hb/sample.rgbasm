@@ -2,57 +2,57 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def OAM_OFFSET_X					equ (8)
-def OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X                    equ (8)
+def OAM_OFFSET_Y                    equ (16)
 
-def COIN_SPRITE_Y					equ (OAM_OFFSET_Y + 64)
-def COIN_SPRITE_MIN_X				equ (OAM_OFFSET_X + 24)
-def COIN_SPRITE_MAX_X				equ (COIN_SPRITE_MIN_X + 24)
+def COIN_SPRITE_Y                   equ (OAM_OFFSET_Y + 64)
+def COIN_SPRITE_MIN_X               equ (OAM_OFFSET_X + 24)
+def COIN_SPRITE_MAX_X               equ (COIN_SPRITE_MIN_X + 24)
 
-def COIN_SPRITE_LEFT				equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
-def COIN_SPRITE_RIGHT				equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
+def COIN_SPRITE_LEFT                equ (_OAMRAM + sizeof_OAM_ATTRS * 0)
+def COIN_SPRITE_RIGHT               equ (_OAMRAM + sizeof_OAM_ATTRS * 1)
 
-def COIN_PALETTE					equ (0)
+def COIN_PALETTE                    equ (0)
 
-def COIN_ANIM_UPDATE_PERIOD			equ (10)
-def COIN_X_UPDATE_PERIOD			equ (5)
-def COIN_FRAME_COUNT				equ (6)
+def COIN_ANIM_UPDATE_PERIOD         equ (10)
+def COIN_X_UPDATE_PERIOD            equ (5)
+def COIN_FRAME_COUNT                equ (6)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-def WRAM_IS_VBLANK					rb 1
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
+def WRAM_IS_VBLANK                  rb 1
 
-def WRAM_TOGGLE_DISPLAY_BG			rb 1
-def WRAM_TOGGLE_PRIORITY			rb 1
+def WRAM_TOGGLE_DISPLAY_BG          rb 1
+def WRAM_TOGGLE_PRIORITY            rb 1
 
-def WRAM_COIN_FRAME_UPDATE_COUNTER	rb 1
-def WRAM_COIN_FRAME					rb 1
-def WRAM_COIN_X_UPDATE_COUNTER		rb 1
-def WRAM_COIN_X						rb 1
-def WRAM_COIN_MOVE					rb 1
+def WRAM_COIN_FRAME_UPDATE_COUNTER  rb 1
+def WRAM_COIN_FRAME                 rb 1
+def WRAM_COIN_X_UPDATE_COUNTER      rb 1
+def WRAM_COIN_X                     rb 1
+def WRAM_COIN_MOVE                  rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	ld a, 1
-	ld [WRAM_IS_VBLANK], a
-	pop af
-	reti
+    push af
+    ld a, 1
+    ld [WRAM_IS_VBLANK], a
+    pop af
+    reti
 
 section "lcd_interrupt", rom0[$0048]
 breakpoint_2_lcd:
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -83,202 +83,202 @@ coins_end:
 section "sample", rom0
 
 InitSample:
-	; set wram variables
-	InitPadInput WRAM_PAD_INPUT
-	copy [WRAM_IS_VBLANK], 0
-	copy [WRAM_TOGGLE_DISPLAY_BG], 0
-	copy [WRAM_TOGGLE_PRIORITY], 0
-	copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
-	copy [WRAM_COIN_X_UPDATE_COUNTER], COIN_X_UPDATE_PERIOD
-	copy [WRAM_COIN_FRAME], 0
-	copy [WRAM_COIN_X], COIN_SPRITE_MIN_X
-	copy [WRAM_COIN_MOVE], 1
+    ; set wram variables
+    InitPadInput WRAM_PAD_INPUT
+    copy [WRAM_IS_VBLANK], 0
+    copy [WRAM_TOGGLE_DISPLAY_BG], 0
+    copy [WRAM_TOGGLE_PRIORITY], 0
+    copy [WRAM_COIN_FRAME_UPDATE_COUNTER], COIN_ANIM_UPDATE_PERIOD
+    copy [WRAM_COIN_X_UPDATE_COUNTER], COIN_X_UPDATE_PERIOD
+    copy [WRAM_COIN_FRAME], 0
+    copy [WRAM_COIN_X], COIN_SPRITE_MIN_X
+    copy [WRAM_COIN_MOVE], 1
 
-	; copy all the bg palettes
-	copy [rBCPS], 0 | BCPSF_AUTOINC
-	ld hl, palette_data
-	ld c, palette_data_end - palette_data
-	.palette_copy
-		copy [rBCPD], [hli]
-		dec c
-		jr nz, .palette_copy
+    ; copy all the bg palettes
+    copy [rBCPS], 0 | BCPSF_AUTOINC
+    ld hl, palette_data
+    ld c, palette_data_end - palette_data
+    .palette_copy
+        copy [rBCPD], [hli]
+        dec c
+        jr nz, .palette_copy
 
-	; VRAM 0
-	copy [rVBK], 0
-		; tileset (background)
-		DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
+    ; VRAM 0
+    copy [rVBK], 0
+        ; tileset (background)
+        DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
 
-	; VRAM 1
-	copy [rVBK], 1
-		; tileset (coin)
-		DmaCopy_General _VRAM8000, coins, coins_end - coins
-		; tile parameters
-		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
+    ; VRAM 1
+    copy [rVBK], 1
+        ; tileset (coin)
+        DmaCopy_General _VRAM8000, coins, coins_end - coins
+        ; tile parameters
+        DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 
-	; set sprites palettes
-	copy [rOCPS], 0 | BCPSF_AUTOINC
+    ; set sprites palettes
+    copy [rOCPS], 0 | BCPSF_AUTOINC
 
-		; black
-		copy [rOCPD], $00
-		copy [rOCPD], $00
-		; orange
-		copy [rOCPD], $7F
-		copy [rOCPD], $02
-		; yellow
-		copy [rOCPD], $BF
-		copy [rOCPD], $1F
-		; white
-		copy [rOCPD], $FF
-		copy [rOCPD], $FF
+        ; black
+        copy [rOCPD], $00
+        copy [rOCPD], $00
+        ; orange
+        copy [rOCPD], $7F
+        copy [rOCPD], $02
+        ; yellow
+        copy [rOCPD], $BF
+        copy [rOCPD], $1F
+        ; white
+        copy [rOCPD], $FF
+        copy [rOCPD], $FF
 
-		; black
-		copy [rOCPD], $00
-		copy [rOCPD], $00
-		; red
-		copy [rOCPD], $5C
-		copy [rOCPD], $01
-		; orange
-		copy [rOCPD], $FE
-		copy [rOCPD], $09
-		; white
-		copy [rOCPD], $FF
-		copy [rOCPD], $FF
+        ; black
+        copy [rOCPD], $00
+        copy [rOCPD], $00
+        ; red
+        copy [rOCPD], $5C
+        copy [rOCPD], $01
+        ; orange
+        copy [rOCPD], $FE
+        copy [rOCPD], $09
+        ; white
+        copy [rOCPD], $FF
+        copy [rOCPD], $FF
 
-	; clear unused palettes
-	ld c, 24
-	.obj_palette_clear
-		copy [rOCPD], $00
-		copy [rOCPD], $80
-		dec c
-		jr nz, .obj_palette_clear
+    ; clear unused palettes
+    ld c, 24
+    .obj_palette_clear
+        copy [rOCPD], $00
+        copy [rOCPD], $80
+        dec c
+        jr nz, .obj_palette_clear
 
-	; clear the OAM
-	InitOAM
+    ; clear the OAM
+    InitOAM
 
-	; set coin parameters that are fixed
-	copy [COIN_SPRITE_LEFT + OAMA_Y], COIN_SPRITE_Y
-	copy [COIN_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
-	copy [COIN_SPRITE_RIGHT + OAMA_Y], COIN_SPRITE_Y
-	copy [COIN_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
+    ; set coin parameters that are fixed
+    copy [COIN_SPRITE_LEFT + OAMA_Y], COIN_SPRITE_Y
+    copy [COIN_SPRITE_LEFT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
+    copy [COIN_SPRITE_RIGHT + OAMA_Y], COIN_SPRITE_Y
+    copy [COIN_SPRITE_RIGHT + OAMA_FLAGS], COIN_PALETTE | OAMF_BANK1
 
-	; enable interrupts
-	copy [rSTAT], STATF_MODE10
-	copy [rIE], IEF_VBLANK | IEF_LCDC
-	ei
+    ; enable interrupts
+    copy [rSTAT], STATF_MODE10
+    copy [rIE], IEF_VBLANK | IEF_LCDC
+    ei
 
-	; set LCD parameters
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
+    ; set LCD parameters
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	ld hl, WRAM_IS_VBLANK
-	xor a
-	.wait_vblank
-		halt
-		cp a, [hl]
-		jr z, .wait_vblank
-		ld [hl], a
+    ld hl, WRAM_IS_VBLANK
+    xor a
+    .wait_vblank
+        halt
+        cp a, [hl]
+        jr z, .wait_vblank
+        ld [hl], a
 
-	; update the OAM parameters
-	ld a, [WRAM_COIN_FRAME]
-	sla a
-	sla a
-	ld [COIN_SPRITE_LEFT + OAMA_TILEID], a
-	add a, 2
-	ld [COIN_SPRITE_RIGHT + OAMA_TILEID], a
+    ; update the OAM parameters
+    ld a, [WRAM_COIN_FRAME]
+    sla a
+    sla a
+    ld [COIN_SPRITE_LEFT + OAMA_TILEID], a
+    add a, 2
+    ld [COIN_SPRITE_RIGHT + OAMA_TILEID], a
 
-	ld a, [WRAM_COIN_X]
-	ld [COIN_SPRITE_LEFT + OAMA_X], a
-	add a, 8
-	ld [COIN_SPRITE_RIGHT + OAMA_X] , a
+    ld a, [WRAM_COIN_X]
+    ld [COIN_SPRITE_LEFT + OAMA_X], a
+    add a, 8
+    ld [COIN_SPRITE_RIGHT + OAMA_X] , a
 
-	ld a, [WRAM_TOGGLE_PRIORITY]
-	dec a
-	jr nz, .toggle_background_parameters
-		copy [WRAM_TOGGLE_PRIORITY], 0
+    ld a, [WRAM_TOGGLE_PRIORITY]
+    dec a
+    jr nz, .toggle_background_parameters
+        copy [WRAM_TOGGLE_PRIORITY], 0
 
-		copy [rVBK], 1
+        copy [rVBK], 1
 
-		ld hl, _SCRN0 + 8 * SCRN_VX_B + 5
-		ld a, [hl]
-		xor a, %10000000
-		ld [hl], a
+        ld hl, _SCRN0 + 8 * SCRN_VX_B + 5
+        ld a, [hl]
+        xor a, %10000000
+        ld [hl], a
 
-		ld de, 32
-		add hl, de
-		ld a, [hl]
-		xor a, %10000000
-		ld [hl], a
-	.toggle_background_parameters
+        ld de, 32
+        add hl, de
+        ld a, [hl]
+        xor a, %10000000
+        ld [hl], a
+    .toggle_background_parameters
 
-	ld a, [WRAM_TOGGLE_DISPLAY_BG]
-	dec a
-	jr nz, .transfer_tiles
-		copy [WRAM_TOGGLE_DISPLAY_BG], 0
-		; tile indices
-		copy [rVBK], 0
-	.breakpoint_1_transfer
-		DmaCopy_Hblank _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
-	.transfer_tiles
+    ld a, [WRAM_TOGGLE_DISPLAY_BG]
+    dec a
+    jr nz, .transfer_tiles
+        copy [WRAM_TOGGLE_DISPLAY_BG], 0
+        ; tile indices
+        copy [rVBK], 0
+    .breakpoint_1_transfer
+        DmaCopy_Hblank _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
+    .transfer_tiles
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_A
-	jr nz, .display_background
-		copy [WRAM_TOGGLE_DISPLAY_BG], 1
-	.display_background
+    UpdatePadInput WRAM_PAD_INPUT
+    TestPadInput_Released WRAM_PAD_INPUT, PADF_A
+    jr nz, .display_background
+        copy [WRAM_TOGGLE_DISPLAY_BG], 1
+    .display_background
 
-	; update the coin position
-	ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
-	dec [hl]
-	jr nz, .update_frame
-		ld [hl], COIN_ANIM_UPDATE_PERIOD
-		ld a, [WRAM_COIN_FRAME]
-		inc a
-		cp a, COIN_FRAME_COUNT
-		jr nz, .reset_frame
-			xor a
-		.reset_frame
-		ld [WRAM_COIN_FRAME], a
-	.update_frame
+    ; update the coin position
+    ld hl, WRAM_COIN_FRAME_UPDATE_COUNTER
+    dec [hl]
+    jr nz, .update_frame
+        ld [hl], COIN_ANIM_UPDATE_PERIOD
+        ld a, [WRAM_COIN_FRAME]
+        inc a
+        cp a, COIN_FRAME_COUNT
+        jr nz, .reset_frame
+            xor a
+        .reset_frame
+        ld [WRAM_COIN_FRAME], a
+    .update_frame
 
-	; update the coin animation frame
-	ld hl, WRAM_COIN_X_UPDATE_COUNTER
-	dec [hl]
-	jr nz, .update_x
-		ld [hl], COIN_X_UPDATE_PERIOD
+    ; update the coin animation frame
+    ld hl, WRAM_COIN_X_UPDATE_COUNTER
+    dec [hl]
+    jr nz, .update_x
+        ld [hl], COIN_X_UPDATE_PERIOD
 
-		ld a, [WRAM_COIN_MOVE]
-		ld b, a
+        ld a, [WRAM_COIN_MOVE]
+        ld b, a
 
-		ld a, [WRAM_COIN_X]
-		add a, b
-		ld [WRAM_COIN_X], a
+        ld a, [WRAM_COIN_X]
+        add a, b
+        ld [WRAM_COIN_X], a
 
-		cp a, COIN_SPRITE_MIN_X
-		jr nc, .below_min
-			copy [WRAM_COIN_MOVE], 1
-			copy [WRAM_TOGGLE_PRIORITY], 1
-		.below_min
+        cp a, COIN_SPRITE_MIN_X
+        jr nc, .below_min
+            copy [WRAM_COIN_MOVE], 1
+            copy [WRAM_TOGGLE_PRIORITY], 1
+        .below_min
 
-		cp a, COIN_SPRITE_MAX_X
-		jr c, .above_max
-			copy [WRAM_COIN_MOVE], -1
-			copy [WRAM_TOGGLE_PRIORITY], 1
-		.above_max
-	.update_x
+        cp a, COIN_SPRITE_MAX_X
+        jr c, .above_max
+            copy [WRAM_COIN_MOVE], -1
+            copy [WRAM_TOGGLE_PRIORITY], 1
+        .above_max
+    .update_x
 
-	; wait for the DMA transfer to end
-	.wait_dma
-		ld a, [rHDMA5]
-		and a, HDMA5F_BUSY
-		jr z, .wait_dma
+    ; wait for the DMA transfer to end
+    .wait_dma
+        ld a, [rHDMA5]
+        and a, HDMA5F_BUSY
+        jr z, .wait_dma
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

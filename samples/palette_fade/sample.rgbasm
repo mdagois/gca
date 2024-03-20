@@ -3,47 +3,47 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
-def TILEMAP_BYTE_SIZE				equ (1024)
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
+def TILEMAP_BYTE_SIZE               equ (1024)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAP_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def FADE_ANIM_FRAME_COUNT			equ (8)
+def FADE_ANIM_FRAME_COUNT           equ (8)
 
 rsset _RAM
 
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
 
-def WRAM_FADE_CURRENT_LEVEL			rb 1
-def WRAM_FADE_TARGET_LEVEL			rb 1
-def WRAM_FADE_FRAME_COUNTER			rb 1
+def WRAM_FADE_CURRENT_LEVEL         rb 1
+def WRAM_FADE_TARGET_LEVEL          rb 1
+def WRAM_FADE_FRAME_COUNTER         rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -54,14 +54,14 @@ section "sample", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-def FADE_LEVEL_DARKEST				rb 1
-def FADE_LEVEL_DARKER				rb 1
-def FADE_LEVEL_DARK					rb 1
-def FADE_LEVEL_NORMAL				rb 1
-def FADE_LEVEL_LIGHT				rb 1
-def FADE_LEVEL_LIGHTER				rb 1
-def FADE_LEVEL_LIGHTEST				rb 1
-def FADE_LEVELS_COUNT				rb 0
+def FADE_LEVEL_DARKEST              rb 1
+def FADE_LEVEL_DARKER               rb 1
+def FADE_LEVEL_DARK                 rb 1
+def FADE_LEVEL_NORMAL               rb 1
+def FADE_LEVEL_LIGHT                rb 1
+def FADE_LEVEL_LIGHTER              rb 1
+def FADE_LEVEL_LIGHTEST             rb 1
+def FADE_LEVELS_COUNT               rb 0
 
 palettes:
 db %11111111
@@ -73,98 +73,98 @@ db %01000000
 db %00000000
 palettes_end:
 
-def PALETTES_COUNT					equ (palettes_end - palettes)
+def PALETTES_COUNT                  equ (palettes_end - palettes)
 
 assert (palettes_end - palettes) == FADE_LEVELS_COUNT, "Mismatch between the fade levels count {d:FADE_LEVELS_COUNT} and the palettes count {d:PALETTES_COUNT}"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 InitSample:
-	; init the WRAM state
-	ClearMemory _RAM, WRAM_END
-	InitPadInput WRAM_PAD_INPUT
-	ld a, FADE_LEVEL_NORMAL
-	ld [WRAM_FADE_CURRENT_LEVEL], a
-	ld [WRAM_FADE_TARGET_LEVEL], a
+    ; init the WRAM state
+    ClearMemory _RAM, WRAM_END
+    InitPadInput WRAM_PAD_INPUT
+    ld a, FADE_LEVEL_NORMAL
+    ld [WRAM_FADE_CURRENT_LEVEL], a
+    ld [WRAM_FADE_TARGET_LEVEL], a
 
-	; init the palette
-	ld a, %11100100
-	ld [rBGP], a
+    ; init the palette
+    ld a, %11100100
+    ld [rBGP], a
 
-	LoadGraphicsDataIntoVRAM
+    LoadGraphicsDataIntoVRAM
 
-	; enable the vblank interrupt
-	ld a, IEF_VBLANK
-	ld [rIE], a
-	ei
+    ; enable the vblank interrupt
+    ld a, IEF_VBLANK
+    ld [rIE], a
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
-	ld [rLCDC], a
+    ; set the graphics parameters and turn back LCD on
+    ld a, LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ld [rLCDC], a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+    halt
 
-	; set the current palette
-	ld hl, palettes
-	ld a, [WRAM_FADE_CURRENT_LEVEL]
-	ld d, 0
-	ld e, a
-	add hl, de
-	ld a, [hl]
-	ld [rBGP], a
+    ; set the current palette
+    ld hl, palettes
+    ld a, [WRAM_FADE_CURRENT_LEVEL]
+    ld d, 0
+    ld e, a
+    add hl, de
+    ld a, [hl]
+    ld [rBGP], a
 
-	; fade animation
-	ld hl, WRAM_FADE_CURRENT_LEVEL
-	ld a, [WRAM_FADE_TARGET_LEVEL]
-	cp a, [hl]
-	jr z, .check_animation
-		ld hl, WRAM_FADE_FRAME_COUNTER
-		dec [hl]
-		jr nz, .animate_fade
-			ld [hl], FADE_ANIM_FRAME_COUNT
+    ; fade animation
+    ld hl, WRAM_FADE_CURRENT_LEVEL
+    ld a, [WRAM_FADE_TARGET_LEVEL]
+    cp a, [hl]
+    jr z, .check_animation
+        ld hl, WRAM_FADE_FRAME_COUNTER
+        dec [hl]
+        jr nz, .animate_fade
+            ld [hl], FADE_ANIM_FRAME_COUNT
 
-			ld hl, WRAM_FADE_CURRENT_LEVEL
-			ld a, [WRAM_FADE_TARGET_LEVEL]
-			cp a, [hl]
-			jr c, .fade_up
-				; the target level is superior to the current level
-				inc [hl]
-				jr .fade_done
-			.fade_up
-				; the current level is superior to the target level
-				dec [hl]
-			.fade_done
-		.animate_fade
-	.check_animation
+            ld hl, WRAM_FADE_CURRENT_LEVEL
+            ld a, [WRAM_FADE_TARGET_LEVEL]
+            cp a, [hl]
+            jr c, .fade_up
+                ; the target level is superior to the current level
+                inc [hl]
+                jr .fade_done
+            .fade_up
+                ; the current level is superior to the target level
+                dec [hl]
+            .fade_done
+        .animate_fade
+    .check_animation
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .fade_out_black
-		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_DARKEST
-		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
-	.fade_out_black
+    TestPadInput_Released WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .fade_out_black
+        copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_DARKEST
+        copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+    .fade_out_black
 
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_UP
-	jr nz, .fade_in_black
-		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_NORMAL
-		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
-	.fade_in_black
+    TestPadInput_Released WRAM_PAD_INPUT, PADF_UP
+    jr nz, .fade_in_black
+        copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_NORMAL
+        copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+    .fade_in_black
 
-	TestPadInput_Released WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .fade_out_white
-		copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_LIGHTEST
-		copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
-	.fade_out_white
+    TestPadInput_Released WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .fade_out_white
+        copy [WRAM_FADE_TARGET_LEVEL], FADE_LEVEL_LIGHTEST
+        copy [WRAM_FADE_FRAME_COUNTER], FADE_ANIM_FRAME_COUNT
+    .fade_out_white
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

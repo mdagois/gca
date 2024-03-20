@@ -3,56 +3,56 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SPRITE_TILE_ID					equ (16)
-def SPRITE_LINES_COUNT				equ (5)
-def SPRITE_FIRST_LINE				equ (32)
-def ANIM_UPDATE_THRESHOLD			equ (4)
-def OAM_BYTES_COUNT					equ (sizeof_OAM_ATTRS * OAM_COUNT)
+def SPRITE_TILE_ID                  equ (16)
+def SPRITE_LINES_COUNT              equ (5)
+def SPRITE_FIRST_LINE               equ (32)
+def ANIM_UPDATE_THRESHOLD           equ (4)
+def OAM_BYTES_COUNT                 equ (sizeof_OAM_ATTRS * OAM_COUNT)
 
 rsset _RAM
 
-def WRAM_SPRITES					rb OAM_BYTES_COUNT
-def WRAM_FRAME_COUNTER				rb 1
-def WRAM_LINE_OFFSETS				rb SPRITE_LINES_COUNT
-def WRAM_LINE_MOVE					rb 1
+def WRAM_SPRITES                    rb OAM_BYTES_COUNT
+def WRAM_FRAME_COUNTER              rb 1
+def WRAM_LINE_OFFSETS               rb SPRITE_LINES_COUNT
+def WRAM_LINE_MOVE                  rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -61,125 +61,125 @@ assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 section "sample", rom0
 
 InitSample:
-	; init the WRAM state
-	copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
+    ; init the WRAM state
+    copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
-	; initialize line offsets semi-randomly
-	copy [WRAM_LINE_OFFSETS + 0], 0
-	copy [WRAM_LINE_OFFSETS + 1], 1
-	copy [WRAM_LINE_OFFSETS + 2], 2
-	copy [WRAM_LINE_OFFSETS + 3], 3
-	copy [WRAM_LINE_OFFSETS + 4], 4
+    ; initialize line offsets semi-randomly
+    copy [WRAM_LINE_OFFSETS + 0], 0
+    copy [WRAM_LINE_OFFSETS + 1], 1
+    copy [WRAM_LINE_OFFSETS + 2], 2
+    copy [WRAM_LINE_OFFSETS + 3], 3
+    copy [WRAM_LINE_OFFSETS + 4], 4
 
-	; make all sprite lines move to the right
-	xor a
-	ld [WRAM_LINE_MOVE], a
+    ; make all sprite lines move to the right
+    xor a
+    ld [WRAM_LINE_MOVE], a
 
-	; place sprites on 5 lines of 8 sprites each
-	ld hl, WRAM_SPRITES
+    ; place sprites on 5 lines of 8 sprites each
+    ld hl, WRAM_SPRITES
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
-		; Y
-		ld a, ((SPRITE_FIRST_LINE + REPT_SPRITE_NUM) / 8) * 8
-		ld [hli], a
-		; X
-		xor a
-		ld [hli], a
-		; Tile ID
-		ld a, SPRITE_TILE_ID
-		ld [hli], a
-		; Flags
-		xor a
-		ld [hli], a
+    REPT OAM_COUNT
+        ; Y
+        ld a, ((SPRITE_FIRST_LINE + REPT_SPRITE_NUM) / 8) * 8
+        ld [hli], a
+        ; X
+        xor a
+        ld [hli], a
+        ; Tile ID
+        ld a, SPRITE_TILE_ID
+        ld [hli], a
+        ; Flags
+        xor a
+        ld [hli], a
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
+    ENDR
 
-	; init graphics
-	copy [rBGP], %11100100
-	copy [rOBP0], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    copy [rOBP0], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJ8 | LCDCF_OBJON | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJ8 | LCDCF_OBJON | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+    halt
 
-	; transfer the sprites to OAM
-	ld hl, _OAMRAM
+    ; transfer the sprites to OAM
+    ld hl, _OAMRAM
 def REPT_BYTE_NUM = 0
-	REPT OAM_BYTES_COUNT
-		ld a, [WRAM_SPRITES + REPT_BYTE_NUM]
-		ld [hli], a
+    REPT OAM_BYTES_COUNT
+        ld a, [WRAM_SPRITES + REPT_BYTE_NUM]
+        ld [hli], a
 def REPT_BYTE_NUM = REPT_BYTE_NUM + 1
-	ENDR
+    ENDR
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	; update the sprite abscissas based on the line offsets
-	ld hl, WRAM_SPRITES + OAMA_X
-	ld de, 3
+    ; update the sprite abscissas based on the line offsets
+    ld hl, WRAM_SPRITES + OAMA_X
+    ld de, 3
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
-		; X
-		ld a, 24 + ((REPT_SPRITE_NUM & $07) * 16)
-		ld b, a
-		ld a, [WRAM_LINE_OFFSETS + (REPT_SPRITE_NUM / 8)]
-		add a, b
+    REPT OAM_COUNT
+        ; X
+        ld a, 24 + ((REPT_SPRITE_NUM & $07) * 16)
+        ld b, a
+        ld a, [WRAM_LINE_OFFSETS + (REPT_SPRITE_NUM / 8)]
+        add a, b
 
-		ld [hli], a
-		add hl, de
+        ld [hli], a
+        add hl, de
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
+    ENDR
 
-	; check whether it is time to update the sprite line offsets
-	ld a, [WRAM_FRAME_COUNTER]
-	dec a
-	ld [WRAM_FRAME_COUNTER], a
-	ret nz
-	copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
+    ; check whether it is time to update the sprite line offsets
+    ld a, [WRAM_FRAME_COUNTER]
+    dec a
+    ld [WRAM_FRAME_COUNTER], a
+    ret nz
+    copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
-	; update the line offsets
+    ; update the line offsets
 def REPT_LINE_NUM = 0
-	REPT SPRITE_LINES_COUNT
-		ld hl, WRAM_LINE_MOVE
-		bit REPT_LINE_NUM, [hl]
-		jr z, .move_left\@
-			ld a, [WRAM_LINE_OFFSETS + REPT_LINE_NUM]
-			dec a
-			and a, $07
-			ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
-			jr nz, .turn_right\@
-				ld hl, WRAM_LINE_MOVE
-				res REPT_LINE_NUM, [hl]
-			.turn_right\@
-			jr .move_end\@
-		.move_left\@
+    REPT SPRITE_LINES_COUNT
+        ld hl, WRAM_LINE_MOVE
+        bit REPT_LINE_NUM, [hl]
+        jr z, .move_left\@
+            ld a, [WRAM_LINE_OFFSETS + REPT_LINE_NUM]
+            dec a
+            and a, $07
+            ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
+            jr nz, .turn_right\@
+                ld hl, WRAM_LINE_MOVE
+                res REPT_LINE_NUM, [hl]
+            .turn_right\@
+            jr .move_end\@
+        .move_left\@
 
-		.move_right\@
-			ld a, [WRAM_LINE_OFFSETS + REPT_LINE_NUM]
-			inc a
-			and a, $07
-			ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
-			jr nz, .turn_left\@
-				ld a, $07
-				ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
-				ld hl, WRAM_LINE_MOVE
-				set REPT_LINE_NUM, [hl]
-			.turn_left\@
-		.move_end\@
+        .move_right\@
+            ld a, [WRAM_LINE_OFFSETS + REPT_LINE_NUM]
+            inc a
+            and a, $07
+            ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
+            jr nz, .turn_left\@
+                ld a, $07
+                ld [WRAM_LINE_OFFSETS + REPT_LINE_NUM], a
+                ld hl, WRAM_LINE_MOVE
+                set REPT_LINE_NUM, [hl]
+            .turn_left\@
+        .move_end\@
 def REPT_LINE_NUM = REPT_LINE_NUM + 1
-	ENDR
+    ENDR
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

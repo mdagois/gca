@@ -7,10 +7,10 @@ include "utils.rgbinc"
 ; Graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_INDEX_BLANK				equ (-128)
-def TILE_INDEX_CURSOR				equ (-128 + 64)
-def TILE_INDEX_SELECTOR_BASE		equ (-128 + 100)
-def TILE_INDEX_SAMPLE_BASE			equ (-128 + 75)
+def TILE_INDEX_BLANK                equ (-128)
+def TILE_INDEX_CURSOR               equ (-128 + 64)
+def TILE_INDEX_SELECTOR_BASE        equ (-128 + 100)
+def TILE_INDEX_SAMPLE_BASE          equ (-128 + 75)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Hexadecimal to tile conversion
@@ -18,58 +18,58 @@ def TILE_INDEX_SAMPLE_BASE			equ (-128 + 75)
 
 ; convert (a) from hexadecimal to a tile index
 macro HexToTileA
-	ld h, 0
-	ld l, a
-	ld de, HexToTileTable
-	add hl, de
-	ld a, [hl]
+    ld h, 0
+    ld l, a
+    ld de, HexToTileTable
+    add hl, de
+    ld a, [hl]
 endm
 
 ; \1 = line, \2 = column
 macro DisplayRegisterA
-	push af
-	swap a
-	and a, $0F
-	HexToTileA
-	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2, a
-	pop af
-	and a, $0F
-	HexToTileA
-	PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2 + 1, a
+    push af
+    swap a
+    and a, $0F
+    HexToTileA
+    PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2, a
+    pop af
+    and a, $0F
+    HexToTileA
+    PushTransfer _SCRN0 + SCRN_VX_B * \1 + \2 + 1, a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; VRAM vblank transfer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TRANSFER_LIST_MAX_SIZE			equ (16)
+def TRANSFER_LIST_MAX_SIZE          equ (16)
 assert (TRANSFER_LIST_MAX_SIZE & (TRANSFER_LIST_MAX_SIZE - 1)) == 0, "TRANSFER_LIST_MAX_SIZE should be a power of two"
 
 rsreset
-def TRANSFER_TILEMAP_ADDRESS		rw 1
-def TRANSFER_TILE_INDEX				rb 1
-def sizeof_TRANSFER					rb 0
+def TRANSFER_TILEMAP_ADDRESS        rw 1
+def TRANSFER_TILE_INDEX             rb 1
+def sizeof_TRANSFER                 rb 0
 
 rsreset
-def TRANSFER_LIST_LEN				rb 1
-def TRANSFER_LIST_NEXT				rw 1
-def TRANSFER_LIST_DATA				rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
-def sizeof_TRANSFER_LIST			rb 0
+def TRANSFER_LIST_LEN               rb 1
+def TRANSFER_LIST_NEXT              rw 1
+def TRANSFER_LIST_DATA              rb TRANSFER_LIST_MAX_SIZE * sizeof_TRANSFER
+def sizeof_TRANSFER_LIST            rb 0
 
 rsreset
-def PUSH_TRANSFER_PARAM_TILEMAP_PTR	rw 1
-def PUSH_TRANSFER_PARAM_TILE_INDEX	rb 1
-def sizeof_PUSH_TRANSFER_PARAM		rb 0
+def PUSH_TRANSFER_PARAM_TILEMAP_PTR rw 1
+def PUSH_TRANSFER_PARAM_TILE_INDEX  rb 1
+def sizeof_PUSH_TRANSFER_PARAM      rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 macro ResetTransferList
-	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
-	ld [hl], 0
-	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
-	ld [hl], low(WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA)
-	inc hl
-	ld [hl], high(WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA)
+    ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN
+    ld [hl], 0
+    ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_NEXT
+    ld [hl], low(WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA)
+    inc hl
+    ld [hl], high(WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA)
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -77,45 +77,45 @@ endm
 ; helper macro for PushTransferFunc
 ; \1 = tilemap address, \2 = tile index
 macro PushTransfer
-	ld d, high(\1)
-	ld e, low(\1)
-	add sp, -sizeof_PUSH_TRANSFER_PARAM
-	ld hl, sp + 0
-	ld [hl], e
-	inc hl
-	ld [hl], d
-	inc hl
-	ld [hl], \2
-	call PushTransferFunc
-	add sp, sizeof_PUSH_TRANSFER_PARAM
+    ld d, high(\1)
+    ld e, low(\1)
+    add sp, -sizeof_PUSH_TRANSFER_PARAM
+    ld hl, sp + 0
+    ld [hl], e
+    inc hl
+    ld [hl], d
+    inc hl
+    ld [hl], \2
+    call PushTransferFunc
+    add sp, sizeof_PUSH_TRANSFER_PARAM
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; perform all the requested transfers
 macro ProcessTransferList
-	ld a, [WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN]
-	or a, a
-	jr z, .end\@
+    ld a, [WRAM_TRANSFER_LIST + TRANSFER_LIST_LEN]
+    or a, a
+    jr z, .end\@
 
-	ld c, a
-	ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA
-	.loop\@
-		ld a, [hli]
-		ld e, a
-		ld a, [hli]
-		ld d, a
-		ld a, [hli]
-		push hl
-		ld_r16_r16 hl, de
-		ld [hl], a
-		pop hl
+    ld c, a
+    ld hl, WRAM_TRANSFER_LIST + TRANSFER_LIST_DATA
+    .loop\@
+        ld a, [hli]
+        ld e, a
+        ld a, [hli]
+        ld d, a
+        ld a, [hli]
+        push hl
+        ld_r16_r16 hl, de
+        ld [hl], a
+        pop hl
 
-		dec c
-		jr nz, .loop\@
+        dec c
+        jr nz, .loop\@
 
-	ResetTransferList
-	.end\@
+    ResetTransferList
+    .end\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,13 +123,13 @@ endm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
-def WRAM_CHANNEL_PREVIOUS_INDEX		rb 1
-def WRAM_CHANNEL_CURRENT_INDEX		rb 1
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-def WRAM_TRANSFER_LIST				rb sizeof_TRANSFER_LIST
-def WRAM_SHARED_END					rb 0
+def WRAM_CHANNEL_PREVIOUS_INDEX     rb 1
+def WRAM_CHANNEL_CURRENT_INDEX      rb 1
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
+def WRAM_TRANSFER_LIST              rb sizeof_TRANSFER_LIST
+def WRAM_SHARED_END                 rb 0
 
-def WRAM_CHANNEL_START				equ (_RAM + WRAM_SHARED_END - _RAM)
+def WRAM_CHANNEL_START              equ (_RAM + WRAM_SHARED_END - _RAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

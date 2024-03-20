@@ -2,30 +2,30 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def OAM_OFFSET_X					equ (8)
-def OAM_OFFSET_Y					equ (16)
+def OAM_OFFSET_X                    equ (8)
+def OAM_OFFSET_Y                    equ (16)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_INPUT						rb sizeof_PAD_INPUT
-def WRAM_IS_VBLANK					rb 1
+def WRAM_INPUT                      rb sizeof_PAD_INPUT
+def WRAM_IS_VBLANK                  rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	copy [WRAM_IS_VBLANK], 1
-	pop af
-	reti
+    push af
+    copy [WRAM_IS_VBLANK], 1
+    pop af
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -48,80 +48,80 @@ tilemap_parameters_end:
 section "sample", rom0
 
 ToggleCpuSpeed:
-	; request a CPU speed change
-	ld hl, rKEY1
-	set 0, [hl]
+    ; request a CPU speed change
+    ld hl, rKEY1
+    set 0, [hl]
 
-	; disable input polling
-	copy [rP1], P1F_GET_NONE
+    ; disable input polling
+    copy [rP1], P1F_GET_NONE
 
-	; save the interrupt flags into (b)
-	copy b, [rIE]
+    ; save the interrupt flags into (b)
+    copy b, [rIE]
 
-	; disable all interrupts and clear pending interrupts
-	xor a
-	ld [rIE], a
-	ld [rIF], a
+    ; disable all interrupts and clear pending interrupts
+    xor a
+    ld [rIE], a
+    ld [rIF], a
 
-	; trigger the speed change
-	stop
+    ; trigger the speed change
+    stop
 
-	; restore the interrupt flags
-	copy [rIE], b
+    ; restore the interrupt flags
+    copy [rIE], b
 
-	ret
+    ret
 
 InitSample:
-	; set wram variables
-	InitPadInput WRAM_INPUT
-	xor a
-	ld [WRAM_IS_VBLANK], a
+    ; set wram variables
+    InitPadInput WRAM_INPUT
+    xor a
+    ld [WRAM_IS_VBLANK], a
 
-	; set background palettes
-	copy [rBCPS], 0 | BCPSF_AUTOINC
-		; black
-		copy [rBCPD], $00
-		copy [rBCPD], $00
-		; white
-		copy [rBCPD], $FF
-		copy [rBCPD], $FF
-		; invalid
-		copy [rBCPD], $00
-		copy [rBCPD], $80
-		; invalid
-		copy [rBCPD], $00
-		copy [rBCPD], $80
+    ; set background palettes
+    copy [rBCPS], 0 | BCPSF_AUTOINC
+        ; black
+        copy [rBCPD], $00
+        copy [rBCPD], $00
+        ; white
+        copy [rBCPD], $FF
+        copy [rBCPD], $FF
+        ; invalid
+        copy [rBCPD], $00
+        copy [rBCPD], $80
+        ; invalid
+        copy [rBCPD], $00
+        copy [rBCPD], $80
 
-	; VRAM 0
-	copy [rVBK], 0
-		; tileset (background)
-		DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
-		; tile indices
-		DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
+    ; VRAM 0
+    copy [rVBK], 0
+        ; tileset (background)
+        DmaCopy_General _VRAM8000, tileset, tileset_end - tileset
+        ; tile indices
+        DmaCopy_General _SCRN0, tilemap_indices, tilemap_indices_end - tilemap_indices
 
-	; VRAM 1
-	copy [rVBK], 1
-		; tile parameters
-		DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
+    ; VRAM 1
+    copy [rVBK], 1
+        ; tile parameters
+        DmaCopy_General _SCRN0, tilemap_parameters, tilemap_parameters_end - tilemap_parameters
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set LCD parameters
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+    ; set LCD parameters
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; convert (a) from hexadecimal to a tile index
 macro HexToTileA
-	ld h, 0
-	ld l, a
-	ld de, HexToTileTable
-	add hl, de
-	ld a, [hl]
+    ld h, 0
+    ld l, a
+    ld de, HexToTileTable
+    add hl, de
+    ld a, [hl]
 endm
 
 HexToTileTable:
@@ -132,43 +132,43 @@ db $23, $24, $25, $26
 
 ; \1 = line, \2 = offset x
 macro DisplayRegisterA
-	push af
-	swap a
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2], a
-	pop af
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+    push af
+    swap a
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2], a
+    pop af
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	xor a
-	ld b, a
-	ld c, a
-	.wait_vblank
-		inc bc
-		ld a, [WRAM_IS_VBLANK]
-		dec a
-		jr nz, .wait_vblank
-	ld [WRAM_IS_VBLANK], a
+    xor a
+    ld b, a
+    ld c, a
+    .wait_vblank
+        inc bc
+        ld a, [WRAM_IS_VBLANK]
+        dec a
+        jr nz, .wait_vblank
+    ld [WRAM_IS_VBLANK], a
 
-	copy [rVBK], 0
-	ld a, b
-	DisplayRegisterA 3, 10
-	ld a, c
-	DisplayRegisterA 3, 12
+    copy [rVBK], 0
+    ld a, b
+    DisplayRegisterA 3, 10
+    ld a, c
+    DisplayRegisterA 3, 12
 
-	UpdatePadInput WRAM_INPUT
-	TestPadInput_Released WRAM_INPUT, PADF_A
-	jr nz, .toggle_speed
-		call ToggleCpuSpeed
-	.toggle_speed
+    UpdatePadInput WRAM_INPUT
+    TestPadInput_Released WRAM_INPUT, PADF_A
+    jr nz, .toggle_speed
+        call ToggleCpuSpeed
+    .toggle_speed
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
