@@ -9,68 +9,68 @@ export GameStateFunc_PutFlag
 section "gamestate_flag", rom0
 
 GameStateFunc_PutFlag:
-	; get the state coordinate for the flag toggling
-	load16 de, vFlagCoordinate
+    ; get the state coordinate for the flag toggling
+    load16 de, vFlagCoordinate
 
-	; return early if the coordinate is not set properly
-	ld a, d
-	cp a, high(BOARD_STATE_INVALID_COORDINATE)
-	jr nz, .coordinate_is_valid
-		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
-		halt
-		ret
-	.coordinate_is_valid
+    ; return early if the coordinate is not set properly
+    ld a, d
+    cp a, high(BOARD_STATE_INVALID_COORDINATE)
+    jr nz, .coordinate_is_valid
+        GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
+        halt
+        ret
+    .coordinate_is_valid
 
-	; retrieve the board value into (a)
-	ld hl, vBoard
-	add hl, de
-	ld a, [hl]
+    ; retrieve the board value into (a)
+    ld hl, vBoard
+    add hl, de
+    ld a, [hl]
 
-	; return early if the coordinate is not hidden
-	bit BOARD_BIT_HIDDEN, a
-	jr nz, .coordinate_is_hidden
-		GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
-		halt
-		ret
-	.coordinate_is_hidden
+    ; return early if the coordinate is not hidden
+    bit BOARD_BIT_HIDDEN, a
+    jr nz, .coordinate_is_hidden
+        GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
+        halt
+        ret
+    .coordinate_is_hidden
 
-	; toggle the flag based on the value at the coordinate
-	bit BOARD_BIT_FLAGGED, a
-	jr nz, .has_flag
-		Sound_Play SOUND_PUT_FLAG
-		set BOARD_BIT_FLAGGED, a
-		ld [hl], a
-		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
-		jr .flag_toggle_done
-	.has_flag
+    ; toggle the flag based on the value at the coordinate
+    bit BOARD_BIT_FLAGGED, a
+    jr nz, .has_flag
+        Sound_Play SOUND_PUT_FLAG
+        set BOARD_BIT_FLAGGED, a
+        ld [hl], a
+        Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_FLAG
+        jr .flag_toggle_done
+    .has_flag
 
-	Sound_Play SOUND_REMOVE_FLAG
+    Sound_Play SOUND_REMOVE_FLAG
 if !def(SHOW_MINES)
-		res BOARD_BIT_FLAGGED, a
-		ld [hl], a
-		Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+        res BOARD_BIT_FLAGGED, a
+        ld [hl], a
+        Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
 else
-		res BOARD_BIT_FLAGGED, a
-		ld [hl], a
-		bit BOARD_BIT_MINE, a
-		jr z, .no_mine
-			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
-			jr .mine_check_end
-		.no_mine
-			Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
-		.mine_check_end
+        res BOARD_BIT_FLAGGED, a
+        ld [hl], a
+        bit BOARD_BIT_MINE, a
+        jr z, .no_mine
+            Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_MINE
+            jr .mine_check_end
+        .no_mine
+            Board_RequestBoardTileChange de, TILE_BOARD_SQUARE_HIDDEN
+        .mine_check_end
 endc
 
-	.flag_toggle_done
+    .flag_toggle_done
 
-	; clear the flag coordinate
-	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16 vFlagCoordinate, de
+    ; clear the flag coordinate
+    ld de, BOARD_STATE_INVALID_COORDINATE
+    store16 vFlagCoordinate, de
 
-	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
+    GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 
-	halt
-	Board_ProcessBoardTileChangeRequest
+    halt
+    Board_ProcessBoardTileChangeRequest
 
-	ret
+    ret
 

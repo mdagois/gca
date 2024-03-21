@@ -11,200 +11,200 @@ section "gamestate_newgame", rom0
 
 ; reset the board (no mines yet)
 macro ResetBoard
-	; go over the board line by line
-	ld hl, vBoard
-	ld c, BOARD_TILE_NUM_Y
-	.clear_board\@
-		; set all the board coordinates for the line to an initial value
-		ld a, (1 << BOARD_BIT_HIDDEN)
-		ld b, BOARD_TILE_NUM_X
-		.clear_line\@
-			ld [hli], a
-			dec b
-			jr nz, .clear_line\@
+    ; go over the board line by line
+    ld hl, vBoard
+    ld c, BOARD_TILE_NUM_Y
+    .clear_board\@
+        ; set all the board coordinates for the line to an initial value
+        ld a, (1 << BOARD_BIT_HIDDEN)
+        ld b, BOARD_TILE_NUM_X
+        .clear_line\@
+            ld [hli], a
+            dec b
+            jr nz, .clear_line\@
 
-		; skip the remaining columns on the line as they must remain at zero
-		ld de, BOARD_STATE_WIDTH - BOARD_TILE_NUM_X
-		add hl, de
+        ; skip the remaining columns on the line as they must remain at zero
+        ld de, BOARD_STATE_WIDTH - BOARD_TILE_NUM_X
+        add hl, de
 
-		dec c
-		jr nz, .clear_board\@
+        dec c
+        jr nz, .clear_board\@
 endm
 
 ; add \1 mines to the board
 macro GenerateMines
-	LFSR8_PickSeed
-	ldh [vLfsrValue], a
-	ld c, \1
-	.generating_mine\@
-		; load the seed and generate the next lfsr
-		ldh a, [vLfsrValue]
-		LFSR8_GetNextValue
-		ldh [vLfsrValue], a
+    LFSR8_PickSeed
+    ldh [vLfsrValue], a
+    ld c, \1
+    .generating_mine\@
+        ; load the seed and generate the next lfsr
+        ldh a, [vLfsrValue]
+        LFSR8_GetNextValue
+        ldh [vLfsrValue], a
 
-		; lfsr can only generate 255 values, but the board has 256 coordinates
-		; when the lfsr result is 1, allow the value to be set to 0 semi-randomly
-		cp a, 1
-		jr nz, .lfsr_not_one\@
-			ldh a, [rDIV]
-			and a, $01
-		.lfsr_not_one\@
+        ; lfsr can only generate 255 values, but the board has 256 coordinates
+        ; when the lfsr result is 1, allow the value to be set to 0 semi-randomly
+        cp a, 1
+        jr nz, .lfsr_not_one\@
+            ldh a, [rDIV]
+            and a, $01
+        .lfsr_not_one\@
 
-		; add the mine flag to the coordinate
-		Board_ConvertLogicalToBoardStateCoordinate a
-		ld de, vBoard
-		add hl, de
-		ld a, [hl]
-		or a, (1 << BOARD_BIT_MINE)
-		ld [hl], a
+        ; add the mine flag to the coordinate
+        Board_ConvertLogicalToBoardStateCoordinate a
+        ld de, vBoard
+        add hl, de
+        ld a, [hl]
+        or a, (1 << BOARD_BIT_MINE)
+        ld [hl], a
 
-		dec c
-		jr nz, .generating_mine\@
+        dec c
+        jr nz, .generating_mine\@
 endm
 
 ; compute the mines count for each coordinate on the board
 macro ComputeMineCounts
 ; temp variables on the stack
 rsreset
-def mine_compute_LOGICAL_BOARD_COORDINATE	rb 1
-def mine_compute_COUNT						rb 1
-def sizeof_mine_compute_TEMP				rb 0
+def mine_compute_LOGICAL_BOARD_COORDINATE   rb 1
+def mine_compute_COUNT                      rb 1
+def sizeof_mine_compute_TEMP                rb 0
 
-	add sp, -sizeof_mine_compute_TEMP
+    add sp, -sizeof_mine_compute_TEMP
 
-	ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
-	xor a
-	ld [hl], a
-	.mine_count_for_coordinate\@
-		; set initial mine count to zero
-		ld hl, sp + mine_compute_COUNT
-		ld [hl], 0
+    ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
+    xor a
+    ld [hl], a
+    .mine_count_for_coordinate\@
+        ; set initial mine count to zero
+        ld hl, sp + mine_compute_COUNT
+        ld [hl], 0
 
-		; get a pointer to the state coordinate that is one row above and one column left from our base coordinate
-		Board_ConvertLogicalToBoardStateCoordinate a
-		ld de, vBoard - (BOARD_STATE_WIDTH + 1)
-		add hl, de
+        ; get a pointer to the state coordinate that is one row above and one column left from our base coordinate
+        Board_ConvertLogicalToBoardStateCoordinate a
+        ld de, vBoard - (BOARD_STATE_WIDTH + 1)
+        add hl, de
 
-		ld b, 3
-		.mine_count_for_column\@
-			ld c, 3 ; three colums per row
-			.mine_count_for_row\@
-				ld a, [hli]
-				bit BOARD_BIT_MINE, a
-				jr z, .no_mine\@
-					ld_r16_r16 de, hl
-					ld hl, sp + mine_compute_COUNT
-					inc [hl]
-					ld_r16_r16 hl, de
-				.no_mine\@
-				dec c
-				jr nz, .mine_count_for_row\@
+        ld b, 3
+        .mine_count_for_column\@
+            ld c, 3 ; three colums per row
+            .mine_count_for_row\@
+                ld a, [hli]
+                bit BOARD_BIT_MINE, a
+                jr z, .no_mine\@
+                    ld_r16_r16 de, hl
+                    ld hl, sp + mine_compute_COUNT
+                    inc [hl]
+                    ld_r16_r16 hl, de
+                .no_mine\@
+                dec c
+                jr nz, .mine_count_for_row\@
 
-			; move to the next row, three columns left
-			ld de, (BOARD_STATE_WIDTH - 3)
-			add hl, de
+            ; move to the next row, three columns left
+            ld de, (BOARD_STATE_WIDTH - 3)
+            add hl, de
 
-			dec b
-			jr nz, .mine_count_for_column\@
+            dec b
+            jr nz, .mine_count_for_column\@
 
-		; put the mines' count in (b) for reference below
-		ld_r16_r16 de, hl
-		ld hl, sp + mine_compute_COUNT
-		ld b, [hl]
-		ld_r16_r16 hl, de
+        ; put the mines' count in (b) for reference below
+        ld_r16_r16 de, hl
+        ld hl, sp + mine_compute_COUNT
+        ld b, [hl]
+        ld_r16_r16 hl, de
 
-		; go back to the coordinate for which we compute the mines' count
-		ld de, -(BOARD_STATE_WIDTH * 2 - 1)
-		add hl, de
+        ; go back to the coordinate for which we compute the mines' count
+        ld de, -(BOARD_STATE_WIDTH * 2 - 1)
+        add hl, de
 
-		; set the mines' count for the coordinate
-		ld a, [hl]
-		or a, b
-		ld [hl], a
+        ; set the mines' count for the coordinate
+        ld a, [hl]
+        or a, b
+        ld [hl], a
 
-		; iterator to the next logical coordinate
-		ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
-		inc [hl]
-		; keep the counter in (a), as it is used at the start of the next iteration
-		ld a, [hl]
-		jr nz, .mine_count_for_coordinate\@
+        ; iterator to the next logical coordinate
+        ld hl, sp + mine_compute_LOGICAL_BOARD_COORDINATE
+        inc [hl]
+        ; keep the counter in (a), as it is used at the start of the next iteration
+        ld a, [hl]
+        jr nz, .mine_count_for_coordinate\@
 
-	add sp, sizeof_mine_compute_TEMP
+    add sp, sizeof_mine_compute_TEMP
 endm
 
 ; reset board variables to default values
 macro ResetBoardVariables
-	; reset counters
-	ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
-	ldh [vUncoveredCount], a
-	Counter_SetCount a
+    ; reset counters
+    ld a, BOARD_TILES_COUNT - BOARD_STATE_MINES_COUNT
+    ldh [vUncoveredCount], a
+    Counter_SetCount a
 
-	; clear the flag coordinate used by the flag toggling mechanics
-	ld de, BOARD_STATE_INVALID_COORDINATE
-	store16 vFlagCoordinate, de
+    ; clear the flag coordinate used by the flag toggling mechanics
+    ld de, BOARD_STATE_INVALID_COORDINATE
+    store16 vFlagCoordinate, de
 endm
 
 ; initialize the board graphics
 macro InitBoardGraphics
-	ld hl, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
-	ld c, BOARD_TILE_NUM_Y
-	.clear_vram_line\@
-		halt
+    ld hl, _SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X
+    ld c, BOARD_TILE_NUM_Y
+    .clear_vram_line\@
+        halt
 if !def(SHOW_MINES)
-		; set the full line to the default brick graphics
-		ld a, TILE_BOARD_SQUARE_HIDDEN
-		ld b, BOARD_TILE_NUM_X
-		.clear_vram_location
-			ld [hli], a
-			dec b
-			jr nz, .clear_vram_location
+        ; set the full line to the default brick graphics
+        ld a, TILE_BOARD_SQUARE_HIDDEN
+        ld b, BOARD_TILE_NUM_X
+        .clear_vram_location
+            ld [hli], a
+            dec b
+            jr nz, .clear_vram_location
 else
-		ld b, BOARD_TILE_NUM_X
-		.check_mine
-			; get the board value into (a) in order to check the mine flag
-			push hl
-				; convert (hl) from a vram pointer to board state pointer
-				ld de, (-(_SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X) & $FFFF)
-				add hl, de
-				ld de, vBoard
-				add hl, de
+        ld b, BOARD_TILE_NUM_X
+        .check_mine
+            ; get the board value into (a) in order to check the mine flag
+            push hl
+                ; convert (hl) from a vram pointer to board state pointer
+                ld de, (-(_SCRN0 + (BOARD_TILE_OFFSET_Y * SCRN_VX_B) + BOARD_TILE_OFFSET_X) & $FFFF)
+                add hl, de
+                ld de, vBoard
+                add hl, de
 
-				; get the board value
-				ld a, [hl]
-			pop hl
+                ; get the board value
+                ld a, [hl]
+            pop hl
 
-			; display the mine graphics if there is a mine
-			bit BOARD_BIT_MINE, a
-			jr z, .not_a_mine
-				ld a, TILE_BOARD_SQUARE_MINE
-				ld [hli], a
-				jr .setup_done
-			.not_a_mine
-				ld a, TILE_BOARD_SQUARE_HIDDEN
-				ld [hli], a
-			.setup_done
+            ; display the mine graphics if there is a mine
+            bit BOARD_BIT_MINE, a
+            jr z, .not_a_mine
+                ld a, TILE_BOARD_SQUARE_MINE
+                ld [hli], a
+                jr .setup_done
+            .not_a_mine
+                ld a, TILE_BOARD_SQUARE_HIDDEN
+                ld [hli], a
+            .setup_done
 
-			dec b
-			jr nz, .check_mine
+            dec b
+            jr nz, .check_mine
 endc
-		; advance the (hl) pointer to the next line
-		ld de, SCRN_VX_B - BOARD_TILE_NUM_X
-		add hl, de
+        ; advance the (hl) pointer to the next line
+        ld de, SCRN_VX_B - BOARD_TILE_NUM_X
+        add hl, de
 
-		dec c
-		jr nz, .clear_vram_line\@
+        dec c
+        jr nz, .clear_vram_line\@
 endm
 
 GameStateFunc_NewGame:
-	ResetBoard
-	GenerateMines BOARD_STATE_MINES_COUNT
-	ComputeMineCounts
-	ResetBoardVariables
-	Cursor_Enable
-	GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
+    ResetBoard
+    GenerateMines BOARD_STATE_MINES_COUNT
+    ComputeMineCounts
+    ResetBoardVariables
+    Cursor_Enable
+    GameState_SetFuncId GAMESTATE_FUNC_ID_PLAY
 
-	halt
-	Counter_UpdateGraphics
-	InitBoardGraphics
-	ret
+    halt
+    Counter_UpdateGraphics
+    InitBoardGraphics
+    ret
 

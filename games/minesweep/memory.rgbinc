@@ -10,46 +10,46 @@ include "gamestate.rgbinc"
 
 ; OAM addresses
 rsset _OAMRAM
-def OAM_CURSOR				rb sizeof_OAM_ATTRS
-def OAM_COUNTER				rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
-def OAM_VICTORY				rb sizeof_OAM_ATTRS * VICTORY_OAM_COUNT
-def OAM_END					rb 0
+def OAM_CURSOR              rb sizeof_OAM_ATTRS
+def OAM_COUNTER             rb sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
+def OAM_VICTORY             rb sizeof_OAM_ATTRS * VICTORY_OAM_COUNT
+def OAM_END                 rb 0
 
-def OAM_USAGE				equ (OAM_END - _OAMRAM)
+def OAM_USAGE               equ (OAM_END - _OAMRAM)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _HRAM
 
 ; input
-def vPadInput						rb sizeof_PAD_INPUT
+def vPadInput                       rb sizeof_PAD_INPUT
 
 ; oam
-def vCursorOam						rb sizeof_OAM_ATTRS
-def vCounterOam						rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
+def vCursorOam                      rb sizeof_OAM_ATTRS
+def vCounterOam                     rb (sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT)
 
 ; board
-def vBoardTileRequestAddress		rw 1
-def vBoardTileRequestValue			rb 1
+def vBoardTileRequestAddress        rw 1
+def vBoardTileRequestValue          rb 1
 
 ; window
-def vWindowTargetY					rb 1
+def vWindowTargetY                  rb 1
 
 ; game state
-def vGameStateFuncId				rb 1
-def vUncoveredCount					rb 1
-def vFlagCoordinate					rw 1
+def vGameStateFuncId                rb 1
+def vUncoveredCount                 rb 1
+def vFlagCoordinate                 rw 1
 
 ; menu flow control
-def vLastGameIsWin				 	rb 1
+def vLastGameIsWin                  rb 1
 
 ; sound
-def vSoundParameters				rb 1
+def vSoundParameters                rb 1
 
 ; rng
-def vLfsrValue						rb 1
+def vLfsrValue                      rb 1
 
-def HRAM_END						rb 0
+def HRAM_END                        rb 0
 
 def HRAM_USAGE equ (HRAM_END - _HRAM)
 
@@ -59,15 +59,15 @@ rsset _RAM
 
 ; board state
 ; two safety rows are used to make the mine counting algorithm easier to implement
-def vBoardSafetyTop					rb BOARD_STATE_WIDTH + 1
-def vBoard							rb BOARD_STATE_SIZE
-def vBoardSafetyBottom				rb BOARD_STATE_WIDTH + 1
+def vBoardSafetyTop                 rb BOARD_STATE_WIDTH + 1
+def vBoard                          rb BOARD_STATE_SIZE
+def vBoardSafetyBottom              rb BOARD_STATE_WIDTH + 1
 
 ; list of board coordinates to uncover
-def vUncoverListSize				rb 1
-def vUncoverList					rw BOARD_TILES_COUNT
+def vUncoverListSize                rb 1
+def vUncoverList                    rw BOARD_TILES_COUNT
 
-def RAM_END							rb 0
+def RAM_END                         rb 0
 
 def RAM_USAGE equ (RAM_END - _RAM)
 

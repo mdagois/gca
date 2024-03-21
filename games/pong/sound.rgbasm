@@ -4,8 +4,8 @@ include "utils.rgbinc"
 
 export _Sound_Initialize, _Sound_Play, _Sound_Update
 
-def PLAY_SOUND_BIT		equ (7)
-def PLAY_SOUND_FLAG		equ (1 << PLAY_SOUND_BIT)
+def PLAY_SOUND_BIT      equ (7)
+def PLAY_SOUND_FLAG     equ (1 << PLAY_SOUND_BIT)
 
 section "sound", rom0
 
@@ -22,70 +22,70 @@ assert (_sound_data_end - _sound_data) == SOUNDS_COUNT * 6, "Mismatch between th
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Sound_Initialize:
-	copy [rNR52], AUDENA_ON
-	copy [rNR50], $77
-	copy [rNR51], $FF
-	ret
+    copy [rNR52], AUDENA_ON
+    copy [rNR50], $77
+    copy [rNR51], $FF
+    ret
 
 _Sound_Play:
-	; (a) has the sound id
+    ; (a) has the sound id
 
-	; raise the play flag and store the parameters
-	or a, PLAY_SOUND_FLAG
-	ldh [vSoundParameters], a
+    ; raise the play flag and store the parameters
+    or a, PLAY_SOUND_FLAG
+    ldh [vSoundParameters], a
 
-	ret
+    ret
 
 _Sound_Update:
-	; check the play flag
-	ld hl, vSoundParameters
-	bit PLAY_SOUND_BIT, [hl]
-	ret z
+    ; check the play flag
+    ld hl, vSoundParameters
+    bit PLAY_SOUND_BIT, [hl]
+    ret z
 
-	; reset the play flag
-	res PLAY_SOUND_BIT, [hl]
+    ; reset the play flag
+    res PLAY_SOUND_BIT, [hl]
 
-	; get the sound id and multiply by 6
-	ld a, [hl]
-	add a, a
-	ld b, a
-	add a, a
-	add a, b
+    ; get the sound id and multiply by 6
+    ld a, [hl]
+    add a, a
+    ld b, a
+    add a, a
+    add a, b
 
-	; get pointer to sound data
-	ld h, 0
-	ld l, a
-	ld de, _sound_data
-	add hl, de
+    ; get pointer to sound data
+    ld h, 0
+    ld l, a
+    ld de, _sound_data
+    add hl, de
 
-	; get the channel on which to play the sound
-	ld a, [hli] ; channel
-	cp a, $00
-	jr z, .channel_1
+    ; get the channel on which to play the sound
+    ld a, [hli] ; channel
+    cp a, $00
+    jr z, .channel_1
 
-	cp a, $03
-	jr z, .channel_4
+    cp a, $03
+    jr z, .channel_4
 
-	; ignore unsupported channels
-	ret
+    ; ignore unsupported channels
+    ret
 
-	.channel_1
+    .channel_1
 
-		copy [rNR10], [hli]
-		copy [rNR11], [hli]
-		copy [rNR12], [hli]
-		copy [rNR13], [hli]
-		copy [rNR14], [hli]
+        copy [rNR10], [hli]
+        copy [rNR11], [hli]
+        copy [rNR12], [hli]
+        copy [rNR13], [hli]
+        copy [rNR14], [hli]
 
-	ret
+    ret
 
-	.channel_4
+    .channel_4
 
-		inc hl ; rNR40 does not exist
-		copy [rNR41], [hli]
-		copy [rNR42], [hli]
-		copy [rNR43], [hli]
-		copy [rNR44], [hli]
+        inc hl ; rNR40 does not exist
+        copy [rNR41], [hli]
+        copy [rNR42], [hli]
+        copy [rNR43], [hli]
+        copy [rNR44], [hli]
 
-	ret
+    ret
 

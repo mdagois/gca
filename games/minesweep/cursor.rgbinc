@@ -8,33 +8,33 @@ def CURSOR_RGBINC equ 1
 
 ; initialize the cursor
 macro Cursor_Initialize
-	call _Cursor_Initialize
+    call _Cursor_Initialize
 endm
 
 ; hide the cursor (the cursor stays in the same location)
 macro Cursor_Hide
-	call _Cursor_Hide
+    call _Cursor_Hide
 endm
 
 ; show the cursor
 macro Cursor_Show
-	call _Cursor_Show
+    call _Cursor_Show
 endm
 
 ; disable the cursor (the cursor is moved outside the screen)
 macro Cursor_Disable
-	call _Cursor_Disable
+    call _Cursor_Disable
 endm
 
 ; enable the cursor and move it to a default position
 macro Cursor_Enable
-	call _Cursor_Enable
+    call _Cursor_Enable
 endm
 
 ; update the cursor graphics
 ; must be used during vblank
 macro Cursor_UpdateGraphics
-	call _Cursor_UpdateGraphics
+    call _Cursor_UpdateGraphics
 endm
 
 endc

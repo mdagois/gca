@@ -24,56 +24,56 @@ assert (_game_state_functions_end - _game_state_functions) == GAMESTATE_FUNC_IDS
 def VICTORY_SPRITE_START_X equ ((BOARD_TILE_OFFSET_X + (BOARD_TILE_NUM_X - VICTORY_SPRITES_PER_ROW) / 2) * TILE_SIDE + OAM_X_OFS)
 
 _GameState_Initialize:
-	; victory OAM
-	ld hl, OAM_VICTORY
+    ; victory OAM
+    ld hl, OAM_VICTORY
 
-		; top row
-		ld c, VICTORY_SPRITES_PER_ROW
-		ld b, TILE_VICTORY_TOP_ROW
-		ld d, VICTORY_SPRITE_START_X
-		.victory_top_row_oam_setup
-			; y
-			copy [hli], 0
+        ; top row
+        ld c, VICTORY_SPRITES_PER_ROW
+        ld b, TILE_VICTORY_TOP_ROW
+        ld d, VICTORY_SPRITE_START_X
+        .victory_top_row_oam_setup
+            ; y
+            copy [hli], 0
 
-			; x
-			copy [hli], d
-			ld a, 8
-			add a, d
-			ld d, a
+            ; x
+            copy [hli], d
+            ld a, 8
+            add a, d
+            ld d, a
 
-			; tile
-			copy [hli], b
-			inc b
+            ; tile
+            copy [hli], b
+            inc b
 
-			; flags
-			copy [hli], 0
+            ; flags
+            copy [hli], 0
 
-			dec c
-			jr nz, .victory_top_row_oam_setup
+            dec c
+            jr nz, .victory_top_row_oam_setup
 
-		; bottom row
-		ld c, VICTORY_SPRITES_PER_ROW
-		ld b, TILE_VICTORY_BOTTOM_ROW
-		ld d, VICTORY_SPRITE_START_X
-		.victory_bottom_row_oam_setup
-			; y
-			copy [hli], 8
+        ; bottom row
+        ld c, VICTORY_SPRITES_PER_ROW
+        ld b, TILE_VICTORY_BOTTOM_ROW
+        ld d, VICTORY_SPRITE_START_X
+        .victory_bottom_row_oam_setup
+            ; y
+            copy [hli], 8
 
-			; x
-			copy [hli], d
-			ld a, 8
-			add a, d
-			ld d, a
+            ; x
+            copy [hli], d
+            ld a, 8
+            add a, d
+            ld d, a
 
-			; tile
-			copy [hli], b
-			inc b
+            ; tile
+            copy [hli], b
+            inc b
 
-			; flags
-			copy [hli], 0
+            ; flags
+            copy [hli], 0
 
-			dec c
-			jr nz, .victory_bottom_row_oam_setup
+            dec c
+            jr nz, .victory_bottom_row_oam_setup
 
-	ret
+    ret
 

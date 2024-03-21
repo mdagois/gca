@@ -8,16 +8,16 @@ export _Window_Initialize, _Window_Hide, _Window_Show, _Window_Update
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WINDOW_X						equ (7)
-def WINDOW_HIDE_Y					equ (SCRN_Y)
-def WINDOW_LINES_COUNT				equ (7)
-def WINDOW_SHOW_Y					equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
-def WINDOW_TITLE_ROW				equ (1)
-def WINDOW_TITLE_TILES_COUNT		equ (4)
-def WINDOW_TITLE_COLUMN				equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
+def WINDOW_X                        equ (7)
+def WINDOW_HIDE_Y                   equ (SCRN_Y)
+def WINDOW_LINES_COUNT              equ (7)
+def WINDOW_SHOW_Y                   equ (SCRN_Y - WINDOW_LINES_COUNT * TILE_SIDE)
+def WINDOW_TITLE_ROW                equ (1)
+def WINDOW_TITLE_TILES_COUNT        equ (4)
+def WINDOW_TITLE_COLUMN             equ ((SCRN_X_B - WINDOW_TITLE_TILES_COUNT) / 2)
 
-def WINDOW_DESCRIPTION_MARGIN		equ (3)
-def WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
+def WINDOW_DESCRIPTION_MARGIN       equ (3)
+def WINDOW_DESCRIPTION_CONTENT      equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) - 2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; helpers
@@ -29,40 +29,40 @@ def WINDOW_DESCRIPTION_CONTENT		equ (SCRN_X_B - (WINDOW_DESCRIPTION_MARGIN * 2) 
 ; \3 = description start tile
 ; \4 = description tile's count
 macro InitWindowActionDescriptionLine
-	; left border and margin
-	ld_hli_v8 TILE_WINDOW_LEFT
-	rept WINDOW_DESCRIPTION_MARGIN
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
+    ; left border and margin
+    ld_hli_v8 TILE_WINDOW_LEFT
+    rept WINDOW_DESCRIPTION_MARGIN
+        ld_hli_v8 TILE_WINDOW_PLAIN
+    endr
 
-	; action
+    ; action
 def REPT_TILE_INDEX = 0
-	rept \2
-		ld_hli_v8 \1 + REPT_TILE_INDEX
+    rept \2
+        ld_hli_v8 \1 + REPT_TILE_INDEX
 def REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
-	endr
+    endr
 
-	; space between action and description
-	rept WINDOW_DESCRIPTION_CONTENT - (\2 + \4)
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
+    ; space between action and description
+    rept WINDOW_DESCRIPTION_CONTENT - (\2 + \4)
+        ld_hli_v8 TILE_WINDOW_PLAIN
+    endr
 
-	; description
+    ; description
 def REPT_TILE_INDEX = 0
-	rept \4
-		ld_hli_v8 \3 + REPT_TILE_INDEX
+    rept \4
+        ld_hli_v8 \3 + REPT_TILE_INDEX
 def REPT_TILE_INDEX = (REPT_TILE_INDEX + 1)
-	endr
+    endr
 
-	; right margin and border
-	rept WINDOW_DESCRIPTION_MARGIN
-		ld_hli_v8 TILE_WINDOW_PLAIN
-	endr
-	ld_hli_v8 TILE_WINDOW_RIGHT
+    ; right margin and border
+    rept WINDOW_DESCRIPTION_MARGIN
+        ld_hli_v8 TILE_WINDOW_PLAIN
+    endr
+    ld_hli_v8 TILE_WINDOW_RIGHT
 
-	; move the next line in the window
-	ld de, SCRN_VX_B - SCRN_X_B
-	add hl, de
+    ; move the next line in the window
+    ld de, SCRN_VX_B - SCRN_X_B
+    add hl, de
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,93 +74,93 @@ section "window", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Window_Initialize:
-	; position the window
-	ld a, WINDOW_X
-	ldh [rWX], a
-	ld a, WINDOW_HIDE_Y
-	ldh [rWY], a
-	ldh [vWindowTargetY], a
+    ; position the window
+    ld a, WINDOW_X
+    ldh [rWX], a
+    ld a, WINDOW_HIDE_Y
+    ldh [rWY], a
+    ldh [vWindowTargetY], a
 
-	; init the tiles map
-	ld hl, _SCRN1
-		; top line
-		ld_hli_v8 TILE_WINDOW_TOP_LEFT
-		rept SCRN_X_B - 2
-			ld_hli_v8 TILE_WINDOW_TOP
-		endr
-		ld_hli_v8 TILE_WINDOW_TOP_RIGHT
-		ld de, SCRN_VX_B - SCRN_X_B
-		add hl, de
+    ; init the tiles map
+    ld hl, _SCRN1
+        ; top line
+        ld_hli_v8 TILE_WINDOW_TOP_LEFT
+        rept SCRN_X_B - 2
+            ld_hli_v8 TILE_WINDOW_TOP
+        endr
+        ld_hli_v8 TILE_WINDOW_TOP_RIGHT
+        ld de, SCRN_VX_B - SCRN_X_B
+        add hl, de
 
-		; title line (initialized as empty) + an additional empty line
-		ld c, 2
-		.title
-			ld_hli_v8 TILE_WINDOW_LEFT
-			rept SCRN_X_B - 2
-				ld_hli_v8 TILE_WINDOW_PLAIN
-			endr
-			ld_hli_v8 TILE_WINDOW_RIGHT
-			ld de, SCRN_VX_B - SCRN_X_B
-			add hl, de
+        ; title line (initialized as empty) + an additional empty line
+        ld c, 2
+        .title
+            ld_hli_v8 TILE_WINDOW_LEFT
+            rept SCRN_X_B - 2
+                ld_hli_v8 TILE_WINDOW_PLAIN
+            endr
+            ld_hli_v8 TILE_WINDOW_RIGHT
+            ld de, SCRN_VX_B - SCRN_X_B
+            add hl, de
 
-			dec c
-			jr nz, .title
+            dec c
+            jr nz, .title
 
-		; button descriptions
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_A, 1, TILE_WINDOW_FLAG_TILE, 5
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_B, 1, TILE_WINDOW_UNCOVER_TILE, 6
-		InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_START, 3, TILE_WINDOW_NEW_GAME, 5
+        ; button descriptions
+        InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_A, 1, TILE_WINDOW_FLAG_TILE, 5
+        InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_B, 1, TILE_WINDOW_UNCOVER_TILE, 6
+        InitWindowActionDescriptionLine TILE_WINDOW_BUTTON_START, 3, TILE_WINDOW_NEW_GAME, 5
 
-		; bottom line
-		ld_hli_v8 TILE_WINDOW_BOTTOM_LEFT
-		rept SCRN_X_B - 2
-			ld_hli_v8 TILE_WINDOW_BOTTOM
-		endr
-		ld_hli_v8 TILE_WINDOW_BOTTOM_RIGHT
+        ; bottom line
+        ld_hli_v8 TILE_WINDOW_BOTTOM_LEFT
+        rept SCRN_X_B - 2
+            ld_hli_v8 TILE_WINDOW_BOTTOM
+        endr
+        ld_hli_v8 TILE_WINDOW_BOTTOM_RIGHT
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Window_Hide:
-	Sound_Play SOUND_CLOSE_WINDOW
-	ld a, WINDOW_HIDE_Y
-	ldh [vWindowTargetY], a
-	ret
+    Sound_Play SOUND_CLOSE_WINDOW
+    ld a, WINDOW_HIDE_Y
+    ldh [vWindowTargetY], a
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Window_Show:
-	; (a) must hold the index of the first tile of the window title
+    ; (a) must hold the index of the first tile of the window title
 
-	; update the title tiles
-	ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
-	rept TILES_PER_WINDOW_TITLE
-		ld [hli], a
-		inc a
-	endr
+    ; update the title tiles
+    ld hl, _SCRN1 + (WINDOW_TITLE_ROW * SCRN_VX_B) + WINDOW_TITLE_COLUMN
+    rept TILES_PER_WINDOW_TITLE
+        ld [hli], a
+        inc a
+    endr
 
-	Sound_Play SOUND_OPEN_WINDOW
-	ld a, WINDOW_SHOW_Y
-	ldh [vWindowTargetY], a
+    Sound_Play SOUND_OPEN_WINDOW
+    ld a, WINDOW_SHOW_Y
+    ldh [vWindowTargetY], a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Window_Update:
-	push af
-	push bc
+    push af
+    push bc
 
-	ldh a, [rWY]
-	ld b, a
-	ldh a, [vWindowTargetY]
-	sub a, b
-	rra
-	add a, b
-	ldh [rWY], a
+    ldh a, [rWY]
+    ld b, a
+    ldh a, [vWindowTargetY]
+    sub a, b
+    rra
+    add a, b
+    ldh [rWY], a
 
-	pop bc
-	pop af
-	ret
+    pop bc
+    pop af
+    ret
 

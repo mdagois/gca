@@ -5,65 +5,65 @@ def DATA_RGBINC equ 1
 ; tile id (index in vram tileset)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILES_PER_WINDOW_TITLE			equ (4)
-def VICTORY_ROWS_COUNT				equ (2)
-def VICTORY_SPRITES_PER_ROW			equ (10)
-def VICTORY_OAM_COUNT				equ (VICTORY_ROWS_COUNT * VICTORY_SPRITES_PER_ROW)
+def TILES_PER_WINDOW_TITLE          equ (4)
+def VICTORY_ROWS_COUNT              equ (2)
+def VICTORY_SPRITES_PER_ROW         equ (10)
+def VICTORY_OAM_COUNT               equ (VICTORY_ROWS_COUNT * VICTORY_SPRITES_PER_ROW)
 
 rsreset
 ; squares
-def TILE_BOARD_SQUARE_HIDDEN		rb 1
-def TILE_BOARD_SQUARE_MINE			rb 1
-def TILE_BOARD_SQUARE_FLAG			rb 1
-def TILE_BOARD_SQUARE_NUMBER_0		rb 9
+def TILE_BOARD_SQUARE_HIDDEN        rb 1
+def TILE_BOARD_SQUARE_MINE          rb 1
+def TILE_BOARD_SQUARE_FLAG          rb 1
+def TILE_BOARD_SQUARE_NUMBER_0      rb 9
 
 ; board
-def TILE_WALL_PLAIN					rb 1
-def TILE_WALL_TOP_LEFT				rb 1
-def TILE_WALL_TOP					rb 1
-def TILE_WALL_TOP_RIGHT				rb 1
-def TILE_WALL_LEFT					rb 1
-def TILE_WALL_RIGHT					rb 1
-def TILE_WALL_BOTTOM_LEFT			rb 1
-def TILE_WALL_BOTTOM				rb 1
-def TILE_WALL_BOTTOM_RIGHT			rb 1
+def TILE_WALL_PLAIN                 rb 1
+def TILE_WALL_TOP_LEFT              rb 1
+def TILE_WALL_TOP                   rb 1
+def TILE_WALL_TOP_RIGHT             rb 1
+def TILE_WALL_LEFT                  rb 1
+def TILE_WALL_RIGHT                 rb 1
+def TILE_WALL_BOTTOM_LEFT           rb 1
+def TILE_WALL_BOTTOM                rb 1
+def TILE_WALL_BOTTOM_RIGHT          rb 1
 
 ; cursor
-def TILE_CURSOR_ON					rb 1
-def TILE_CURSOR_OFF					rb 1
+def TILE_CURSOR_ON                  rb 1
+def TILE_CURSOR_OFF                 rb 1
 
 ; hidden square counter
-def TILE_UI_NUMBER_0				rb 10
+def TILE_UI_NUMBER_0                rb 10
 
 ; window
-def TILE_WINDOW_TOP_LEFT			rb 1
-def TILE_WINDOW_TOP					rb 1
-def TILE_WINDOW_TOP_RIGHT			rb 1
-def TILE_WINDOW_LEFT				rb 1
-def TILE_WINDOW_PLAIN				rb 1
-def TILE_WINDOW_RIGHT				rb 1
-def TILE_WINDOW_BOTTOM_LEFT			rb 1
-def TILE_WINDOW_BOTTOM				rb 1
-def TILE_WINDOW_BOTTOM_RIGHT		rb 1
+def TILE_WINDOW_TOP_LEFT            rb 1
+def TILE_WINDOW_TOP                 rb 1
+def TILE_WINDOW_TOP_RIGHT           rb 1
+def TILE_WINDOW_LEFT                rb 1
+def TILE_WINDOW_PLAIN               rb 1
+def TILE_WINDOW_RIGHT               rb 1
+def TILE_WINDOW_BOTTOM_LEFT         rb 1
+def TILE_WINDOW_BOTTOM              rb 1
+def TILE_WINDOW_BOTTOM_RIGHT        rb 1
 
 ; window text
-def TILE_WINDOW_TITLE_WELCOME		rb 4
-def TILE_WINDOW_TITLE_LOSE			rb 4
-def TILE_WINDOW_TITLE_WIN			rb 4
-def TILE_WINDOW_BUTTON_A			rb 1
-def TILE_WINDOW_BUTTON_B			rb 1
-def TILE_WINDOW_BUTTON_START		rb 3
-def TILE_WINDOW_FLAG_TILE			rb 5
-def TILE_WINDOW_UNCOVER_TILE		rb 6
-def TILE_WINDOW_NEW_GAME			rb 5
+def TILE_WINDOW_TITLE_WELCOME       rb 4
+def TILE_WINDOW_TITLE_LOSE          rb 4
+def TILE_WINDOW_TITLE_WIN           rb 4
+def TILE_WINDOW_BUTTON_A            rb 1
+def TILE_WINDOW_BUTTON_B            rb 1
+def TILE_WINDOW_BUTTON_START        rb 3
+def TILE_WINDOW_FLAG_TILE           rb 5
+def TILE_WINDOW_UNCOVER_TILE        rb 6
+def TILE_WINDOW_NEW_GAME            rb 5
 
 ; unused tile
-def TILE_UNUSED_TILES_0				rb 5
+def TILE_UNUSED_TILES_0             rb 5
 
 ; victory
-def TILE_VICTORY_TOP_ROW			rb VICTORY_SPRITES_PER_ROW
-def TILE_UNUSED_TILES_1				rb 6
-def TILE_VICTORY_BOTTOM_ROW			rb VICTORY_SPRITES_PER_ROW
+def TILE_VICTORY_TOP_ROW            rb VICTORY_SPRITES_PER_ROW
+def TILE_UNUSED_TILES_1             rb 6
+def TILE_VICTORY_BOTTOM_ROW         rb VICTORY_SPRITES_PER_ROW
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
