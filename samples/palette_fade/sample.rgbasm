@@ -75,7 +75,8 @@ palettes_end:
 
 def PALETTES_COUNT                  equ (palettes_end - palettes)
 
-assert (palettes_end - palettes) == FADE_LEVELS_COUNT, "Mismatch between the fade levels count {d:FADE_LEVELS_COUNT} and the palettes count {d:PALETTES_COUNT}"
+assert (palettes_end - palettes) == FADE_LEVELS_COUNT, \
+       "Mismatch between the fade levels count {d:FADE_LEVELS_COUNT} and the palettes count {d:PALETTES_COUNT}"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

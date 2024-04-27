@@ -373,7 +373,9 @@ PerformCustomInitialization:
     CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
 
     CopyMemory _VRAM, palettes_sgb, palettes_sgb_end - palettes_sgb
-    CopyMemory _VRAM + BYTES_PER_ATTRIBUTE_SCREEN, graphics_sgb_attr_chr, graphics_sgb_attr_chr_end - graphics_sgb_attr_chr
+    CopyMemory _VRAM + BYTES_PER_ATTRIBUTE_SCREEN, \
+               graphics_sgb_attr_chr, \
+               graphics_sgb_attr_chr_end - graphics_sgb_attr_chr
     xor a
     ld hl, _SCRN1
     ld c, 12

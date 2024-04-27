@@ -60,10 +60,13 @@ SerialInterrupt:
     PushAllRegisters
 
     ; These instructions are only meaningful on the last byte of each packet.
-    ; However, it is convenient to just execute the instructions each time a byte is received as trying to
-    ; detect the last byte of a packet is more work.
-    ; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS should only be used between packets.
-    copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+    ; However, it is convenient to just execute the instructions each time a
+    ; byte is received as trying to detect the last byte of a packet is more
+    ; work.
+    ; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS
+    ; should only be used between packets.
+    copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], \
+         [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
     copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS], [rSB]
 
     StartTimer
@@ -82,7 +85,7 @@ SerialInterrupt:
 def PRINTER_STATUS_BIT_LOW_BATTERY      equ (7)
 def PRINTER_STATUS_BIT_OTHER_ERROR      equ (6)
 def PRINTER_STATUS_BIT_PAPER_JAM        equ (5)
-def PRINTER_STATUS_BIT_PACKET_ERROR     equ (4)
+def PRINTER_STATUS_BIT_PKT_ERROR        equ (4)
 def PRINTER_STATUS_BIT_READY_TO_PRINT   equ (3)
 def PRINTER_STATUS_BIT_DATA_FULL        equ (2)
 def PRINTER_STATUS_BIT_PRINTING         equ (1)
@@ -92,16 +95,16 @@ def PRINTER_STATUS_BIT_CHECKSUM_ERROR   equ (0)
 ; packet constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def PACKET_MAGIC_0                      equ ($88)
-def PACKET_MAGIC_1                      equ ($33)
+def PKT_MAGIC_0                      equ ($88)
+def PKT_MAGIC_1                      equ ($33)
 
-def PACKET_TYPE_INIT                    equ ($01)
-def PACKET_TYPE_PRINT                   equ ($02)
-def PACKET_TYPE_DATA                    equ ($04)
-def PACKET_TYPE_STATUS                  equ ($0F)
+def PKT_TYPE_INIT                    equ ($01)
+def PKT_TYPE_PRINT                   equ ($02)
+def PKT_TYPE_DATA                    equ ($04)
+def PKT_TYPE_STATUS                  equ ($0F)
 
-def PACKET_COMPRESSION_OFF              equ ($00)
-def PACKET_COMPRESSION_ON               equ ($01)
+def PKT_COMPRESSION_OFF              equ ($00)
+def PKT_COMPRESSION_ON               equ ($01)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; result codes
@@ -148,41 +151,43 @@ section "protocol", rom0
 ; create a simple packet definition with no payload
 ; \1 = packet type
 macro FixedPacket
-db PACKET_MAGIC_0, PACKET_MAGIC_1, \1, PACKET_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
+db PKT_MAGIC_0, PKT_MAGIC_1, \1, PKT_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
 endm
 
 packet_init:
-    FixedPacket PACKET_TYPE_INIT
+    FixedPacket PKT_TYPE_INIT
 packet_init_end:
 
 packet_data_sentinel:
-    FixedPacket PACKET_TYPE_DATA
+    FixedPacket PKT_TYPE_DATA
 packet_data_sentinel_end:
 
 packet_status:
-    FixedPacket PACKET_TYPE_STATUS
+    FixedPacket PKT_TYPE_STATUS
 packet_status_end:
 
 ;;;;;;;;;;;;;;;;;;;;
 ; print packet
 ;;;;;;;;;;;;;;;;;;;;
 
-def PACKET_PRINT_PAYLOAD_SIZE           equ ($0004)
-def PACKET_PRINT_SHEET_COUNT            equ ($01)
-def PACKET_PRINT_FEEDS                  equ ($14)
-def PACKET_PRINT_PALETTE                equ ($1B)
-def PACKET_PRINT_DENSITY                equ ($40)
-def PACKET_PRINT_CHECKSUM               equ (PACKET_TYPE_PRINT + PACKET_PRINT_PAYLOAD_SIZE + PACKET_PRINT_SHEET_COUNT + PACKET_PRINT_FEEDS + PACKET_PRINT_PALETTE + PACKET_PRINT_DENSITY)
+def PKT_PRINT_PAYLOAD_SIZE equ ($0004)
+def PKT_PRINT_SHEET_COUNT  equ ($01)
+def PKT_PRINT_FEEDS        equ ($14)
+def PKT_PRINT_PALETTE      equ ($1B)
+def PKT_PRINT_DENSITY      equ ($40)
+def PKT_PRINT_CHECKSUM     equ (PKT_TYPE_PRINT + PKT_PRINT_PAYLOAD_SIZE + \
+                                PKT_PRINT_SHEET_COUNT + PKT_PRINT_FEEDS + \
+                                PKT_PRINT_PALETTE + PKT_PRINT_DENSITY)
 
 packet_print:
-db PACKET_MAGIC_0, PACKET_MAGIC_1
-db PACKET_TYPE_PRINT, PACKET_COMPRESSION_OFF
-dw PACKET_PRINT_PAYLOAD_SIZE
-db PACKET_PRINT_SHEET_COUNT
-db PACKET_PRINT_FEEDS
-db PACKET_PRINT_PALETTE
-db PACKET_PRINT_DENSITY
-dw PACKET_PRINT_CHECKSUM
+db PKT_MAGIC_0, PKT_MAGIC_1
+db PKT_TYPE_PRINT, PKT_COMPRESSION_OFF
+dw PKT_PRINT_PAYLOAD_SIZE
+db PKT_PRINT_SHEET_COUNT
+db PKT_PRINT_FEEDS
+db PKT_PRINT_PALETTE
+db PKT_PRINT_DENSITY
+dw PKT_PRINT_CHECKSUM
 db $00, $00
 packet_print_end:
 
@@ -270,7 +275,9 @@ macro CheckForErrors
         .paper_jam
 
     .check_other_error ; catch all
-        and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
+        and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | \
+               (1 << PRINTER_STATUS_BIT_PKT_ERROR) | \
+               (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
         jr z, .other_error
             ; other error
             copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_04

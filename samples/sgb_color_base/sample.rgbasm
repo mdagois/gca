@@ -319,8 +319,12 @@ PerformCustomInitialization:
 
     ld hl, rLCDC
     res LCDCB_ON, [hl]
-    CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), graphics_tileset_sgb, graphics_tileset_sgb_end - graphics_tileset_sgb
-    CopyMemory _SCRN0, graphics_tilemap_sgb, graphics_tilemap_sgb_end - graphics_tilemap_sgb
+    CopyMemory _VRAM + (2 * TILES_PER_BLOCK * BYTES_PER_TILE), \
+               graphics_tileset_sgb, \
+               graphics_tileset_sgb_end - graphics_tileset_sgb
+    CopyMemory _SCRN0, \
+               graphics_tilemap_sgb, \
+               graphics_tilemap_sgb_end - graphics_tilemap_sgb
     ld hl, rLCDC
     set LCDCB_ON, [hl]
 

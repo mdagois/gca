@@ -73,11 +73,11 @@ InitSample:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def DISPLAY_ROW                 equ (1)
-def DISPLAY_COLUMN              equ (1)
-def VRAM_DISPLAY_START          equ (_SCRN0 + SCRN_VX_B * DISPLAY_ROW + DISPLAY_COLUMN)
-def TILE_INDEX_SPACE            equ (64)
-def TILE_INDEX_A                equ (97)
+def DISPLAY_ROW        equ (1)
+def DISPLAY_COLUMN     equ (1)
+def VRAM_DISPLAY_START equ (_SCRN0 + SCRN_VX_B * DISPLAY_ROW + DISPLAY_COLUMN)
+def TILE_INDEX_SPACE   equ (64)
+def TILE_INDEX_A       equ (97)
 
 Update_0:
     ld hl, VRAM_DISPLAY_START

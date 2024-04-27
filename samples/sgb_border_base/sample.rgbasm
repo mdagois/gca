@@ -344,7 +344,9 @@ PerformCustomInitialization:
     ; send the second block of border tile data
     ld hl, rLCDC
     res LCDCB_ON, [hl]
-    CopyMemory _VRAM, graphics_border_tileset + SNES_TILE_BLOCK_SIZE, SNES_TILE_BLOCK_SIZE
+    CopyMemory _VRAM, \
+               graphics_border_tileset + SNES_TILE_BLOCK_SIZE, \
+               SNES_TILE_BLOCK_SIZE
     ld hl, rLCDC
     set LCDCB_ON, [hl]
     SendCommand SgbPacket_ChrTrn_Block1
@@ -352,8 +354,12 @@ PerformCustomInitialization:
     ; send the border tilemap
     ld hl, rLCDC
     res LCDCB_ON, [hl]
-    CopyMemory _VRAM, graphics_border_tilemap, graphics_border_tilemap_end - graphics_border_tilemap
-    CopyMemory _VRAM + SNES_TILEMAP_SIZE, graphics_border_pal, graphics_border_pal_end - graphics_border_pal
+    CopyMemory _VRAM, \
+               graphics_border_tilemap, \
+               graphics_border_tilemap_end - graphics_border_tilemap
+    CopyMemory _VRAM + SNES_TILEMAP_SIZE, \
+               graphics_border_pal, \
+               graphics_border_pal_end - graphics_border_pal
     ld hl, rLCDC
     set LCDCB_ON, [hl]
     SendCommand SgbPacket_PctTrn
