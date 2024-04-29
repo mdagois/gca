@@ -2,31 +2,31 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,30 +34,30 @@ endm
 section "dma", rom0
 
 InitDmaCopy:
-	ld hl, HRAM_DMA_FUNC
-	ld de, DmaCopyFunc
-	ld c, DMA_FUNC_SIZE
-	.func_copy
-		ld a, [de]
-		ld [hli], a
-		inc de
-		dec c
-		jr nz, .func_copy
-	ret
+    ld hl, HRAM_DMA_FUNC
+    ld de, DmaCopyFunc
+    ld c, DMA_FUNC_SIZE
+    .func_copy
+        ld a, [de]
+        ld [hli], a
+        inc de
+        dec c
+        jr nz, .func_copy
+    ret
 
 ; \1 = high byte of source address
 macro DmaCopy
-	ld a, \1
-	call HRAM_DMA_FUNC
+    ld a, \1
+    call HRAM_DMA_FUNC
 endm
 
 DmaCopyFunc:
-	ldh [rDMA], a
-	ld c, 40
-	.wait_copy
-		dec c
-		jr nz, .wait_copy
-	ret
+    ldh [rDMA], a
+    ld c, 40
+    .wait_copy
+        dec c
+        jr nz, .wait_copy
+    ret
 DmaCopyFunc_End:
 
 def DMA_FUNC_SIZE equ (DmaCopyFunc_End - DmaCopyFunc)
@@ -66,40 +66,40 @@ def DMA_FUNC_SIZE equ (DmaCopyFunc_End - DmaCopyFunc)
 
 rsset _HRAM
 
-def HRAM_DMA_FUNC					rb DMA_FUNC_SIZE
+def HRAM_DMA_FUNC                   rb DMA_FUNC_SIZE
 
-def HRAM_END						rb 0
+def HRAM_END                        rb 0
 
 ; sanity checks
-def HRAM_USAGE						equ (HRAM_END - _HRAM)
+def HRAM_USAGE                      equ (HRAM_END - _HRAM)
 println "HRAM usage: {d:HRAM_USAGE} bytes"
 assert HRAM_USAGE <= $40, "Too many bytes used in HRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SPRITE_TILE_ID					equ (16)
-def SPRITE_LINES_PER_BLOCK			equ (5)
-def SPRITE_LINES_COUNT				equ (SPRITE_LINES_PER_BLOCK * 2)
-def SPRITE_TOP_Y_BLOCK_1			equ (32)
-def SPRITE_TOP_Y_BLOCK_2			equ (96)
-def SPRITE_BLOCK_SWITCH_Y			equ (80)
-def ANIM_UPDATE_THRESHOLD			equ (4)
-def OAM_BYTES_COUNT					equ (sizeof_OAM_ATTRS * OAM_COUNT)
+def SPRITE_TILE_ID                  equ (16)
+def SPRITE_LINES_PER_BLOCK          equ (5)
+def SPRITE_LINES_COUNT              equ (SPRITE_LINES_PER_BLOCK * 2)
+def SPRITE_TOP_Y_BLOCK_1            equ (32)
+def SPRITE_TOP_Y_BLOCK_2            equ (96)
+def SPRITE_BLOCK_SWITCH_Y           equ (80)
+def ANIM_UPDATE_THRESHOLD           equ (4)
+def OAM_BYTES_COUNT                 equ (sizeof_OAM_ATTRS * OAM_COUNT)
 
 rsset _RAM
 
-def WRAM_SPRITES_BLOCK_1			rb OAM_BYTES_COUNT
-def WRAM_IS_VBLANK					rb 1
-def WRAM_FRAME_COUNTER				rb 1
-def WRAM_LINE_OFFSETS				rb SPRITE_LINES_COUNT
-def WRAM_LINE_MOVE					rb 2
-def WRAM_PADDING					rb 82
-def WRAM_SPRITES_BLOCK_2			rb OAM_BYTES_COUNT
+def WRAM_SPRITES_BLOCK_1            rb OAM_BYTES_COUNT
+def WRAM_IS_VBLANK                  rb 1
+def WRAM_FRAME_COUNTER              rb 1
+def WRAM_LINE_OFFSETS               rb SPRITE_LINES_COUNT
+def WRAM_LINE_MOVE                  rb 2
+def WRAM_PADDING                    rb 82
+def WRAM_SPRITES_BLOCK_2            rb OAM_BYTES_COUNT
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 assert low(WRAM_SPRITES_BLOCK_1) == 0, "WRAM_SPRITES_BLOCK_1 ({x:WRAM_SPRITES_BLOCK_1}) must be 256-bytes aligned"
@@ -108,207 +108,207 @@ assert low(WRAM_SPRITES_BLOCK_2) == 0, "WRAM_SPRITES_BLOCK_2 ({x:WRAM_SPRITES_BL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	ld a, 1
-	ld [WRAM_IS_VBLANK], a
-	pop af
-	reti
+    push af
+    ld a, 1
+    ld [WRAM_IS_VBLANK], a
+    pop af
+    reti
 
 section "lcd_interrupt", rom0[$0048]
-	jp LcdInterrupt
+    jp LcdInterrupt
 
 section "interrupts", rom0
 
 LcdInterrupt:
-	push af
-	push bc
-	; copy block 2 to OAM
-	DmaCopy high(WRAM_SPRITES_BLOCK_2)
-	pop bc
-	pop af
-	reti
+    push af
+    push bc
+    ; copy block 2 to OAM
+    DmaCopy high(WRAM_SPRITES_BLOCK_2)
+    pop bc
+    pop af
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0
 
 InitSample:
-	; init the WRAM state
-	xor a
-	ld [WRAM_IS_VBLANK], a
-	copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
+    ; init the WRAM state
+    xor a
+    ld [WRAM_IS_VBLANK], a
+    copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
-	; initialize line offsets arbitrary
-	copy [WRAM_LINE_OFFSETS + 0], 0
-	copy [WRAM_LINE_OFFSETS + 1], 1
-	copy [WRAM_LINE_OFFSETS + 2], 2
-	copy [WRAM_LINE_OFFSETS + 3], 3
-	copy [WRAM_LINE_OFFSETS + 4], 4
-	copy [WRAM_LINE_OFFSETS + 5], 7
-	copy [WRAM_LINE_OFFSETS + 6], 6
-	copy [WRAM_LINE_OFFSETS + 7], 5
-	copy [WRAM_LINE_OFFSETS + 8], 3
-	copy [WRAM_LINE_OFFSETS + 9], 2
+    ; initialize line offsets arbitrary
+    copy [WRAM_LINE_OFFSETS + 0], 0
+    copy [WRAM_LINE_OFFSETS + 1], 1
+    copy [WRAM_LINE_OFFSETS + 2], 2
+    copy [WRAM_LINE_OFFSETS + 3], 3
+    copy [WRAM_LINE_OFFSETS + 4], 4
+    copy [WRAM_LINE_OFFSETS + 5], 7
+    copy [WRAM_LINE_OFFSETS + 6], 6
+    copy [WRAM_LINE_OFFSETS + 7], 5
+    copy [WRAM_LINE_OFFSETS + 8], 3
+    copy [WRAM_LINE_OFFSETS + 9], 2
 
-	; make all sprite lines move to the right
-	xor a
-	ld [WRAM_LINE_MOVE + 0], a
-	ld [WRAM_LINE_MOVE + 1], a
+    ; make all sprite lines move to the right
+    xor a
+    ld [WRAM_LINE_MOVE + 0], a
+    ld [WRAM_LINE_MOVE + 1], a
 
-	; place sprites on 5 lines of 8 sprites each
-	ld hl, WRAM_SPRITES_BLOCK_1
+    ; place sprites on 5 lines of 8 sprites each
+    ld hl, WRAM_SPRITES_BLOCK_1
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
-		; Y
-		ld a, ((SPRITE_TOP_Y_BLOCK_1 + REPT_SPRITE_NUM) / 8) * 8
-		ld [hli], a
-		; X
-		xor a
-		ld [hli], a
-		; Tile ID
-		ld a, SPRITE_TILE_ID
-		ld [hli], a
-		; Flags
-		xor a
-		ld [hli], a
+    REPT OAM_COUNT
+        ; Y
+        ld a, ((SPRITE_TOP_Y_BLOCK_1 + REPT_SPRITE_NUM) / 8) * 8
+        ld [hli], a
+        ; X
+        xor a
+        ld [hli], a
+        ; Tile ID
+        ld a, SPRITE_TILE_ID
+        ld [hli], a
+        ; Flags
+        xor a
+        ld [hli], a
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
+    ENDR
 
-	ld hl, WRAM_SPRITES_BLOCK_2
+    ld hl, WRAM_SPRITES_BLOCK_2
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
-		; Y
-		ld a, ((SPRITE_TOP_Y_BLOCK_2 + REPT_SPRITE_NUM) / 8) * 8
-		ld [hli], a
-		; X
-		xor a
-		ld [hli], a
-		; Tile ID
-		ld a, SPRITE_TILE_ID
-		ld [hli], a
-		; Flags
-		xor a
-		ld [hli], a
+    REPT OAM_COUNT
+        ; Y
+        ld a, ((SPRITE_TOP_Y_BLOCK_2 + REPT_SPRITE_NUM) / 8) * 8
+        ld [hli], a
+        ; X
+        xor a
+        ld [hli], a
+        ; Tile ID
+        ld a, SPRITE_TILE_ID
+        ld [hli], a
+        ; Flags
+        xor a
+        ld [hli], a
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
+    ENDR
 
-	; init HRAM
-	call InitDmaCopy
+    ; init HRAM
+    call InitDmaCopy
 
-	; init graphics
-	copy [rBGP], %11100100
-	copy [rOBP0], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    copy [rOBP0], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; enable interrupts
-	copy [rSTAT], STATF_LYC
-	copy [rLYC], SPRITE_BLOCK_SWITCH_Y
-	copy [rIE], IEF_VBLANK | IEF_LCDC
-	ei
+    ; enable interrupts
+    copy [rSTAT], STATF_LYC
+    copy [rLYC], SPRITE_BLOCK_SWITCH_Y
+    copy [rIE], IEF_VBLANK | IEF_LCDC
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJ8 | LCDCF_OBJON | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJ8 | LCDCF_OBJON | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	ld hl, WRAM_IS_VBLANK
-	xor a
-	.wait_vblank
-		halt
-		cp a, [hl]
-		jr z, .wait_vblank
-		ld [hl], a
+    ld hl, WRAM_IS_VBLANK
+    xor a
+    .wait_vblank
+        halt
+        cp a, [hl]
+        jr z, .wait_vblank
+        ld [hl], a
 
-	; copy block 1 to OAM
-	DmaCopy high(WRAM_SPRITES_BLOCK_1)
+    ; copy block 1 to OAM
+    DmaCopy high(WRAM_SPRITES_BLOCK_1)
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	; update the sprite abscissas based on the line offsets
-	; block 1
-	ld hl, WRAM_SPRITES_BLOCK_1 + OAMA_X
-	ld de, 3
+    ; update the sprite abscissas based on the line offsets
+    ; block 1
+    ld hl, WRAM_SPRITES_BLOCK_1 + OAMA_X
+    ld de, 3
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
+    REPT OAM_COUNT
 def REPT_LINE_OFFSET = WRAM_LINE_OFFSETS + (REPT_SPRITE_NUM / 8)
 def REPT_SPRITE_X = 24 + ((REPT_SPRITE_NUM & $07) * 16)
 
-		; X
-		ld a, REPT_SPRITE_X
-		ld b, a
-		ld a, [REPT_LINE_OFFSET]
-		add a, b
+        ; X
+        ld a, REPT_SPRITE_X
+        ld b, a
+        ld a, [REPT_LINE_OFFSET]
+        add a, b
 
-		ld [hli], a
-		add hl, de
+        ld [hli], a
+        add hl, de
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
-	; block 2
-	ld hl, WRAM_SPRITES_BLOCK_2 + OAMA_X
-	ld de, 3
+    ENDR
+    ; block 2
+    ld hl, WRAM_SPRITES_BLOCK_2 + OAMA_X
+    ld de, 3
 def REPT_SPRITE_NUM = 0
-	REPT OAM_COUNT
+    REPT OAM_COUNT
 def REPT_LINE_OFFSET = WRAM_LINE_OFFSETS + SPRITE_LINES_PER_BLOCK + (REPT_SPRITE_NUM / 8)
 def REPT_SPRITE_X = 24 + ((REPT_SPRITE_NUM & $07) * 16)
 
-		; X
-		ld a, REPT_SPRITE_X
-		ld b, a
-		ld a, [REPT_LINE_OFFSET]
-		add a, b
+        ; X
+        ld a, REPT_SPRITE_X
+        ld b, a
+        ld a, [REPT_LINE_OFFSET]
+        add a, b
 
-		ld [hli], a
-		add hl, de
+        ld [hli], a
+        add hl, de
 def REPT_SPRITE_NUM = REPT_SPRITE_NUM + 1
-	ENDR
+    ENDR
 
-	; check whether it is time to update the sprite line offsets
-	ld a, [WRAM_FRAME_COUNTER]
-	dec a
-	ld [WRAM_FRAME_COUNTER], a
-	ret nz
-	copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
+    ; check whether it is time to update the sprite line offsets
+    ld a, [WRAM_FRAME_COUNTER]
+    dec a
+    ld [WRAM_FRAME_COUNTER], a
+    ret nz
+    copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
-	; update the line offsets
+    ; update the line offsets
 def REPT_LINE_NUM = 0
-	REPT SPRITE_LINES_COUNT
+    REPT SPRITE_LINES_COUNT
 def REPT_MOVE_ADDRESS = WRAM_LINE_MOVE + (REPT_LINE_NUM / SPRITE_LINES_PER_BLOCK)
 def REPT_BIT_NUM = REPT_LINE_NUM % SPRITE_LINES_PER_BLOCK
 def REPT_LINE_OFFSET = WRAM_LINE_OFFSETS + REPT_LINE_NUM
 
-		ld hl, REPT_MOVE_ADDRESS
-		bit REPT_BIT_NUM, [hl]
-		jr z, .move_left\@
-			ld a, [REPT_LINE_OFFSET]
-			dec a
-			and a, $07
-			ld [REPT_LINE_OFFSET], a
-			jr nz, .turn_right\@
-				ld hl, REPT_MOVE_ADDRESS
-				res REPT_BIT_NUM, [hl]
-			.turn_right\@
-			jr .move_end\@
-		.move_left\@
+        ld hl, REPT_MOVE_ADDRESS
+        bit REPT_BIT_NUM, [hl]
+        jr z, .move_left\@
+            ld a, [REPT_LINE_OFFSET]
+            dec a
+            and a, $07
+            ld [REPT_LINE_OFFSET], a
+            jr nz, .turn_right\@
+                ld hl, REPT_MOVE_ADDRESS
+                res REPT_BIT_NUM, [hl]
+            .turn_right\@
+            jr .move_end\@
+        .move_left\@
 
-		.move_right\@
-			ld a, [REPT_LINE_OFFSET]
-			inc a
-			and a, $07
-			ld [REPT_LINE_OFFSET], a
-			jr nz, .turn_left\@
-				ld a, $07
-				ld [REPT_LINE_OFFSET], a
-				ld hl, REPT_MOVE_ADDRESS
-				set REPT_BIT_NUM, [hl]
-			.turn_left\@
-		.move_end\@
+        .move_right\@
+            ld a, [REPT_LINE_OFFSET]
+            inc a
+            and a, $07
+            ld [REPT_LINE_OFFSET], a
+            jr nz, .turn_left\@
+                ld a, $07
+                ld [REPT_LINE_OFFSET], a
+                ld hl, REPT_MOVE_ADDRESS
+                set REPT_BIT_NUM, [hl]
+            .turn_left\@
+        .move_end\@
 def REPT_LINE_NUM = REPT_LINE_NUM + 1
-	ENDR
+    ENDR
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

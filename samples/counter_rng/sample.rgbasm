@@ -3,50 +3,50 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def UPDATE_INTERVAL					equ (60)
+def UPDATE_INTERVAL                 equ (60)
 
 rsset _RAM
 
-def WRAM_UPDATE_TRACKER				rb 1
-def WRAM_RESULTS					rb 4
+def WRAM_UPDATE_TRACKER             rb 1
+def WRAM_RESULTS                    rb 4
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -56,11 +56,11 @@ section "sample", rom0
 
 ; convert (a) from hexadecimal to a tile index
 macro HexToTileA
-	ld h, 0
-	ld l, a
-	ld de, HexToTileTable
-	add hl, de
-	ld a, [hl]
+    ld h, 0
+    ld l, a
+    ld de, HexToTileTable
+    add hl, de
+    ld a, [hl]
 endm
 
 HexToTileTable:
@@ -71,84 +71,84 @@ db $63, $64, $65, $66
 
 ; \1 = line, \2 = offset x
 macro DisplayRegisterA
-	push af
-	swap a
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
-	pop af
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+    push af
+    swap a
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
+    pop af
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 InitSample:
-	; init the WRAM state
-	xor a
-	ld hl, WRAM_RESULTS
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	copy [WRAM_UPDATE_TRACKER], UPDATE_INTERVAL
+    ; init the WRAM state
+    xor a
+    ld hl, WRAM_RESULTS
+    ld [hli], a
+    ld [hli], a
+    ld [hli], a
+    ld [hli], a
+    copy [WRAM_UPDATE_TRACKER], UPDATE_INTERVAL
 
-	; init graphics
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
+    halt
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	ld hl, WRAM_UPDATE_TRACKER
-	dec [hl]
-	jp nz, .display_results
-		; display results on the LCD
-		ld a, [WRAM_RESULTS + 0]
-		DisplayRegisterA 3, 7
-		ld a, [WRAM_RESULTS + 1]
-		DisplayRegisterA 4, 7
-		ld a, [WRAM_RESULTS + 2]
-		DisplayRegisterA 5, 7
-		ld a, [WRAM_RESULTS + 3]
-		DisplayRegisterA 6, 7
+    ld hl, WRAM_UPDATE_TRACKER
+    dec [hl]
+    jp nz, .display_results
+        ; display results on the LCD
+        ld a, [WRAM_RESULTS + 0]
+        DisplayRegisterA 3, 7
+        ld a, [WRAM_RESULTS + 1]
+        DisplayRegisterA 4, 7
+        ld a, [WRAM_RESULTS + 2]
+        DisplayRegisterA 5, 7
+        ld a, [WRAM_RESULTS + 3]
+        DisplayRegisterA 6, 7
 
-		; reset the results and update counter
-		xor a
-		ld hl, WRAM_RESULTS
-		ld [hli], a
-		ld [hli], a
-		ld [hli], a
-		ld [hli], a
-		copy [WRAM_UPDATE_TRACKER], UPDATE_INTERVAL
-	.display_results
+        ; reset the results and update counter
+        xor a
+        ld hl, WRAM_RESULTS
+        ld [hli], a
+        ld [hli], a
+        ld [hli], a
+        ld [hli], a
+        copy [WRAM_UPDATE_TRACKER], UPDATE_INTERVAL
+    .display_results
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	; gather the result for this frame
-	ld a, [rDIV]
-	and a, $03
-	ld h, 0
-	ld l, a
-	ld de, WRAM_RESULTS
-	add hl, de
-	inc [hl]
+    ; gather the result for this frame
+    ld a, [rDIV]
+    and a, $03
+    ld h, 0
+    ld l, a
+    ld de, WRAM_RESULTS
+    add hl, de
+    inc [hl]
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

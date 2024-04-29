@@ -5,21 +5,21 @@ include "shared.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-def NOTE_FREQUENCY_CH124			rb 2
-def NOTE_FREQUENCY_CH3				rb 2
-def NOTE_TILE_INDICES				rb 3
-def sizeof_NOTE						rb 0
+def NOTE_FREQUENCY_CH124            rb 2
+def NOTE_FREQUENCY_CH3              rb 2
+def NOTE_TILE_INDICES               rb 3
+def sizeof_NOTE                     rb 0
 
-def OCTAVE_NOTES_COUNT				equ 12
-def NOTES_COUNT						equ (7 * OCTAVE_NOTES_COUNT)
+def OCTAVE_NOTES_COUNT              equ 12
+def NOTES_COUNT                     equ (7 * OCTAVE_NOTES_COUNT)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Waveform
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WAVEFORM_SAMPLES_COUNT			equ (32)
-def WAVEFORM_BYTES_PER_SAMPLE		equ (2)
-def WAVEFORM_BYTE_LENGTH			equ (WAVEFORM_SAMPLES_COUNT / WAVEFORM_BYTES_PER_SAMPLE)
+def WAVEFORM_SAMPLES_COUNT          equ (32)
+def WAVEFORM_BYTES_PER_SAMPLE       equ (2)
+def WAVEFORM_BYTE_LENGTH            equ (WAVEFORM_SAMPLES_COUNT / WAVEFORM_BYTES_PER_SAMPLE)
 
 section "ch3_waveform", rom0
 
@@ -28,215 +28,215 @@ db $01, $23, $45, $67, $89, $AB, $CD, $EF
 db $ED, $CB, $A9, $87, $65, $43, $21, $00
 
 copy_waveform_func:
-	copy [rNR30], $00
-	ld h, b
-	ld l, c
-	ld c, WAVEFORM_BYTE_LENGTH
-	.ch3_data_copy
-		ld a, [de]
-		inc de
-		ld [hli], a
-		dec c
-	jr nz, .ch3_data_copy
-	ret
+    copy [rNR30], $00
+    ld h, b
+    ld l, c
+    ld c, WAVEFORM_BYTE_LENGTH
+    .ch3_data_copy
+        ld a, [de]
+        inc de
+        ld [hli], a
+        dec c
+    jr nz, .ch3_data_copy
+    ret
 
 ; \1 = destination, \2 = source
 macro copy_waveform
-	ld bc, \1
-	ld de, \2
-	call copy_waveform_func
+    ld bc, \1
+    ld de, \2
+    call copy_waveform_func
 endm
 
 ; update the visual of the waveform
 UpdateWaveformColumn:
-	; check whether any update is needed ($FF = not needed)
-	ld a, [WRAM_WAVEFORM_COLUMN_UPDATE]
-	bit 7, a
-	ret nz
+    ; check whether any update is needed ($FF = not needed)
+    ld a, [WRAM_WAVEFORM_COLUMN_UPDATE]
+    bit 7, a
+    ret nz
 
-	; there are two columns per byte in waveform RAM,
-	; and each tile in VRAM contains sample for two columns,
-	; so divide the column number and keep the result in (de)
-	srl a
-	ld d, 0
-	ld e, a
+    ; there are two columns per byte in waveform RAM,
+    ; and each tile in VRAM contains sample for two columns,
+    ; so divide the column number and keep the result in (de)
+    srl a
+    ld d, 0
+    ld e, a
 
-	; get the waveform value for both columns
-	ld hl, WRAM_WAVEFORM
-	add hl, de
-	ld a, [hl]
+    ; get the waveform value for both columns
+    ld hl, WRAM_WAVEFORM
+    add hl, de
+    ld a, [hl]
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	push af
+    push af
 
-		swap a
-		and a, $0F
-		ld b, a
+        swap a
+        and a, $0F
+        ld b, a
 
-		cp a, $0C
-		jr c, .row_ge_0C
-			and a, $03
-			inc a
+        cp a, $0C
+        jr c, .row_ge_0C
+            and a, $03
+            inc a
 
-			ld c, a
-			sla a
-			sla a
-			add a, c
-			ldh [HRAM_TEMP + 0], a
+            ld c, a
+            sla a
+            sla a
+            add a, c
+            ldh [HRAM_TEMP + 0], a
 
-			xor a
-			ldh [HRAM_TEMP + 1], a
-			ldh [HRAM_TEMP + 2], a
-			ldh [HRAM_TEMP + 3], a
+            xor a
+            ldh [HRAM_TEMP + 1], a
+            ldh [HRAM_TEMP + 2], a
+            ldh [HRAM_TEMP + 3], a
 
-			jr .row_done
-		.row_ge_0C
+            jr .row_done
+        .row_ge_0C
 
-		ld a, b
-		cp a, $08
-		jr c, .row_ge_08
-			and a, $03
-			inc a
+        ld a, b
+        cp a, $08
+        jr c, .row_ge_08
+            and a, $03
+            inc a
 
-			ld c, a
-			sla a
-			sla a
-			add a, c
-			ldh [HRAM_TEMP + 1], a
+            ld c, a
+            sla a
+            sla a
+            add a, c
+            ldh [HRAM_TEMP + 1], a
 
-			xor a
-			ldh [HRAM_TEMP + 0], a
-			ldh [HRAM_TEMP + 2], a
-			ldh [HRAM_TEMP + 3], a
+            xor a
+            ldh [HRAM_TEMP + 0], a
+            ldh [HRAM_TEMP + 2], a
+            ldh [HRAM_TEMP + 3], a
 
-			jr .row_done
-		.row_ge_08
+            jr .row_done
+        .row_ge_08
 
-		ld a, b
-		cp a, $04
-		jr c, .row_ge_04
-			and a, $03
-			inc a
+        ld a, b
+        cp a, $04
+        jr c, .row_ge_04
+            and a, $03
+            inc a
 
-			ld c, a
-			sla a
-			sla a
-			add a, c
-			ldh [HRAM_TEMP + 2], a
+            ld c, a
+            sla a
+            sla a
+            add a, c
+            ldh [HRAM_TEMP + 2], a
 
-			xor a
-			ldh [HRAM_TEMP + 0], a
-			ldh [HRAM_TEMP + 1], a
-			ldh [HRAM_TEMP + 3], a
+            xor a
+            ldh [HRAM_TEMP + 0], a
+            ldh [HRAM_TEMP + 1], a
+            ldh [HRAM_TEMP + 3], a
 
-			jr .row_done
-		.row_ge_04
+            jr .row_done
+        .row_ge_04
 
-		ld a, b
-		inc a
+        ld a, b
+        inc a
 
-		ld c, a
-		sla a
-		sla a
-		add a, c
-		ldh [HRAM_TEMP + 3], a
+        ld c, a
+        sla a
+        sla a
+        add a, c
+        ldh [HRAM_TEMP + 3], a
 
-		xor a
-		ldh [HRAM_TEMP + 0], a
-		ldh [HRAM_TEMP + 1], a
-		ldh [HRAM_TEMP + 2], a
+        xor a
+        ldh [HRAM_TEMP + 0], a
+        ldh [HRAM_TEMP + 1], a
+        ldh [HRAM_TEMP + 2], a
 
-		.row_done
+        .row_done
 
-	pop af
+    pop af
 
-	and a, $0F
-	ld b, a
+    and a, $0F
+    ld b, a
 
-	cp a, $0C
-	jr c, .column_ge_0C
-		and a, $03
-		inc a
-		ld c, a
+    cp a, $0C
+    jr c, .column_ge_0C
+        and a, $03
+        inc a
+        ld c, a
 
-		ldh a, [HRAM_TEMP + 0]
-		add a, c
-		ldh [HRAM_TEMP + 0], a
+        ldh a, [HRAM_TEMP + 0]
+        add a, c
+        ldh [HRAM_TEMP + 0], a
 
-		jr .column_done
-	.column_ge_0C
+        jr .column_done
+    .column_ge_0C
 
-	ld a, b
-	cp a, $08
-	jr c, .column_ge_08
-		and a, $03
-		inc a
-		ld c, a
+    ld a, b
+    cp a, $08
+    jr c, .column_ge_08
+        and a, $03
+        inc a
+        ld c, a
 
-		ldh a, [HRAM_TEMP + 1]
-		add a, c
-		ldh [HRAM_TEMP + 1], a
+        ldh a, [HRAM_TEMP + 1]
+        add a, c
+        ldh [HRAM_TEMP + 1], a
 
-		jr .column_done
-	.column_ge_08
+        jr .column_done
+    .column_ge_08
 
-	ld a, b
-	cp a, $04
-	jr c, .column_ge_04
-		and a, $03
-		inc a
-		ld c, a
+    ld a, b
+    cp a, $04
+    jr c, .column_ge_04
+        and a, $03
+        inc a
+        ld c, a
 
-		ldh a, [HRAM_TEMP + 2]
-		add a, c
-		ldh [HRAM_TEMP + 2], a
+        ldh a, [HRAM_TEMP + 2]
+        add a, c
+        ldh [HRAM_TEMP + 2], a
 
-		jr .column_done
-	.column_ge_04
+        jr .column_done
+    .column_ge_04
 
-	ld a, b
-	inc a
-	ld c, a
+    ld a, b
+    inc a
+    ld c, a
 
-	ldh a, [HRAM_TEMP + 3]
-	add a, c
-	ldh [HRAM_TEMP + 3], a
+    ldh a, [HRAM_TEMP + 3]
+    add a, c
+    ldh [HRAM_TEMP + 3], a
 
-	.column_done
+    .column_done
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	ld hl, SAMPLE_COLUMN_BASE_TILE_ADDRESS
-	add hl, de
+    ld hl, SAMPLE_COLUMN_BASE_TILE_ADDRESS
+    add hl, de
 
-	ld b, TILE_INDEX_SAMPLE_BASE
-	ld de, SCRN_VX_B
+    ld b, TILE_INDEX_SAMPLE_BASE
+    ld de, SCRN_VX_B
 
-	ld a, [HRAM_TEMP + 0]
-	add a, b
-	ld [hl], a
+    ld a, [HRAM_TEMP + 0]
+    add a, b
+    ld [hl], a
 
-	add hl, de
-	ld a, [HRAM_TEMP + 1]
-	add a, b
-	ld [hl], a
+    add hl, de
+    ld a, [HRAM_TEMP + 1]
+    add a, b
+    ld [hl], a
 
-	add hl, de
-	ld a, [HRAM_TEMP + 2]
-	add a, b
-	ld [hl], a
+    add hl, de
+    ld a, [HRAM_TEMP + 2]
+    add a, b
+    ld [hl], a
 
-	add hl, de
-	ld a, [HRAM_TEMP + 3]
-	add a, b
-	ld [hl], a
+    add hl, de
+    ld a, [HRAM_TEMP + 3]
+    add a, b
+    ld [hl], a
 
-	;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;
 
-	copy [WRAM_WAVEFORM_COLUMN_UPDATE], $FF
-	
-	ret
+    copy [WRAM_WAVEFORM_COLUMN_UPDATE], $FF
+    
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; HRAM
@@ -244,12 +244,12 @@ UpdateWaveformColumn:
 
 rsset _HRAM
 
-def HRAM_TEMP						rb 8
+def HRAM_TEMP                       rb 8
 
-def HRAM_END						rb 0
+def HRAM_END                        rb 0
 
 ; sanity checks
-def HRAM_USAGE						equ (HRAM_END - _HRAM)
+def HRAM_USAGE                      equ (HRAM_END - _HRAM)
 println "CH3 HRAM usage: {d:HRAM_USAGE} bytes"
 assert HRAM_USAGE <= $0040, "Too many bytes used in HRAM"
 
@@ -258,29 +258,29 @@ assert HRAM_USAGE <= $0040, "Too many bytes used in HRAM"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-def CONTROL_FLAG_PLAY_SOUND			rb 1
-def CONTROL_FLAG_WAVEFORM_EDIT_MODE	rb 1
-def CONTROL_FLAGS_COUNT				rb 0
+def CONTROL_FLAG_PLAY_SOUND         rb 1
+def CONTROL_FLAG_WAVEFORM_EDIT_MODE rb 1
+def CONTROL_FLAGS_COUNT             rb 0
 assert CONTROL_FLAGS_COUNT < 8, "Too many control flags declared"
 
 rsset WRAM_CHANNEL_START
-def WRAM_CONTROL_FLAGS				rb 1
-def WRAM_SELECTION_INDEX			rb 1
-def WRAM_CH3_REGISTER				rb 5
+def WRAM_CONTROL_FLAGS              rb 1
+def WRAM_SELECTION_INDEX            rb 1
+def WRAM_CH3_REGISTER               rb 5
 
-def WRAM_NOTE_NUMBER				rb 1
-def WRAM_LENGTH_INDEX				rb 1
-def WRAM_USE_LENGTH_FLAG			rb 1
-def WRAM_VOLUME						rb 1
+def WRAM_NOTE_NUMBER                rb 1
+def WRAM_LENGTH_INDEX               rb 1
+def WRAM_USE_LENGTH_FLAG            rb 1
+def WRAM_VOLUME                     rb 1
 
-def WRAM_WAVEFORM					rb WAVEFORM_BYTE_LENGTH
-def WRAM_WAVEFORM_SELECTOR_COLUMN	rb 1
-def WRAM_WAVEFORM_COLUMN_UPDATE		rb 1
+def WRAM_WAVEFORM                   rb WAVEFORM_BYTE_LENGTH
+def WRAM_WAVEFORM_SELECTOR_COLUMN   rb 1
+def WRAM_WAVEFORM_COLUMN_UPDATE     rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "CH3 WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -293,21 +293,21 @@ section "ch3_update", rom0
 ; \1 = previous line, \2 = current line, \3 = next line
 ; \4 = previous index, \5 = next index
 macro ProcessSelection
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
-	jr nz, .down\@
-		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
-		PushTransfer _SCRN0 + SCRN_VX_B * \3, TILE_INDEX_CURSOR
-		ld hl, WRAM_SELECTION_INDEX
-		ld [hl], \5
-	.down\@
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
+    jr nz, .down\@
+        PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
+        PushTransfer _SCRN0 + SCRN_VX_B * \3, TILE_INDEX_CURSOR
+        ld hl, WRAM_SELECTION_INDEX
+        ld [hl], \5
+    .down\@
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_UP
-	jr nz, .up\@
-		PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
-		PushTransfer _SCRN0 + SCRN_VX_B * \1, TILE_INDEX_CURSOR
-		ld hl, WRAM_SELECTION_INDEX
-		ld [hl], \4
-	.up\@
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_UP
+    jr nz, .up\@
+        PushTransfer _SCRN0 + SCRN_VX_B * \2, TILE_INDEX_BLANK
+        PushTransfer _SCRN0 + SCRN_VX_B * \1, TILE_INDEX_CURSOR
+        ld hl, WRAM_SELECTION_INDEX
+        ld [hl], \4
+    .up\@
 endm
 
 ; update functions table
@@ -320,428 +320,428 @@ dw UpdateWaveform
 UpdateFunc_End:
 
 ; line numbers
-def LINE_NOTE						equ (2)
-def LINE_LENGTH						equ (3)
-def LINE_USE_LENGTH					equ (4)
-def LINE_VOLUME						equ (5)
-def LINE_WAVEFORM					equ (6)
+def LINE_NOTE                       equ (2)
+def LINE_LENGTH                     equ (3)
+def LINE_USE_LENGTH                 equ (4)
+def LINE_VOLUME                     equ (5)
+def LINE_WAVEFORM                   equ (6)
 
 ; selection indices
 rsreset
-def SELECTION_NOTE					rb 1
-def SELECTION_LENGTH				rb 1
-def SELECTION_USE_LENGTH			rb 1
-def SELECTION_VOLUME				rb 1
-def SELECTION_WAVEFORM				rb 1
-def SELECTIONS_COUNT				rb 0
+def SELECTION_NOTE                  rb 1
+def SELECTION_LENGTH                rb 1
+def SELECTION_USE_LENGTH            rb 1
+def SELECTION_VOLUME                rb 1
+def SELECTION_WAVEFORM              rb 1
+def SELECTIONS_COUNT                rb 0
 assert SELECTIONS_COUNT == ((UpdateFunc_End - UpdateFunc) / 2), "The number of selections is not in sync with the number of update functions"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateNote:
-	ProcessSelection LINE_WAVEFORM, LINE_NOTE, LINE_LENGTH, SELECTION_WAVEFORM, SELECTION_LENGTH
+    ProcessSelection LINE_WAVEFORM, LINE_NOTE, LINE_LENGTH, SELECTION_WAVEFORM, SELECTION_LENGTH
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .left
-		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
-		ld a, [WRAM_NOTE_NUMBER]
-		jr nz, .fast_mode_left
-			add a, -OCTAVE_NOTES_COUNT
-			jr .fast_mode_left_end
-		.fast_mode_left
-			dec a
-		.fast_mode_left_end
-		bit 7, a
-		ld [WRAM_NOTE_NUMBER], a
-		jr z, .update_ui
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .left
+        TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+        ld a, [WRAM_NOTE_NUMBER]
+        jr nz, .fast_mode_left
+            add a, -OCTAVE_NOTES_COUNT
+            jr .fast_mode_left_end
+        .fast_mode_left
+            dec a
+        .fast_mode_left_end
+        bit 7, a
+        ld [WRAM_NOTE_NUMBER], a
+        jr z, .update_ui
 
-		ld a, NOTES_COUNT - 1
-		ld [WRAM_NOTE_NUMBER], a
-		jr .update_ui
-	.left
+        ld a, NOTES_COUNT - 1
+        ld [WRAM_NOTE_NUMBER], a
+        jr .update_ui
+    .left
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .right
-		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
-		ld a, [WRAM_NOTE_NUMBER]
-		jr nz, .fast_mode_right
-			add a, OCTAVE_NOTES_COUNT
-			jr .fast_mode_right_end
-		.fast_mode_right
-			inc a
-		.fast_mode_right_end
-		cp a, NOTES_COUNT
-		ld [WRAM_NOTE_NUMBER], a
-		jr c, .update_ui
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .right
+        TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+        ld a, [WRAM_NOTE_NUMBER]
+        jr nz, .fast_mode_right
+            add a, OCTAVE_NOTES_COUNT
+            jr .fast_mode_right_end
+        .fast_mode_right
+            inc a
+        .fast_mode_right_end
+        cp a, NOTES_COUNT
+        ld [WRAM_NOTE_NUMBER], a
+        jr c, .update_ui
 
-		xor a
-		ld [WRAM_NOTE_NUMBER], a
-		jr .update_ui
-	.right
+        xor a
+        ld [WRAM_NOTE_NUMBER], a
+        jr .update_ui
+    .right
 
-	ret
+    ret
 
-	.update_ui
-		ld a, [WRAM_NOTE_NUMBER]
-		ld b, 0
-		ld c, a
+    .update_ui
+        ld a, [WRAM_NOTE_NUMBER]
+        ld b, 0
+        ld c, a
 
-		sla a
-		ld d, 0
-		ld e, a
+        sla a
+        ld d, 0
+        ld e, a
 
-		ld h, 0
-		ld l, a
-		sla l
-		rl h
+        ld h, 0
+        ld l, a
+        sla l
+        rl h
 
-		add hl, bc
-		add hl, de
+        add hl, bc
+        add hl, de
 
-		ld de, NoteTable + NOTE_TILE_INDICES
-		add hl, de
+        ld de, NoteTable + NOTE_TILE_INDICES
+        add hl, de
 
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 17, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 18, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 19, a
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 17, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 18, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_NOTE + 19, a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateLength:
-	ProcessSelection LINE_NOTE, LINE_LENGTH, LINE_USE_LENGTH, SELECTION_NOTE, SELECTION_USE_LENGTH
+    ProcessSelection LINE_NOTE, LINE_LENGTH, LINE_USE_LENGTH, SELECTION_NOTE, SELECTION_USE_LENGTH
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .left
-		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
-		ld a, [WRAM_LENGTH_INDEX]
-		jr nz, .fast_mode_left
-			add a, -10
-			jr .fast_mode_left_end
-		.fast_mode_left
-			dec a
-		.fast_mode_left_end
-		ld [WRAM_LENGTH_INDEX], a
-		jr .update_ui
-	.left
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .left
+        TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+        ld a, [WRAM_LENGTH_INDEX]
+        jr nz, .fast_mode_left
+            add a, -10
+            jr .fast_mode_left_end
+        .fast_mode_left
+            dec a
+        .fast_mode_left_end
+        ld [WRAM_LENGTH_INDEX], a
+        jr .update_ui
+    .left
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .right
-		TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
-		ld a, [WRAM_LENGTH_INDEX]
-		jr nz, .fast_mode_right
-			add a, 10
-			jr .fast_mode_right_end
-		.fast_mode_right
-			inc a
-		.fast_mode_right_end
-		ld [WRAM_LENGTH_INDEX], a
-		jr .update_ui
-	.right
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .right
+        TestPadInput_HeldAll WRAM_PAD_INPUT, PADF_B
+        ld a, [WRAM_LENGTH_INDEX]
+        jr nz, .fast_mode_right
+            add a, 10
+            jr .fast_mode_right_end
+        .fast_mode_right
+            inc a
+        .fast_mode_right_end
+        ld [WRAM_LENGTH_INDEX], a
+        jr .update_ui
+    .right
 
-	ret
+    ret
 
-	.update_ui
-		ld a, [WRAM_LENGTH_INDEX]
-		ld h, 0
-		ld l, a
-		sla l
-		rl h
-		ld d, h
-		ld e, l
-		sla l
-		rl h
-		add hl, de
-		ld de, LongLengthTable
-		add hl, de
+    .update_ui
+        ld a, [WRAM_LENGTH_INDEX]
+        ld h, 0
+        ld l, a
+        sla l
+        rl h
+        ld d, h
+        ld e, l
+        sla l
+        rl h
+        add hl, de
+        ld de, LongLengthTable
+        add hl, de
 
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 14, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 15, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 16, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 17, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 18, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 19, a
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 14, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 15, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 16, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 17, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 18, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_LENGTH + 19, a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateUseLength:
-	ProcessSelection LINE_LENGTH, LINE_USE_LENGTH, LINE_VOLUME, SELECTION_LENGTH, SELECTION_VOLUME
+    ProcessSelection LINE_LENGTH, LINE_USE_LENGTH, LINE_VOLUME, SELECTION_LENGTH, SELECTION_VOLUME
 
-	TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
-	jr z, .pressed
-		ld a, [WRAM_USE_LENGTH_FLAG]
-		inc a
-		and a, $01
-		ld [WRAM_USE_LENGTH_FLAG], a
-		jr .update_ui
-	.pressed
+    TestPadInput_PressedAny WRAM_PAD_INPUT, PADF_LEFT | PADF_RIGHT
+    jr z, .pressed
+        ld a, [WRAM_USE_LENGTH_FLAG]
+        inc a
+        and a, $01
+        ld [WRAM_USE_LENGTH_FLAG], a
+        jr .update_ui
+    .pressed
 
-	ret
+    ret
 
-	.update_ui
-		ld a, [WRAM_USE_LENGTH_FLAG]
-		ld b, a
-		sla a
-		add a, b
-		ld h, 0
-		ld l, a
-		ld de, UseLengthTable
-		add hl, de
+    .update_ui
+        ld a, [WRAM_USE_LENGTH_FLAG]
+        ld b, a
+        sla a
+        add a, b
+        ld h, 0
+        ld l, a
+        ld de, UseLengthTable
+        add hl, de
 
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 17, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 18, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 19, a
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 17, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 18, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_USE_LENGTH + 19, a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateVolume:
-	ProcessSelection LINE_USE_LENGTH, LINE_VOLUME, LINE_WAVEFORM, SELECTION_USE_LENGTH, SELECTION_WAVEFORM
+    ProcessSelection LINE_USE_LENGTH, LINE_VOLUME, LINE_WAVEFORM, SELECTION_USE_LENGTH, SELECTION_WAVEFORM
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .left
-		ld a, [WRAM_VOLUME]
-		dec a
-		and a, $03
-		ld [WRAM_VOLUME], a
-		jr .update_ui
-	.left
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .left
+        ld a, [WRAM_VOLUME]
+        dec a
+        and a, $03
+        ld [WRAM_VOLUME], a
+        jr .update_ui
+    .left
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .right
-		ld a, [WRAM_VOLUME]
-		inc a
-		and a, $03
-		ld [WRAM_VOLUME], a
-		jr .update_ui
-	.right
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .right
+        ld a, [WRAM_VOLUME]
+        inc a
+        and a, $03
+        ld [WRAM_VOLUME], a
+        jr .update_ui
+    .right
 
-	ret
+    ret
 
-	.update_ui
-		ld a, [WRAM_VOLUME]
-		ld b, a
-		sla a
-		add a, b
-		ld h, 0
-		ld l, a
-		ld de, VolumeTable
-		add hl, de
+    .update_ui
+        ld a, [WRAM_VOLUME]
+        ld b, a
+        sla a
+        add a, b
+        ld h, 0
+        ld l, a
+        ld de, VolumeTable
+        add hl, de
 
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 17, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		push hl
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 18, a
-		pop hl
-		inc hl
-		ld a, [hl]
-		PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 19, a
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 17, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        push hl
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 18, a
+        pop hl
+        inc hl
+        ld a, [hl]
+        PushTransfer _SCRN0 + SCRN_VX_B * LINE_VOLUME + 19, a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def WAVEFORM_SELECTOR_BASE_TILE_ADDRESS			equ (_SCRN0 + (7 * SCRN_VX_B) + 2)
+def WAVEFORM_SELECTOR_BASE_TILE_ADDRESS         equ (_SCRN0 + (7 * SCRN_VX_B) + 2)
 
 macro ShowSelectorTile
-	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
-	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-	ld b, a
-	srl a
-	ld d, 0
-	ld e, a
-	add hl, de
+    ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
+    ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+    ld b, a
+    srl a
+    ld d, 0
+    ld e, a
+    add hl, de
 
-	ld a, TILE_INDEX_SELECTOR_BASE
-	bit 0, b
-	jr z, .right_column_selector\@
-		inc a
-	.right_column_selector\@
+    ld a, TILE_INDEX_SELECTOR_BASE
+    bit 0, b
+    jr z, .right_column_selector\@
+        inc a
+    .right_column_selector\@
 
-	PushTransfer hl, a
+    PushTransfer hl, a
 endm
 
 macro HideSelectorTile
-	ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
-	ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-	srl a
-	ld d, 0
-	ld e, a
-	add hl, de
-	PushTransfer hl, TILE_INDEX_BLANK
+    ld hl, WAVEFORM_SELECTOR_BASE_TILE_ADDRESS
+    ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+    srl a
+    ld d, 0
+    ld e, a
+    add hl, de
+    PushTransfer hl, TILE_INDEX_BLANK
 endm
 
 UpdateWaveform:
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_B
-	jr nz, .edit_mode_toggle
-		ld a, [WRAM_CONTROL_FLAGS]
-		xor a, (1 << CONTROL_FLAG_WAVEFORM_EDIT_MODE)
-		ld [WRAM_CONTROL_FLAGS], a
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_B
+    jr nz, .edit_mode_toggle
+        ld a, [WRAM_CONTROL_FLAGS]
+        xor a, (1 << CONTROL_FLAG_WAVEFORM_EDIT_MODE)
+        ld [WRAM_CONTROL_FLAGS], a
 
-		bit CONTROL_FLAG_WAVEFORM_EDIT_MODE, a
-		jr z, .toggle_selector
-			ShowSelectorTile
-			jr .toggle_selector_end
-		.toggle_selector
-			HideSelectorTile
-		.toggle_selector_end
-	.edit_mode_toggle
+        bit CONTROL_FLAG_WAVEFORM_EDIT_MODE, a
+        jr z, .toggle_selector
+            ShowSelectorTile
+            jr .toggle_selector_end
+        .toggle_selector
+            HideSelectorTile
+        .toggle_selector_end
+    .edit_mode_toggle
 
-	ld a, [WRAM_CONTROL_FLAGS]
-	bit CONTROL_FLAG_WAVEFORM_EDIT_MODE, a
-	jr nz, .selection_mode
-		ProcessSelection LINE_VOLUME, LINE_WAVEFORM, LINE_NOTE, SELECTION_VOLUME, SELECTION_NOTE
-		ret
-	.selection_mode
+    ld a, [WRAM_CONTROL_FLAGS]
+    bit CONTROL_FLAG_WAVEFORM_EDIT_MODE, a
+    jr nz, .selection_mode
+        ProcessSelection LINE_VOLUME, LINE_WAVEFORM, LINE_NOTE, SELECTION_VOLUME, SELECTION_NOTE
+        ret
+    .selection_mode
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
-	jr nz, .move_selector_left
-		HideSelectorTile
-		ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-		dec a
-		and a, WAVEFORM_SAMPLES_COUNT - 1
-		ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
-		ShowSelectorTile
-	.move_selector_left
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_LEFT
+    jr nz, .move_selector_left
+        HideSelectorTile
+        ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+        dec a
+        and a, WAVEFORM_SAMPLES_COUNT - 1
+        ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
+        ShowSelectorTile
+    .move_selector_left
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
-	jr nz, .move_selector_right
-		HideSelectorTile
-		ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-		inc a
-		and a, WAVEFORM_SAMPLES_COUNT - 1
-		ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
-		ShowSelectorTile
-	.move_selector_right
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_RIGHT
+    jr nz, .move_selector_right
+        HideSelectorTile
+        ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+        inc a
+        and a, WAVEFORM_SAMPLES_COUNT - 1
+        ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
+        ShowSelectorTile
+    .move_selector_right
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_UP
-	jr nz, .move_sample_up
-		ld hl, WRAM_WAVEFORM
-		ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-		ld b, a
-		srl a
-		ld d, 0
-		ld e, a
-		add hl, de
-		ld a, [hl]
-		ld c, a
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_UP
+    jr nz, .move_sample_up
+        ld hl, WRAM_WAVEFORM
+        ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+        ld b, a
+        srl a
+        ld d, 0
+        ld e, a
+        add hl, de
+        ld a, [hl]
+        ld c, a
 
-		bit 0, b
-		jr nz, .up_extract_sample_value
-			swap a
-		.up_extract_sample_value
-		
-		and a, $0F
-		inc a
-		and a, $0F
+        bit 0, b
+        jr nz, .up_extract_sample_value
+            swap a
+        .up_extract_sample_value
+        
+        and a, $0F
+        inc a
+        and a, $0F
 
-		bit 0, b
-		jr nz, .up_compute_sample_value
-			swap a
-			ld d, a
-			ld a, c
-			and a, $0F
-			or a, d
-			jr .up_compute_sample_value_end
-		.up_compute_sample_value
-			ld d, a
-			ld a, c
-			and a, $F0
-			or a, d
-		.up_compute_sample_value_end
+        bit 0, b
+        jr nz, .up_compute_sample_value
+            swap a
+            ld d, a
+            ld a, c
+            and a, $0F
+            or a, d
+            jr .up_compute_sample_value_end
+        .up_compute_sample_value
+            ld d, a
+            ld a, c
+            and a, $F0
+            or a, d
+        .up_compute_sample_value_end
 
-		ld [hl], a
-		copy [WRAM_WAVEFORM_COLUMN_UPDATE], [WRAM_WAVEFORM_SELECTOR_COLUMN]
-	.move_sample_up
+        ld [hl], a
+        copy [WRAM_WAVEFORM_COLUMN_UPDATE], [WRAM_WAVEFORM_SELECTOR_COLUMN]
+    .move_sample_up
 
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
-	jr nz, .move_sample_down
-		ld hl, WRAM_WAVEFORM
-		ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
-		ld b, a
-		srl a
-		ld d, 0
-		ld e, a
-		add hl, de
-		ld a, [hl]
-		ld c, a
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_DOWN
+    jr nz, .move_sample_down
+        ld hl, WRAM_WAVEFORM
+        ld a, [WRAM_WAVEFORM_SELECTOR_COLUMN]
+        ld b, a
+        srl a
+        ld d, 0
+        ld e, a
+        add hl, de
+        ld a, [hl]
+        ld c, a
 
-		bit 0, b
-		jr nz, .down_extract_sample_value
-			swap a
-		.down_extract_sample_value
-		
-		and a, $0F
-		dec a
-		and a, $0F
+        bit 0, b
+        jr nz, .down_extract_sample_value
+            swap a
+        .down_extract_sample_value
+        
+        and a, $0F
+        dec a
+        and a, $0F
 
-		bit 0, b
-		jr nz, .down_compute_sample_value
-			swap a
-			ld d, a
-			ld a, c
-			and a, $0F
-			or a, d
-			jr .down_compute_sample_value_end
-		.down_compute_sample_value
-			ld d, a
-			ld a, c
-			and a, $F0
-			or a, d
-		.down_compute_sample_value_end
+        bit 0, b
+        jr nz, .down_compute_sample_value
+            swap a
+            ld d, a
+            ld a, c
+            and a, $0F
+            or a, d
+            jr .down_compute_sample_value_end
+        .down_compute_sample_value
+            ld d, a
+            ld a, c
+            and a, $F0
+            or a, d
+        .down_compute_sample_value_end
 
-		ld [hl], a
-		copy [WRAM_WAVEFORM_COLUMN_UPDATE], [WRAM_WAVEFORM_SELECTOR_COLUMN]
-	.move_sample_down
+        ld [hl], a
+        copy [WRAM_WAVEFORM_COLUMN_UPDATE], [WRAM_WAVEFORM_SELECTOR_COLUMN]
+    .move_sample_down
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Public
@@ -750,173 +750,173 @@ UpdateWaveform:
 section "ch3_public", rom0
 
 InitializeCH3:
-	xor a
-	ld [WRAM_CONTROL_FLAGS], a
-	ld [WRAM_SELECTION_INDEX], a
+    xor a
+    ld [WRAM_CONTROL_FLAGS], a
+    ld [WRAM_SELECTION_INDEX], a
 
-	PushTransfer _SCRN0 + SCRN_VX_B * 2, TILE_INDEX_CURSOR
+    PushTransfer _SCRN0 + SCRN_VX_B * 2, TILE_INDEX_CURSOR
 
-	ld hl, WRAM_NOTE_NUMBER
-	ld [hl], 24
+    ld hl, WRAM_NOTE_NUMBER
+    ld [hl], 24
 
-	ld hl, WRAM_LENGTH_INDEX
-	ld [hl], $3F
+    ld hl, WRAM_LENGTH_INDEX
+    ld [hl], $3F
 
-	ld hl, WRAM_USE_LENGTH_FLAG
-	ld [hl], $01
+    ld hl, WRAM_USE_LENGTH_FLAG
+    ld [hl], $01
 
-	ld hl, WRAM_VOLUME
-	ld [hl], 1
+    ld hl, WRAM_VOLUME
+    ld [hl], 1
 
-	copy_waveform WRAM_WAVEFORM, ch3_default_waveform
+    copy_waveform WRAM_WAVEFORM, ch3_default_waveform
 
-	xor a
-	ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
-	copy [WRAM_WAVEFORM_COLUMN_UPDATE], $FF
+    xor a
+    ld [WRAM_WAVEFORM_SELECTOR_COLUMN], a
+    copy [WRAM_WAVEFORM_COLUMN_UPDATE], $FF
 
-	; init the sound
-	copy [rNR52], AUDENA_ON
-	copy [rNR50], $77
-	copy [rNR51], $FF
+    ; init the sound
+    copy [rNR52], AUDENA_ON
+    copy [rNR50], $77
+    copy [rNR51], $FF
 
-	; init graphics
-	copy [rBGP], %11100100
+    ; init graphics
+    copy [rBGP], %11100100
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SAMPLE_COLUMN_BASE_TILE_ADDRESS			equ (_SCRN0 + SCRN_VX_B * 9 + 2)
+def SAMPLE_COLUMN_BASE_TILE_ADDRESS         equ (_SCRN0 + SCRN_VX_B * 9 + 2)
 
 UpdateCH3:
-	halt
+    halt
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; vblank
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; vblank
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	ProcessTransferList
-	call UpdateWaveformColumn
+    ProcessTransferList
+    call UpdateWaveformColumn
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; logic
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; logic
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	; call the proper menu update function
-	ld a, [WRAM_SELECTION_INDEX]
-	sla a
-	ld_r16_r8 hl, a
-	ld de, UpdateFunc
-	add hl, de
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
-	ld de, .call_return_address
-	push de
-	jp hl
-	.call_return_address
+    ; call the proper menu update function
+    ld a, [WRAM_SELECTION_INDEX]
+    sla a
+    ld_r16_r8 hl, a
+    ld de, UpdateFunc
+    add hl, de
+    ld a, [hli]
+    ld h, [hl]
+    ld l, a
+    ld de, .call_return_address
+    push de
+    jp hl
+    .call_return_address
 
-	; request to play a sound based on the parameters
-	TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_A
-	jp nz, .request_play_sound
-		ld hl, WRAM_CONTROL_FLAGS
-		set CONTROL_FLAG_PLAY_SOUND, [hl]
-	.request_play_sound
+    ; request to play a sound based on the parameters
+    TestPadInput_PressedAll WRAM_PAD_INPUT, PADF_A
+    jp nz, .request_play_sound
+        ld hl, WRAM_CONTROL_FLAGS
+        set CONTROL_FLAG_PLAY_SOUND, [hl]
+    .request_play_sound
 
-	; set the "enable sound" flag
-	copy [WRAM_CH3_REGISTER + 0], $80
-	DisplayRegisterA 15, 7
+    ; set the "enable sound" flag
+    copy [WRAM_CH3_REGISTER + 0], $80
+    DisplayRegisterA 15, 7
 
-	; set the length
-	ld a, [WRAM_LENGTH_INDEX]
-	ld b, a
-	ld a, $FF
-	sub a, b
-	ld [WRAM_CH3_REGISTER + 1], a
-	DisplayRegisterA 15, 17
+    ; set the length
+    ld a, [WRAM_LENGTH_INDEX]
+    ld b, a
+    ld a, $FF
+    sub a, b
+    ld [WRAM_CH3_REGISTER + 1], a
+    DisplayRegisterA 15, 17
 
-	; set the volume
-	ld a, [WRAM_VOLUME]
-	sla a
-	swap a
-	ld [WRAM_CH3_REGISTER + 2], a
-	DisplayRegisterA 16, 7
+    ; set the volume
+    ld a, [WRAM_VOLUME]
+    sla a
+    swap a
+    ld [WRAM_CH3_REGISTER + 2], a
+    DisplayRegisterA 16, 7
 
-	; get a pointer to the note to play
-	ld a, [WRAM_NOTE_NUMBER]
-	ld b, 0
-	ld c, a
+    ; get a pointer to the note to play
+    ld a, [WRAM_NOTE_NUMBER]
+    ld b, 0
+    ld c, a
 
-	sla a
-	ld d, 0
-	ld e, a
+    sla a
+    ld d, 0
+    ld e, a
 
-	ld h, 0
-	ld l, a
-	sla l
-	rl h
+    ld h, 0
+    ld l, a
+    sla l
+    rl h
 
-	add hl, bc
-	add hl, de
+    add hl, bc
+    add hl, de
 
-	ld de, NoteTable + NOTE_FREQUENCY_CH3
-	add hl, de
+    ld de, NoteTable + NOTE_FREQUENCY_CH3
+    add hl, de
 
-	; load the frequency low bits
-	ld a, [hli]
-	ld [WRAM_CH3_REGISTER + 3], a
+    ; load the frequency low bits
+    ld a, [hli]
+    ld [WRAM_CH3_REGISTER + 3], a
 
-	push hl
-	DisplayRegisterA 16, 17
-	pop hl
+    push hl
+    DisplayRegisterA 16, 17
+    pop hl
 
-	; load the frequency high bits and set the start/length flags
-	ld a, [WRAM_USE_LENGTH_FLAG]
-	sla a
-	sla a
-	swap a
-	or a, $80
-	ld b, a
+    ; load the frequency high bits and set the start/length flags
+    ld a, [WRAM_USE_LENGTH_FLAG]
+    sla a
+    sla a
+    swap a
+    or a, $80
+    ld b, a
 
-	ld a, [hl]
-	or a, b
-	ld [WRAM_CH3_REGISTER + 4], a
+    ld a, [hl]
+    or a, b
+    ld [WRAM_CH3_REGISTER + 4], a
 
-	DisplayRegisterA 17, 7
+    DisplayRegisterA 17, 7
 
-	; play sound if requested
-	ld hl, WRAM_CONTROL_FLAGS
-	bit CONTROL_FLAG_PLAY_SOUND, [hl]
-	jp z, .play_sound
-		ld hl, WRAM_CONTROL_FLAGS
-		res CONTROL_FLAG_PLAY_SOUND, [hl]
+    ; play sound if requested
+    ld hl, WRAM_CONTROL_FLAGS
+    bit CONTROL_FLAG_PLAY_SOUND, [hl]
+    jp z, .play_sound
+        ld hl, WRAM_CONTROL_FLAGS
+        res CONTROL_FLAG_PLAY_SOUND, [hl]
 
-		xor a
-		ld [rNR30], a
-		copy_waveform _AUD3WAVERAM, WRAM_WAVEFORM
+        xor a
+        ld [rNR30], a
+        copy_waveform _AUD3WAVERAM, WRAM_WAVEFORM
 
-		copy [rNR30], [WRAM_CH3_REGISTER + 0]
-		copy [rNR31], [WRAM_CH3_REGISTER + 1]
-		copy [rNR32], [WRAM_CH3_REGISTER + 2]
-		copy [rNR33], [WRAM_CH3_REGISTER + 3]
-		copy [rNR34], [WRAM_CH3_REGISTER + 4]
-	.play_sound
+        copy [rNR30], [WRAM_CH3_REGISTER + 0]
+        copy [rNR31], [WRAM_CH3_REGISTER + 1]
+        copy [rNR32], [WRAM_CH3_REGISTER + 2]
+        copy [rNR33], [WRAM_CH3_REGISTER + 3]
+        copy [rNR34], [WRAM_CH3_REGISTER + 4]
+    .play_sound
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 FinalizeCH3:
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

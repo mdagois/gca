@@ -13,38 +13,38 @@ section "game", rom0
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def SCORE_MAX						equ (9)
-def GAME_OVER_MESSAGE_TILE_LEFT		equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
-def GAME_OVER_MESSAGE_TILE_RIGHT	equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)
-def GAME_OVER_WAIT_TIME				equ (255)
+def SCORE_MAX                       equ (9)
+def GAME_OVER_MESSAGE_TILE_LEFT     equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) - 1 - 2)
+def GAME_OVER_MESSAGE_TILE_RIGHT    equ (_SCRN0 + SCRN_VX_B * 5 + (SCRN_X_B / 2) + 1)
+def GAME_OVER_WAIT_TIME             equ (255)
 
-def WALL_HEIGHT						equ (8)
+def WALL_HEIGHT                     equ (8)
 
-def BALL_WIDTH						equ (4)
-def BALL_HEIGHT						equ (4)
-def BALL_INITIAL_SPEED				equ (3)
-def BALL_MAX_SPEED					equ (6)
-def BALL_HIT_COUNTER				equ (5)
-def BALL_INITIAL_RIGHT_GAP_X		equ (40 << 8)
-def BALL_INITIAL_LEFT_GAP_X			equ (-BALL_INITIAL_RIGHT_GAP_X)
-def BALL_INITIAL_POS_X				equ (((SCRN_X + OAM_X_OFS) / 2 + (BALL_WIDTH / 2)) << 8)
-def BALL_INITIAL_POS_Y				equ (((SCRN_Y + OAM_Y_OFS) / 2 - (BALL_WIDTH / 2)) << 8)
-def BALL_INITIAL_DIR_X				equ ($FF81)
-def BALL_INITIAL_DIR_Y				equ ($0000)
-def BALL_MIN_Y						equ (OAM_Y_OFS + WALL_HEIGHT)
-def BALL_MAX_Y						equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
+def BALL_WIDTH                      equ (4)
+def BALL_HEIGHT                     equ (4)
+def BALL_INITIAL_SPEED              equ (3)
+def BALL_MAX_SPEED                  equ (6)
+def BALL_HIT_COUNTER                equ (5)
+def BALL_INITIAL_RIGHT_GAP_X        equ (40 << 8)
+def BALL_INITIAL_LEFT_GAP_X         equ (-BALL_INITIAL_RIGHT_GAP_X)
+def BALL_INITIAL_POS_X              equ (((SCRN_X + OAM_X_OFS) / 2 + (BALL_WIDTH / 2)) << 8)
+def BALL_INITIAL_POS_Y              equ (((SCRN_Y + OAM_Y_OFS) / 2 - (BALL_WIDTH / 2)) << 8)
+def BALL_INITIAL_DIR_X              equ ($FF81)
+def BALL_INITIAL_DIR_Y              equ ($0000)
+def BALL_MIN_Y                      equ (OAM_Y_OFS + WALL_HEIGHT)
+def BALL_MAX_Y                      equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - BALL_HEIGHT)
 
-def PAD_WIDTH						equ (8)
-def PAD_HEIGHT						equ (16)
-def PAD_INITIAL_POS_Y				equ (((SCRN_Y + OAM_Y_OFS) / 2) - (PAD_HEIGHT / 2))
-def PAD_MIN_Y						equ (OAM_Y_OFS + WALL_HEIGHT)
-def PAD_MAX_Y						equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
+def PAD_WIDTH                       equ (8)
+def PAD_HEIGHT                      equ (16)
+def PAD_INITIAL_POS_Y               equ (((SCRN_Y + OAM_Y_OFS) / 2) - (PAD_HEIGHT / 2))
+def PAD_MIN_Y                       equ (OAM_Y_OFS + WALL_HEIGHT)
+def PAD_MAX_Y                       equ (SCRN_Y + OAM_Y_OFS - WALL_HEIGHT - PAD_HEIGHT)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def DIRECTIONS_PER_PAD				equ (19)
-def BYTES_PER_DIRECTION				equ (4)
-def PADS_COUNT						equ (2)
+def DIRECTIONS_PER_PAD              equ (19)
+def BYTES_PER_DIRECTION             equ (4)
+def PADS_COUNT                      equ (2)
 
 ; table used to determine the speed of the ball after it hits a pad
 ball_direction_table:
@@ -114,181 +114,181 @@ assert (ball_direction_table_end - ball_direction_table) / BYTES_PER_DIRECTION /
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Game_Initialize:
-	; reset the score
-	xor a
-	ldh [vScore + LEFT_INDEX], a
-	ldh [vScore + RIGHT_INDEX], a
-	xor a
-	ldh [vScoreFlag], a
+    ; reset the score
+    xor a
+    ldh [vScore + LEFT_INDEX], a
+    ldh [vScore + RIGHT_INDEX], a
+    xor a
+    ldh [vScoreFlag], a
 
-	; set sprite tile IDs
-	copy [vBallOam + OAMA_TILEID], TILE_ID_BALL
-	ld a, TILE_ID_PADS
-	ld [vLeftPadTopOam + OAMA_TILEID], a
-	inc a
-	ld [vLeftPadBottomOam + OAMA_TILEID], a
-	inc a
-	ld [vRightPadTopOam + OAMA_TILEID], a
-	inc a
-	ld [vRightPadBottomOam + OAMA_TILEID], a
+    ; set sprite tile IDs
+    copy [vBallOam + OAMA_TILEID], TILE_ID_BALL
+    ld a, TILE_ID_PADS
+    ld [vLeftPadTopOam + OAMA_TILEID], a
+    inc a
+    ld [vLeftPadBottomOam + OAMA_TILEID], a
+    inc a
+    ld [vRightPadTopOam + OAMA_TILEID], a
+    inc a
+    ld [vRightPadBottomOam + OAMA_TILEID], a
 
-	; set ball sprite initial positions
-	Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
-	Set16 vBallY, BALL_INITIAL_POS_Y
+    ; set ball sprite initial positions
+    Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
+    Set16 vBallY, BALL_INITIAL_POS_Y
 
-	; set pad fixed position
-	ld a, OAM_X_OFS
-	ld [vLeftPadTopOam + OAMA_X], a
-	ld [vLeftPadBottomOam + OAMA_X], a
-	ld a, SCRN_X
-	ld [vRightPadTopOam + OAMA_X], a
-	ld [vRightPadBottomOam + OAMA_X], a
+    ; set pad fixed position
+    ld a, OAM_X_OFS
+    ld [vLeftPadTopOam + OAMA_X], a
+    ld [vLeftPadBottomOam + OAMA_X], a
+    ld a, SCRN_X
+    ld [vRightPadTopOam + OAMA_X], a
+    ld [vRightPadBottomOam + OAMA_X], a
 
-	; set pad variable positions
-	ld a, PAD_INITIAL_POS_Y
-	ldh [vPadsY + LEFT_INDEX], a
-	ldh [vPadsY + RIGHT_INDEX], a
+    ; set pad variable positions
+    ld a, PAD_INITIAL_POS_Y
+    ldh [vPadsY + LEFT_INDEX], a
+    ldh [vPadsY + RIGHT_INDEX], a
 
-	; set initial ball dynamics
-	Set16 vBallDirX, BALL_INITIAL_DIR_X
-	Set16 vBallDirY, BALL_INITIAL_DIR_Y
-	ld a, BALL_INITIAL_SPEED
-	ldh [vBallSpeed], a
+    ; set initial ball dynamics
+    Set16 vBallDirX, BALL_INITIAL_DIR_X
+    Set16 vBallDirY, BALL_INITIAL_DIR_Y
+    ld a, BALL_INITIAL_SPEED
+    ldh [vBallSpeed], a
 
-	; miscellaneous
-	ld a, BALL_HIT_COUNTER
-	ldh [vBallHitCounter], a
+    ; miscellaneous
+    ld a, BALL_HIT_COUNTER
+    ldh [vBallHitCounter], a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; move a given pad up
 ; \1 = pad index
 macro MovePadUp
-	ldh a, [vPadsY + \1]
-	dec a
-	cp a, PAD_MIN_Y
-	jr nc, .underflow\@
-		ld a, PAD_MIN_Y
-	.underflow\@
-	ldh [vPadsY + \1], a
+    ldh a, [vPadsY + \1]
+    dec a
+    cp a, PAD_MIN_Y
+    jr nc, .underflow\@
+        ld a, PAD_MIN_Y
+    .underflow\@
+    ldh [vPadsY + \1], a
 endm
 
 ; move a given pad down
 ; \1 = pad index
 macro MovePadDown
-	ldh a, [vPadsY + \1]
-	inc a
-	cp a, PAD_MAX_Y
-	jr c, .overflow\@
-		ld a, PAD_MAX_Y
-	.overflow\@
-	ldh [vPadsY + \1], a
+    ldh a, [vPadsY + \1]
+    inc a
+    cp a, PAD_MAX_Y
+    jr c, .overflow\@
+        ld a, PAD_MAX_Y
+    .overflow\@
+    ldh [vPadsY + \1], a
 endm
 
 ; update the player-controlled pad position
 UpdatePlayerPad:
-	; move and apply constraint to left pad
-	PadInput_TestHeld vPadInput, PADF_UP
-	jr nz, .left_up
-		MovePadUp LEFT_INDEX
-	.left_up
-	PadInput_TestHeld vPadInput, PADF_DOWN
-	jr nz, .left_down
-		MovePadDown LEFT_INDEX
-	.left_down
+    ; move and apply constraint to left pad
+    PadInput_TestHeld vPadInput, PADF_UP
+    jr nz, .left_up
+        MovePadUp LEFT_INDEX
+    .left_up
+    PadInput_TestHeld vPadInput, PADF_DOWN
+    jr nz, .left_down
+        MovePadDown LEFT_INDEX
+    .left_down
 
-	ret
+    ret
 
 ; update the AI-controlled pad position
 UpdateAiPad:
-	AI_GetNextMove
-	cp a, AI_MOVE_UP
-	jr z, .ai_goes_up
-	cp a, AI_MOVE_DOWN
-	jr z, .ai_goes_down
-	jr .ai_done
+    AI_GetNextMove
+    cp a, AI_MOVE_UP
+    jr z, .ai_goes_up
+    cp a, AI_MOVE_DOWN
+    jr z, .ai_goes_down
+    jr .ai_done
 
-	.ai_goes_up
-		MovePadUp RIGHT_INDEX
-		jr .ai_done
+    .ai_goes_up
+        MovePadUp RIGHT_INDEX
+        jr .ai_done
 
-	.ai_goes_down
-		MovePadDown RIGHT_INDEX
-		jr .ai_done
+    .ai_goes_down
+        MovePadDown RIGHT_INDEX
+        jr .ai_done
 
-	.ai_done
+    .ai_done
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; accelerate the ball each time the hit counter runs out
 UpdateBallSpeed:
-	; update the counter
-	ldh a, [vBallHitCounter]
-	dec a
-	ldh [vBallHitCounter], a
-	ret nz
+    ; update the counter
+    ldh a, [vBallHitCounter]
+    dec a
+    ldh [vBallHitCounter], a
+    ret nz
 
-	; check whether the ball already reached max speed
-	ldh a, [vBallSpeed]
-	cp a, BALL_MAX_SPEED
-	ret z
+    ; check whether the ball already reached max speed
+    ldh a, [vBallSpeed]
+    cp a, BALL_MAX_SPEED
+    ret z
 
-	; increase the ball speed
-	inc a
-	ldh [vBallSpeed], a
+    ; increase the ball speed
+    inc a
+    ldh [vBallSpeed], a
 
-	; reset the counter
-	ld a, BALL_HIT_COUNTER
-	ldh [vBallHitCounter], a
+    ; reset the counter
+    ld a, BALL_HIT_COUNTER
+    ldh [vBallHitCounter], a
 
-	; play the speed up sound
-	Sound_Play SOUND_BALL_SPEED_UP
+    ; play the speed up sound
+    Sound_Play SOUND_BALL_SPEED_UP
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; apply collision constraints of the ball with the walls
 HandleBallAndWallCollision:
-	; check for top wall collision
-	.check_top_wall
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		cp a, BALL_MIN_Y
-		; jump if no collision
-		jr nc, .check_bottom_wall
+    ; check for top wall collision
+    .check_top_wall
+        ldh a, [vBallY + REAL_INTEGER_PART]
+        cp a, BALL_MIN_Y
+        ; jump if no collision
+        jr nc, .check_bottom_wall
 
-	; handle the top wall collision
-	.handle_top_wall
-		; apply constraint
-		Set16 vBallY, BALL_MIN_Y << 8
-		; reverse Y direction
-		Negate16 vBallDirY
+    ; handle the top wall collision
+    .handle_top_wall
+        ; apply constraint
+        Set16 vBallY, BALL_MIN_Y << 8
+        ; reverse Y direction
+        Negate16 vBallDirY
 
-		Sound_Play SOUND_BALL_HIT_WALL
-		; return early as there cannot be a collision with both walls
-		ret
+        Sound_Play SOUND_BALL_HIT_WALL
+        ; return early as there cannot be a collision with both walls
+        ret
 
-	; check for bottom wall collision
-	.check_bottom_wall
-		ldh a, [vBallY + REAL_INTEGER_PART]
-		cp a, BALL_MAX_Y
-		; return if no collision
-		ret c
+    ; check for bottom wall collision
+    .check_bottom_wall
+        ldh a, [vBallY + REAL_INTEGER_PART]
+        cp a, BALL_MAX_Y
+        ; return if no collision
+        ret c
 
-	; handle the bottom wall collision
-	.handle_bottom_wall
-		; apply constraint
-		Set16 vBallY, BALL_MAX_Y << 8
-		; reverse Y direction
-		Negate16 vBallDirY
+    ; handle the bottom wall collision
+    .handle_bottom_wall
+        ; apply constraint
+        Set16 vBallY, BALL_MAX_Y << 8
+        ; reverse Y direction
+        Negate16 vBallDirY
 
-		Sound_Play SOUND_BALL_HIT_WALL
+        Sound_Play SOUND_BALL_HIT_WALL
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -297,188 +297,188 @@ HandleBallAndWallCollision:
 ; \1 = pad index
 ; \2 = label to jump to when ball does not hit
 macro GetRelativeBallYToPadY
-	; load ball and pad Y
-	ldh a, [vBallY + REAL_INTEGER_PART]
-	ld b, a
-	ldh a, [vPadsY + \1]
+    ; load ball and pad Y
+    ldh a, [vBallY + REAL_INTEGER_PART]
+    ld b, a
+    ldh a, [vPadsY + \1]
 
-	; check if ball is too low
-	add a, PAD_HEIGHT - 1
-	cp a, b
-	jr c, \2
+    ; check if ball is too low
+    add a, PAD_HEIGHT - 1
+    cp a, b
+    jr c, \2
 
-	; check if ball is too high
-	sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
-	cp a, b
-	jr nc, \2
+    ; check if ball is too high
+    sub a, (PAD_HEIGHT - 1) + BALL_HEIGHT
+    cp a, b
+    jr nc, \2
 
-	; NOTE: the ball hit the pad
+    ; NOTE: the ball hit the pad
 
-	; determine the relative position of the ball to the pad
-	; a = vBallY - (vPadY - 3)
-	ld d, a
-	inc d
-	ld a, b
-	sub a, d
+    ; determine the relative position of the ball to the pad
+    ; a = vBallY - (vPadY - 3)
+    ld d, a
+    inc d
+    ld a, b
+    sub a, d
 endm
 
 ; update the ball direction based on the position it hit a given pad
 ; a = ball Y relative to the pad Y
 ; \1 = pad index
 macro UpdateBallDirection
-	; register a contains the ball Y relative to the pad Y (0 to 18) 
-	; get a pointer to the new direction
-	add a, a
-	add a, a
-	ld h, 0
-	ld l, a
-	ld de, ball_direction_table + (\1 * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
-	add hl, de
+    ; register a contains the ball Y relative to the pad Y (0 to 18) 
+    ; get a pointer to the new direction
+    add a, a
+    add a, a
+    ld h, 0
+    ld l, a
+    ld de, ball_direction_table + (\1 * DIRECTIONS_PER_PAD * BYTES_PER_DIRECTION)
+    add hl, de
 
-	; update the direction
-	ld a, [hli]
-	ldh [vBallDirX + REAL_FRACTION_PART], a
-	ld a, [hli]
-	ldh [vBallDirX + REAL_INTEGER_PART], a
-	ld a, [hli]
-	ldh [vBallDirY + REAL_FRACTION_PART], a
-	ld a, [hli]
-	ldh [vBallDirY + REAL_INTEGER_PART], a
+    ; update the direction
+    ld a, [hli]
+    ldh [vBallDirX + REAL_FRACTION_PART], a
+    ld a, [hli]
+    ldh [vBallDirX + REAL_INTEGER_PART], a
+    ld a, [hli]
+    ldh [vBallDirY + REAL_FRACTION_PART], a
+    ld a, [hli]
+    ldh [vBallDirY + REAL_INTEGER_PART], a
 endm
 
 ; update the ball direction when it hit a given pad border
 ; a = ball Y relative to the pad Y
 ; \1 = pad index
 macro SetBallDirectionFromBorderCollision
-	cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
-	jr nc, .hit_bottom\@
-	.hit_top\@
+    cp a, (PAD_HEIGHT + BALL_HEIGHT - 1) / 2
+    jr nc, .hit_bottom\@
+    .hit_top\@
 if \1 == LEFT_INDEX
-		Set16 vBallDirX, $FFA6
+        Set16 vBallDirX, $FFA6
 elif \1 == RIGHT_INDEX
-		Set16 vBallDirX, $005A
+        Set16 vBallDirX, $005A
 else
-	assert 0, "Invalid parameter"
+    assert 0, "Invalid parameter"
 endc
-		Set16 vBallDirY, $FFA6
-		jr .pad_border_collision_done\@
-	.hit_bottom\@
+        Set16 vBallDirY, $FFA6
+        jr .pad_border_collision_done\@
+    .hit_bottom\@
 if \1 == LEFT_INDEX
-		Set16 vBallDirX, $FFA6
+        Set16 vBallDirX, $FFA6
 elif \1 == RIGHT_INDEX
-		Set16 vBallDirX, $005A
+        Set16 vBallDirX, $005A
 else
-	assert 0, "Invalid parameter"
+    assert 0, "Invalid parameter"
 endc
-		Set16 vBallDirY, $005A
-	.pad_border_collision_done\@
+        Set16 vBallDirY, $005A
+    .pad_border_collision_done\@
 endm
 
 ; handle collisions that happens when the ball move toward the left
 HandleLeftSideCollisions:
-	; check whether the ball hit the pad
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, OAM_X_OFS + PAD_WIDTH
-	jr nz, .pad_collision
-		GetRelativeBallYToPadY LEFT_INDEX, .pad_collision
-		UpdateBallDirection LEFT_INDEX
-		Sound_Play SOUND_BALL_HIT_PAD
+    ; check whether the ball hit the pad
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, OAM_X_OFS + PAD_WIDTH
+    jr nz, .pad_collision
+        GetRelativeBallYToPadY LEFT_INDEX, .pad_collision
+        UpdateBallDirection LEFT_INDEX
+        Sound_Play SOUND_BALL_HIT_PAD
 
-		; update ball speed
-		call UpdateBallSpeed
+        ; update ball speed
+        call UpdateBallSpeed
 
-		ret
-	.pad_collision
+        ret
+    .pad_collision
 
-	; check whether the ball reached the goal
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, OAM_X_OFS - BALL_WIDTH
-	jr nz, .score_check
-		ld a, 1 << RIGHT_INDEX
-		ldh [vScoreFlag], a
-		ret
-	.score_check
+    ; check whether the ball reached the goal
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, OAM_X_OFS - BALL_WIDTH
+    jr nz, .score_check
+        ld a, 1 << RIGHT_INDEX
+        ldh [vScoreFlag], a
+        ret
+    .score_check
 
-	; check whether the ball collided with the top or bottom of the pad
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, OAM_X_OFS + PAD_WIDTH
-	jr nc, .pad_border_collision
-		GetRelativeBallYToPadY LEFT_INDEX, .pad_border_collision
-		SetBallDirectionFromBorderCollision LEFT_INDEX
-		ret
-	.pad_border_collision
+    ; check whether the ball collided with the top or bottom of the pad
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, OAM_X_OFS + PAD_WIDTH
+    jr nc, .pad_border_collision
+        GetRelativeBallYToPadY LEFT_INDEX, .pad_border_collision
+        SetBallDirectionFromBorderCollision LEFT_INDEX
+        ret
+    .pad_border_collision
 
-	ret
+    ret
 
 ; handle collisions that happens when the ball move toward the right
 HandleRightSideCollisions:
-	; check whether the ball hit the pad
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
-	jr nz, .pad_collision
-		GetRelativeBallYToPadY RIGHT_INDEX, .pad_collision
-		UpdateBallDirection RIGHT_INDEX
-		Sound_Play SOUND_BALL_HIT_PAD
+    ; check whether the ball hit the pad
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH
+    jr nz, .pad_collision
+        GetRelativeBallYToPadY RIGHT_INDEX, .pad_collision
+        UpdateBallDirection RIGHT_INDEX
+        Sound_Play SOUND_BALL_HIT_PAD
 
-		; pick a new target after each pad collision
-		AI_PickNextTarget
+        ; pick a new target after each pad collision
+        AI_PickNextTarget
 
-		; update ball speed
-		call UpdateBallSpeed
+        ; update ball speed
+        call UpdateBallSpeed
 
-		ret
-	.pad_collision
+        ret
+    .pad_collision
 
-	; check whether the ball reached the goal
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, SCRN_X + OAM_X_OFS
-	jr nz, .score_check
-		ld a, 1 << LEFT_INDEX
-		ldh [vScoreFlag], a
-		ret
-	.score_check
+    ; check whether the ball reached the goal
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, SCRN_X + OAM_X_OFS
+    jr nz, .score_check
+        ld a, 1 << LEFT_INDEX
+        ldh [vScoreFlag], a
+        ret
+    .score_check
 
-	; check whether the ball collided with the top or bottom of the pad
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH + 1
-	jr c, .pad_border_collision
-		GetRelativeBallYToPadY RIGHT_INDEX, .pad_border_collision
-		SetBallDirectionFromBorderCollision RIGHT_INDEX
-		ret
-	.pad_border_collision
+    ; check whether the ball collided with the top or bottom of the pad
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    cp a, OAM_X_OFS + SCRN_X - PAD_WIDTH - BALL_WIDTH + 1
+    jr c, .pad_border_collision
+        GetRelativeBallYToPadY RIGHT_INDEX, .pad_border_collision
+        SetBallDirectionFromBorderCollision RIGHT_INDEX
+        ret
+    .pad_border_collision
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateBall:
-	; update ball
-	ldh a, [vBallSpeed]
-	ld c, a
-	.ball_update
-		push bc
+    ; update ball
+    ldh a, [vBallSpeed]
+    ld c, a
+    .ball_update
+        push bc
 
-		; move the ball
-		Add16 vBallX, vBallDirX
-		Add16 vBallY, vBallDirY
+        ; move the ball
+        Add16 vBallX, vBallDirX
+        Add16 vBallY, vBallDirY
 
-		call HandleBallAndWallCollision
+        call HandleBallAndWallCollision
 
-		ldh a, [vBallDirX + REAL_INTEGER_PART]
-		bit 7, a
-		jr z, .ball_goes_right
-		.ball_goes_left
-			call HandleLeftSideCollisions
-			jr .events_done
-		.ball_goes_right
-			call HandleRightSideCollisions
-		.events_done
+        ldh a, [vBallDirX + REAL_INTEGER_PART]
+        bit 7, a
+        jr z, .ball_goes_right
+        .ball_goes_left
+            call HandleLeftSideCollisions
+            jr .events_done
+        .ball_goes_right
+            call HandleRightSideCollisions
+        .events_done
 
-		pop bc
-		dec c
-		jp nz, .ball_update
+        pop bc
+        dec c
+        jp nz, .ball_update
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -488,139 +488,139 @@ UpdateBall:
 ; \2 = first tile id
 ; \3 = second tile id
 macro SetGameOverMessage
-	ld hl, \1
-	ld a, \2
-	ld [hli], a
-	ld a, \3
-	ld [hli], a
+    ld hl, \1
+    ld a, \2
+    ld [hli], a
+    ld a, \3
+    ld [hli], a
 endm
 
 ; handle scoring and game over
 UpdateScore:
-	ldh a, [vScoreFlag]
-	or a
-	ret z
+    ldh a, [vScoreFlag]
+    or a
+    ret z
 
-	cp a, 1 << LEFT_INDEX
-	jr z, .left_score
-	.right_score
-		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_LEFT_GAP_X
-		Set16 vBallY, BALL_INITIAL_POS_Y
-		Set16 vBallDirX, -BALL_INITIAL_DIR_X
-		Set16 vBallDirY, -BALL_INITIAL_DIR_Y
+    cp a, 1 << LEFT_INDEX
+    jr z, .left_score
+    .right_score
+        Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_LEFT_GAP_X
+        Set16 vBallY, BALL_INITIAL_POS_Y
+        Set16 vBallDirX, -BALL_INITIAL_DIR_X
+        Set16 vBallDirY, -BALL_INITIAL_DIR_Y
 
-		ldh a, [vScore + RIGHT_INDEX]
-		inc a
-		ldh [vScore + RIGHT_INDEX], a
-		jr .score_updated
-	.left_score
-		Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
-		Set16 vBallY, BALL_INITIAL_POS_Y
-		Set16 vBallDirX, BALL_INITIAL_DIR_X
-		Set16 vBallDirY, BALL_INITIAL_DIR_Y
+        ldh a, [vScore + RIGHT_INDEX]
+        inc a
+        ldh [vScore + RIGHT_INDEX], a
+        jr .score_updated
+    .left_score
+        Set16 vBallX, BALL_INITIAL_POS_X + BALL_INITIAL_RIGHT_GAP_X
+        Set16 vBallY, BALL_INITIAL_POS_Y
+        Set16 vBallDirX, BALL_INITIAL_DIR_X
+        Set16 vBallDirY, BALL_INITIAL_DIR_Y
 
-		ldh a, [vScore + LEFT_INDEX]
-		inc a
-		ldh [vScore + LEFT_INDEX], a
-	.score_updated
+        ldh a, [vScore + LEFT_INDEX]
+        inc a
+        ldh [vScore + LEFT_INDEX], a
+    .score_updated
 
-	; save the latest score
-	ld e, a
+    ; save the latest score
+    ld e, a
 
-	; reset pads position
-	ld a, PAD_INITIAL_POS_Y
-	ldh [vPadsY + LEFT_INDEX], a
-	ldh [vPadsY + RIGHT_INDEX], a
+    ; reset pads position
+    ld a, PAD_INITIAL_POS_Y
+    ldh [vPadsY + LEFT_INDEX], a
+    ldh [vPadsY + RIGHT_INDEX], a
 
-	; reset ball speed
-	ld a, BALL_INITIAL_SPEED
-	ldh [vBallSpeed], a
-	ld a, BALL_HIT_COUNTER
-	ldh [vBallHitCounter], a
+    ; reset ball speed
+    ld a, BALL_INITIAL_SPEED
+    ldh [vBallSpeed], a
+    ld a, BALL_HIT_COUNTER
+    ldh [vBallHitCounter], a
 
-	; default sound that may be overriden if the game is over
-	Sound_Play SOUND_GOAL
+    ; default sound that may be overriden if the game is over
+    Sound_Play SOUND_GOAL
 
-	; check win condition
-	ld a, e ; restore score
-	cp a, SCORE_MAX
-	jr nz, .win
-		; override the default goal sound
-		Sound_Play SOUND_GAME_OVER
-		halt
+    ; check win condition
+    ld a, e ; restore score
+    cp a, SCORE_MAX
+    jr nz, .win
+        ; override the default goal sound
+        Sound_Play SOUND_GAME_OVER
+        halt
 
-		; set the game over messages
-		ldh a, [vScoreFlag]
-		cp a, 1 << LEFT_INDEX
-		jr z, .left_win
-		.right_win
-			SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_LOSE, TILE_ID_LOSE + 1
-			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_WIN, TILE_ID_WIN + 1
-			jr .win_updated
-		.left_win
-			SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_WIN, TILE_ID_WIN + 1
-			SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_LOSE, TILE_ID_LOSE + 1
-		.win_updated
+        ; set the game over messages
+        ldh a, [vScoreFlag]
+        cp a, 1 << LEFT_INDEX
+        jr z, .left_win
+        .right_win
+            SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_LOSE, TILE_ID_LOSE + 1
+            SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_WIN, TILE_ID_WIN + 1
+            jr .win_updated
+        .left_win
+            SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_WIN, TILE_ID_WIN + 1
+            SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_LOSE, TILE_ID_LOSE + 1
+        .win_updated
 
-		; update score graphics
-		Score_UpdateGraphics
+        ; update score graphics
+        Score_UpdateGraphics
 
-		; wait a bit
-		ld c, GAME_OVER_WAIT_TIME
-		.wait
-			halt
-			dec c
-			jr nz, .wait
+        ; wait a bit
+        ld c, GAME_OVER_WAIT_TIME
+        .wait
+            halt
+            dec c
+            jr nz, .wait
 
-		; clear the game over messages
-		halt
-		SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
-		SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
+        ; clear the game over messages
+        halt
+        SetGameOverMessage GAME_OVER_MESSAGE_TILE_LEFT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
+        SetGameOverMessage GAME_OVER_MESSAGE_TILE_RIGHT, TILE_ID_BACKGROUND, TILE_ID_BACKGROUND
 
-		; reset score for a new game
-		xor a
-		ldh [vScore + LEFT_INDEX], a
-		ldh [vScore + RIGHT_INDEX], a
-	.win
+        ; reset score for a new game
+        xor a
+        ldh [vScore + LEFT_INDEX], a
+        ldh [vScore + RIGHT_INDEX], a
+    .win
 
-	; reset score flag
-	xor a
-	ldh [vScoreFlag], a
+    ; reset score flag
+    xor a
+    ldh [vScoreFlag], a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _Game_Update:
-	call UpdatePlayerPad
-	call UpdateAiPad
-	call UpdateBall
-	call UpdateScore
-	ret
+    call UpdatePlayerPad
+    call UpdateAiPad
+    call UpdateBall
+    call UpdateScore
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; update the game graphics
 ; must be used during vblank
 _Game_UpdateGraphics:
-	; update ball sprite
-	ldh a, [vBallX + REAL_INTEGER_PART]
-	ld [vBallOam + OAMA_X], a
-	ldh a, [vBallY + REAL_INTEGER_PART]
-	ld [vBallOam + OAMA_Y], a
+    ; update ball sprite
+    ldh a, [vBallX + REAL_INTEGER_PART]
+    ld [vBallOam + OAMA_X], a
+    ldh a, [vBallY + REAL_INTEGER_PART]
+    ld [vBallOam + OAMA_Y], a
 
-	; update left pad sprite
-	ldh a, [vPadsY + LEFT_INDEX]
-	ld [vLeftPadTopOam + OAMA_Y], a
-	add a, 8
-	ld [vLeftPadBottomOam + OAMA_Y], a
+    ; update left pad sprite
+    ldh a, [vPadsY + LEFT_INDEX]
+    ld [vLeftPadTopOam + OAMA_Y], a
+    add a, 8
+    ld [vLeftPadBottomOam + OAMA_Y], a
 
-	; update right pad sprite
-	ldh a, [vPadsY + RIGHT_INDEX]
-	ld [vRightPadTopOam + OAMA_Y], a
-	add a, 8
-	ld [vRightPadBottomOam + OAMA_Y], a
+    ; update right pad sprite
+    ldh a, [vPadsY + RIGHT_INDEX]
+    ld [vRightPadTopOam + OAMA_Y], a
+    add a, 8
+    ld [vRightPadBottomOam + OAMA_Y], a
 
-	Score_UpdateGraphics
-	ret
+    Score_UpdateGraphics
+    ret
 

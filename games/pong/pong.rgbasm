@@ -9,81 +9,81 @@ include "sound.rgbinc"
 section "pong", rom0
 
 InitGraphics:
-	; palettes
-	ld a, %11100100
-	ldh [rBGP], a
-	ld a, %00100100
-	ldh [rOBP0], a
-	xor a, $FF
-	ldh [rOBP1], a
+    ; palettes
+    ld a, %11100100
+    ldh [rBGP], a
+    ld a, %00100100
+    ldh [rOBP0], a
+    xor a, $FF
+    ldh [rOBP1], a
 
-	; load the tileset
-	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
+    ; load the tileset
+    CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 
-	; initialize the tilemap
-		; clear the tilemap
-		ClearMemory _SCRN0, (_SCRN1 - _SCRN0) * 2
+    ; initialize the tilemap
+        ; clear the tilemap
+        ClearMemory _SCRN0, (_SCRN1 - _SCRN0) * 2
 
-		; draw the walls
-		ld hl, _SCRN0
-		ld de, _SCRN0 + SCRN_VX_B * (SCRN_Y_B - 1)
-		ld c, SCRN_X_B
-		.walls
-			ld a, TILE_ID_TOP_WALL
-			ld [hli], a
-			ld a, TILE_ID_BOTTOM_WALL
-			ld [de], a
-			inc de
-			dec c
-			jr nz, .walls
+        ; draw the walls
+        ld hl, _SCRN0
+        ld de, _SCRN0 + SCRN_VX_B * (SCRN_Y_B - 1)
+        ld c, SCRN_X_B
+        .walls
+            ld a, TILE_ID_TOP_WALL
+            ld [hli], a
+            ld a, TILE_ID_BOTTOM_WALL
+            ld [de], a
+            inc de
+            dec c
+            jr nz, .walls
 
-		; draw the midline
-		ld hl, _SCRN0 + SCRN_VX_B + (SCRN_X_B / 2) - 1
-		ld de, SCRN_VX_B - 2
-		ld c, SCRN_Y_B - 2
-		.midline
-			ld a, TILE_ID_MIDLINE_LEFT
-			ld [hli], a
-			ld a, TILE_ID_MIDLINE_RIGHT
-			ld [hli], a
-			add hl, de
-			dec c
-			jr nz, .midline
+        ; draw the midline
+        ld hl, _SCRN0 + SCRN_VX_B + (SCRN_X_B / 2) - 1
+        ld de, SCRN_VX_B - 2
+        ld c, SCRN_Y_B - 2
+        .midline
+            ld a, TILE_ID_MIDLINE_LEFT
+            ld [hli], a
+            ld a, TILE_ID_MIDLINE_RIGHT
+            ld [hli], a
+            add hl, de
+            dec c
+            jr nz, .midline
 
-	; initialize the random seed
-	LFSR8_PickSeed
-	ldh [vLfsrValue], a
+    ; initialize the random seed
+    LFSR8_PickSeed
+    ldh [vLfsrValue], a
 
-	ret
+    ret
 
 Initialize:
-	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
-	ClearMemory _HRAM, HRAM_USAGE
-	OamHideAll
+    ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
+    ClearMemory _HRAM, HRAM_USAGE
+    OamHideAll
 
-	PadInput_Initialize vPadInput
-	call InitGraphics
+    PadInput_Initialize vPadInput
+    call InitGraphics
 
-	Sound_Initialize
-	Game_Initialize
-	Score_Initialize
-	AI_Initialize
+    Sound_Initialize
+    Game_Initialize
+    Score_Initialize
+    AI_Initialize
 
-	copy [rIE], IEF_VBLANK
-	ei
+    copy [rIE], IEF_VBLANK
+    ei
 
-	copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ8 | LCDCF_BGON
+    copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ8 | LCDCF_BGON
 
-	ret
+    ret
 
 Update:
-	; vblank
-	halt
-	Game_UpdateGraphics
+    ; vblank
+    halt
+    Game_UpdateGraphics
 
-	; logic
-	PadInput_Update vPadInput
-	Game_Update
+    ; logic
+    PadInput_Update vPadInput
+    Game_Update
 
-	ret
+    ret
 

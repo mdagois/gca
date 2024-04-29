@@ -11,38 +11,38 @@ include "window.rgbinc"
 section "minesweep", rom0
 
 Initialize:
-	ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
-	ClearMemory _HRAM, HRAM_USAGE
-	ClearMemory _RAM, RAM_USAGE
+    ClearMemory _OAMRAM, OAM_COUNT * sizeof_OAM_ATTRS
+    ClearMemory _HRAM, HRAM_USAGE
+    ClearMemory _RAM, RAM_USAGE
 
-	ld a, %11100100
-	ldh [rBGP], a
-	ldh [rOBP0], a
-	xor a, $FF
-	ldh [rOBP1], a
+    ld a, %11100100
+    ldh [rBGP], a
+    ldh [rOBP0], a
+    xor a, $FF
+    ldh [rOBP1], a
 
-	CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
+    CopyMemory _VRAM8000, tile_data_start, tile_data_end - tile_data_start
 
-	Board_Initialize
-	Counter_Initialize
-	Cursor_Initialize
-	GameState_Initialize
-	PadInput_Initialize vPadInput
-	Window_Initialize
-	Sound_Initialize
+    Board_Initialize
+    Counter_Initialize
+    Cursor_Initialize
+    GameState_Initialize
+    PadInput_Initialize vPadInput
+    Window_Initialize
+    Sound_Initialize
 
-	GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
-	Window_Show TILE_WINDOW_TITLE_WELCOME
+    GameState_SetFuncId GAMESTATE_FUNC_ID_WAIT_FOR_NEW_GAME
+    Window_Show TILE_WINDOW_TITLE_WELCOME
 
-	copy [rIE], IEF_VBLANK
-	ei
+    copy [rIE], IEF_VBLANK
+    ei
 
-	copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
+    copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_BGON
 
-	ret
+    ret
 
 Update:
-	PadInput_Update vPadInput
-	GameState_CallFunc
-	ret
+    PadInput_Update vPadInput
+    GameState_CallFunc
+    ret
 

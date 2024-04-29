@@ -3,10 +3,10 @@ include "utils.rgbinc"
 section "sample", rom0
 
 InitSample:
-	ret
+    ret
 
 UpdateSample:
-	ret
+    ret
 
 export InitSample, UpdateSample
 

@@ -9,67 +9,70 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	ld a, 1
-	ld [WRAM_IS_VBLANK], a
-	pop af
-	reti
+    push af
+    ld a, 1
+    ld [WRAM_IS_VBLANK], a
+    pop af
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Timer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "timer_interrupt", rom0[$0050]
-	jp TimerInterrupt
+    jp TimerInterrupt
 
 section "timer", rom0
 
 macro StartTimer
-	ld a, 256 - 5
-	ld [rTMA], a
-	ld [rTIMA], a
-	ld [rDIV], a
-	copy [rTAC], TACF_START | TACF_16KHZ
+    ld a, 256 - 5
+    ld [rTMA], a
+    ld [rTIMA], a
+    ld [rDIV], a
+    copy [rTAC], TACF_START | TACF_16KHZ
 endm
 
 macro StopTimer
-	copy [rTAC], TACF_STOP
+    copy [rTAC], TACF_STOP
 endm
 
 TimerInterrupt:
-	PushAllRegisters
+    PushAllRegisters
 
-	StopTimer
+    StopTimer
 
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS
-	CallHL
+    load16 hl, WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS
+    CallHL
 
-	PopAllRegisters
-	reti
+    PopAllRegisters
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Serial
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "serial_interrupt", rom0[$0058]
-	jp SerialInterrupt
+    jp SerialInterrupt
 
 section "serial", rom0
 
 SerialInterrupt:
-	PushAllRegisters
+    PushAllRegisters
 
-	; These instructions are only meaningful on the last byte of each packet.
-	; However, it is convenient to just execute the instructions each time a byte is received as trying to
-	; detect the last byte of a packet is more work.
-	; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS should only be used between packets.
-	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
-	copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS], [rSB]
+    ; These instructions are only meaningful on the last byte of each packet.
+    ; However, it is convenient to just execute the instructions each time a
+    ; byte is received as trying to detect the last byte of a packet is more
+    ; work.
+    ; The values of PRINT_STATE_RESPONSE_ACK and PRINT_STATE_RESPONSE_STATUS
+    ; should only be used between packets.
+    copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK], \
+         [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+    copy [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS], [rSB]
 
-	StartTimer
+    StartTimer
 
-	PopAllRegisters
-	reti
+    PopAllRegisters
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Protocol
@@ -79,61 +82,61 @@ SerialInterrupt:
 ; printer flags
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def PRINTER_STATUS_BIT_LOW_BATTERY		equ (7)
-def PRINTER_STATUS_BIT_OTHER_ERROR		equ (6)
-def PRINTER_STATUS_BIT_PAPER_JAM		equ (5)
-def PRINTER_STATUS_BIT_PACKET_ERROR		equ (4)
-def PRINTER_STATUS_BIT_READY_TO_PRINT	equ (3)
-def PRINTER_STATUS_BIT_DATA_FULL		equ (2)
-def PRINTER_STATUS_BIT_PRINTING			equ (1)
-def PRINTER_STATUS_BIT_CHECKSUM_ERROR	equ (0)
+def PRINTER_STATUS_BIT_LOW_BATTERY      equ (7)
+def PRINTER_STATUS_BIT_OTHER_ERROR      equ (6)
+def PRINTER_STATUS_BIT_PAPER_JAM        equ (5)
+def PRINTER_STATUS_BIT_PKT_ERROR        equ (4)
+def PRINTER_STATUS_BIT_READY_TO_PRINT   equ (3)
+def PRINTER_STATUS_BIT_DATA_FULL        equ (2)
+def PRINTER_STATUS_BIT_PRINTING         equ (1)
+def PRINTER_STATUS_BIT_CHECKSUM_ERROR   equ (0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; packet constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def PACKET_MAGIC_0						equ ($88)
-def PACKET_MAGIC_1						equ ($33)
+def PKT_MAGIC_0                      equ ($88)
+def PKT_MAGIC_1                      equ ($33)
 
-def PACKET_TYPE_INIT					equ ($01)
-def PACKET_TYPE_PRINT					equ ($02)
-def PACKET_TYPE_DATA					equ ($04)
-def PACKET_TYPE_STATUS					equ ($0F)
+def PKT_TYPE_INIT                    equ ($01)
+def PKT_TYPE_PRINT                   equ ($02)
+def PKT_TYPE_DATA                    equ ($04)
+def PKT_TYPE_STATUS                  equ ($0F)
 
-def PACKET_COMPRESSION_OFF				equ ($00)
-def PACKET_COMPRESSION_ON				equ ($01)
+def PKT_COMPRESSION_OFF              equ ($00)
+def PKT_COMPRESSION_ON               equ ($01)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; result codes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-def RESULT_SUCCESS						rb 1
-def RESULT_ERROR_01						rb 1
-def RESULT_ERROR_02						rb 1
-def RESULT_ERROR_03						rb 1
-def RESULT_ERROR_04						rb 1
-def RESULT_IN_PROGRESS					rb 1
-def RESULTS_COUNT						rb 0
+def RESULT_SUCCESS                      rb 1
+def RESULT_ERROR_01                     rb 1
+def RESULT_ERROR_02                     rb 1
+def RESULT_ERROR_03                     rb 1
+def RESULT_ERROR_04                     rb 1
+def RESULT_IN_PROGRESS                  rb 1
+def RESULTS_COUNT                       rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; print state
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def NULL_POINTER						equ ($0000)
+def NULL_POINTER                        equ ($0000)
 
 rsreset
-def PRINT_STATE_FUNCTION_ADDRESS		rb 2
+def PRINT_STATE_FUNCTION_ADDRESS        rb 2
 
-def PRINT_STATE_DATA_POINTER_NEXT_BYTE	rb 2
-def PRINT_STATE_DATA_POINTER_LAST_BYTE	rb 2
+def PRINT_STATE_DATA_POINTER_NEXT_BYTE  rb 2
+def PRINT_STATE_DATA_POINTER_LAST_BYTE  rb 2
 
-def PRINT_STATE_RESPONSE_ACK			rb 1
-def PRINT_STATE_RESPONSE_STATUS			rb 1
+def PRINT_STATE_RESPONSE_ACK            rb 1
+def PRINT_STATE_RESPONSE_STATUS         rb 1
 
-def PRINT_STATE_TRANSFER_RESULT			rb 1
+def PRINT_STATE_TRANSFER_RESULT         rb 1
 
-def sizeof_PRINT_STATE					rb 0
+def sizeof_PRINT_STATE                  rb 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; packet definitions
@@ -148,41 +151,43 @@ section "protocol", rom0
 ; create a simple packet definition with no payload
 ; \1 = packet type
 macro FixedPacket
-db PACKET_MAGIC_0, PACKET_MAGIC_1, \1, PACKET_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
+db PKT_MAGIC_0, PKT_MAGIC_1, \1, PKT_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
 endm
 
 packet_init:
-	FixedPacket PACKET_TYPE_INIT
+    FixedPacket PKT_TYPE_INIT
 packet_init_end:
 
 packet_data_sentinel:
-	FixedPacket PACKET_TYPE_DATA
+    FixedPacket PKT_TYPE_DATA
 packet_data_sentinel_end:
 
 packet_status:
-	FixedPacket PACKET_TYPE_STATUS
+    FixedPacket PKT_TYPE_STATUS
 packet_status_end:
 
 ;;;;;;;;;;;;;;;;;;;;
 ; print packet
 ;;;;;;;;;;;;;;;;;;;;
 
-def PACKET_PRINT_PAYLOAD_SIZE			equ ($0004)
-def PACKET_PRINT_SHEET_COUNT			equ ($01)
-def PACKET_PRINT_FEEDS					equ ($14)
-def PACKET_PRINT_PALETTE				equ ($1B)
-def PACKET_PRINT_DENSITY				equ ($40)
-def PACKET_PRINT_CHECKSUM				equ (PACKET_TYPE_PRINT + PACKET_PRINT_PAYLOAD_SIZE + PACKET_PRINT_SHEET_COUNT + PACKET_PRINT_FEEDS + PACKET_PRINT_PALETTE + PACKET_PRINT_DENSITY)
+def PKT_PRINT_PAYLOAD_SIZE equ ($0004)
+def PKT_PRINT_SHEET_COUNT  equ ($01)
+def PKT_PRINT_FEEDS        equ ($14)
+def PKT_PRINT_PALETTE      equ ($1B)
+def PKT_PRINT_DENSITY      equ ($40)
+def PKT_PRINT_CHECKSUM     equ (PKT_TYPE_PRINT + PKT_PRINT_PAYLOAD_SIZE + \
+                                PKT_PRINT_SHEET_COUNT + PKT_PRINT_FEEDS + \
+                                PKT_PRINT_PALETTE + PKT_PRINT_DENSITY)
 
 packet_print:
-db PACKET_MAGIC_0, PACKET_MAGIC_1
-db PACKET_TYPE_PRINT, PACKET_COMPRESSION_OFF
-dw PACKET_PRINT_PAYLOAD_SIZE
-db PACKET_PRINT_SHEET_COUNT
-db PACKET_PRINT_FEEDS
-db PACKET_PRINT_PALETTE
-db PACKET_PRINT_DENSITY
-dw PACKET_PRINT_CHECKSUM
+db PKT_MAGIC_0, PKT_MAGIC_1
+db PKT_TYPE_PRINT, PKT_COMPRESSION_OFF
+dw PKT_PRINT_PAYLOAD_SIZE
+db PKT_PRINT_SHEET_COUNT
+db PKT_PRINT_FEEDS
+db PKT_PRINT_PALETTE
+db PKT_PRINT_DENSITY
+dw PKT_PRINT_CHECKSUM
 db $00, $00
 packet_print_end:
 
@@ -201,131 +206,133 @@ packet_data_end:
 ; set the parameters of the next packet to be sent
 ; \1 = send function address, \2 = data start, \3 = data end
 macro PrepareNextPacket
-	ld hl, \1
-	store16 WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS, hl
-	ld hl, \2
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
-	ld hl, \3
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE, hl
+    ld hl, \1
+    store16 WRAM_PRINT_STATE + PRINT_STATE_FUNCTION_ADDRESS, hl
+    ld hl, \2
+    store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
+    ld hl, \3
+    store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE, hl
 endm
 
 ; perform tasks common to all packets
 macro SendPacketByte_Common
-	; send a byte
-	load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE
-	copy [rSB], [hl]
-	copy [rSC], SCF_START | SCF_SOURCE
+    ; send a byte
+    load16 hl, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE
+    copy [rSB], [hl]
+    copy [rSC], SCF_START | SCF_SOURCE
 
-	; update the data pointer to point to the next byte to send
-	inc hl
-	store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
+    ; update the data pointer to point to the next byte to send
+    inc hl
+    store16 WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_NEXT_BYTE, hl
 
-	; check whether all the data for the packet has been sent
-	; and return if that is not the case
-	load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE
-	ld a, e
-	cp a, l
-	ret nz
-	ld a, h
-	cp a, d
-	ret nz
+    ; check whether all the data for the packet has been sent
+    ; and return if that is not the case
+    load16 de, WRAM_PRINT_STATE + PRINT_STATE_DATA_POINTER_LAST_BYTE
+    ld a, e
+    cp a, l
+    ret nz
+    ld a, h
+    cp a, d
+    ret nz
 
-	; all the packet data has been sent
+    ; all the packet data has been sent
 endm
 
 ; set the error code and return when an error is detected
 ; this must only be used between packets, as it relies and PRINT_STATE_RESPONSE_ACK
 ; and PRINT_STATE_RESPONSE_STATUS which are only valid between packets.
 macro CheckForErrors
-	.check_not_connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK]
-		cp a, $FF
-		jr nz, .connected
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
-		cp a, $FF
-		jr nz, .connected
+    .check_not_connected
+        ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_ACK]
+        cp a, $FF
+        jr nz, .connected
+        ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+        cp a, $FF
+        jr nz, .connected
 
-		; not connected
-		copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_02
-		ret
+        ; not connected
+        copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_02
+        ret
 
-	.connected
+    .connected
 
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+    ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
 
-	.check_low_battery
-		bit PRINTER_STATUS_BIT_LOW_BATTERY, a
-		jr z, .low_battery
-			; low battery
-			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_01
-			ret
-		.low_battery
+    .check_low_battery
+        bit PRINTER_STATUS_BIT_LOW_BATTERY, a
+        jr z, .low_battery
+            ; low battery
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_01
+            ret
+        .low_battery
 
-	.check_paper_jam
-		bit PRINTER_STATUS_BIT_PAPER_JAM, a
-		jr z, .paper_jam
-			; paper jam
-			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_03
-			ret
-		.paper_jam
+    .check_paper_jam
+        bit PRINTER_STATUS_BIT_PAPER_JAM, a
+        jr z, .paper_jam
+            ; paper jam
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_03
+            ret
+        .paper_jam
 
-	.check_other_error ; catch all
-		and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | (1 << PRINTER_STATUS_BIT_PACKET_ERROR) | (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
-		jr z, .other_error
-			; other error
-			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_04
-			ret
-		.other_error
+    .check_other_error ; catch all
+        and a, (1 << PRINTER_STATUS_BIT_CHECKSUM_ERROR) | \
+               (1 << PRINTER_STATUS_BIT_PKT_ERROR) | \
+               (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
+        jr z, .other_error
+            ; other error
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_04
+            ret
+        .other_error
 endm
 
 SendPacketByte_Init:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_CheckConnection, NULL_POINTER, NULL_POINTER
-	ret
+    SendPacketByte_Common
+    PrepareNextPacket SendPacketByte_CheckConnection, NULL_POINTER, NULL_POINTER
+    ret
 
 SendPacketByte_CheckConnection:
-	CheckForErrors
+    CheckForErrors
 
-	; no error
-	PrepareNextPacket SendPacketByte_Data, packet_data, packet_data_end
-	StartTimer
-	ret
+    ; no error
+    PrepareNextPacket SendPacketByte_Data, packet_data, packet_data_end
+    StartTimer
+    ret
 
 SendPacketByte_Print:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
-	ret
+    SendPacketByte_Common
+    PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
+    ret
 
 SendPacketByte_Data:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_DataEnd, packet_data_sentinel, packet_data_sentinel_end
-	ret
+    SendPacketByte_Common
+    PrepareNextPacket SendPacketByte_DataEnd, packet_data_sentinel, packet_data_sentinel_end
+    ret
 
 SendPacketByte_DataEnd:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_Print, packet_print, packet_print_end
-	ret
+    SendPacketByte_Common
+    PrepareNextPacket SendPacketByte_Print, packet_print, packet_print_end
+    ret
 
 SendPacketByte_Status:
-	SendPacketByte_Common
-	PrepareNextPacket SendPacketByte_CheckStatus, NULL_POINTER, NULL_POINTER
-	ret
+    SendPacketByte_Common
+    PrepareNextPacket SendPacketByte_CheckStatus, NULL_POINTER, NULL_POINTER
+    ret
 
 SendPacketByte_CheckStatus:
-	CheckForErrors
+    CheckForErrors
 
-	; no error, check whether printing is over
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
-	bit PRINTER_STATUS_BIT_PRINTING, a
-	jr nz, .success
-		copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_SUCCESS
-		ret
-	.success
+    ; no error, check whether printing is over
+    ld a, [WRAM_PRINT_STATE + PRINT_STATE_RESPONSE_STATUS]
+    bit PRINTER_STATUS_BIT_PRINTING, a
+    jr nz, .success
+        copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_SUCCESS
+        ret
+    .success
 
-	; printing not over, send another status packet
-	PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
-	StartTimer
-	ret
+    ; printing not over, send another status packet
+    PrepareNextPacket SendPacketByte_Status, packet_status, packet_status_end
+    StartTimer
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Memory
@@ -333,14 +340,14 @@ SendPacketByte_CheckStatus:
 
 rsset _RAM
 
-def WRAM_IS_VBLANK					rb 1
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-def WRAM_PRINT_STATE				rb sizeof_PRINT_STATE
+def WRAM_IS_VBLANK                  rb 1
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
+def WRAM_PRINT_STATE                rb sizeof_PRINT_STATE
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -348,29 +355,29 @@ assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 ; Graphics
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 section "graphics_data", rom0[GRAPHICS_DATA_ADDRESS_START]
@@ -386,87 +393,87 @@ section "sample", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 InitSample:
-	; init the WRAM state
-	ClearMemory _RAM, WRAM_END
-	InitPadInput WRAM_PAD_INPUT
+    ; init the WRAM state
+    ClearMemory _RAM, WRAM_END
+    InitPadInput WRAM_PAD_INPUT
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK | IEF_TIMER | IEF_SERIAL
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK | IEF_TIMER | IEF_SERIAL
+    ei
 
-	; init graphics
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	StopTimer
-	ret
+    StopTimer
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_INDEX_BLANK					equ (64)
-def TILE_INDEX_SELECTOR					equ (94)
-def OPTION_SELECT_FIRST_TILE_ADDRESS	equ (_SCRN0 + 3 * SCRN_VX_B + 1)
+def TILE_INDEX_BLANK                    equ (64)
+def TILE_INDEX_SELECTOR                 equ (94)
+def OPTION_SELECT_FIRST_TILE_ADDRESS    equ (_SCRN0 + 3 * SCRN_VX_B + 1)
 
 UpdateSample:
-	ld hl, WRAM_IS_VBLANK
-	xor a
-	.wait_vblank
-		halt
-		cp a, [hl]
-		jr z, .wait_vblank
-		ld [hl], a
+    ld hl, WRAM_IS_VBLANK
+    xor a
+    .wait_vblank
+        halt
+        cp a, [hl]
+        jr z, .wait_vblank
+        ld [hl], a
 
-	; go through all the menu items and position
-	; the cursor in front of the correct one
-	ld hl, OPTION_SELECT_FIRST_TILE_ADDRESS
-	ld de, SCRN_VX_B * 2
-	ld c, RESULTS_COUNT
-	.set_tiles
-		; compute the iteration number
-		ld a, RESULTS_COUNT
-		sub a, c
-		ld b, a
+    ; go through all the menu items and position
+    ; the cursor in front of the correct one
+    ld hl, OPTION_SELECT_FIRST_TILE_ADDRESS
+    ld de, SCRN_VX_B * 2
+    ld c, RESULTS_COUNT
+    .set_tiles
+        ; compute the iteration number
+        ld a, RESULTS_COUNT
+        sub a, c
+        ld b, a
 
-		; compare the iteration number to the current result
-		; to display the cursor in front of the correct item
-		ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
-		cp a, b
-		jr nz, .selected
-			ld a, TILE_INDEX_SELECTOR
-			jr .selected_done
-		.selected
-			ld a, TILE_INDEX_BLANK
-		.selected_done
-		ld [hl], a
+        ; compare the iteration number to the current result
+        ; to display the cursor in front of the correct item
+        ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
+        cp a, b
+        jr nz, .selected
+            ld a, TILE_INDEX_SELECTOR
+            jr .selected_done
+        .selected
+            ld a, TILE_INDEX_BLANK
+        .selected_done
+        ld [hl], a
 
-		; go to the next tile
-		add hl, de
+        ; go to the next tile
+        add hl, de
 
-		dec c
-		jr nz, .set_tiles
+        dec c
+        jr nz, .set_tiles
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	; only accept input when no printing is occurring
-	ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
-	cp a, RESULT_IN_PROGRESS
-	jr z, .accept_input
-		TestPadInput_Released WRAM_PAD_INPUT, PADF_A
-		jr nz, .start_printing
-			copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_IN_PROGRESS
+    ; only accept input when no printing is occurring
+    ld a, [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT]
+    cp a, RESULT_IN_PROGRESS
+    jr z, .accept_input
+        TestPadInput_Released WRAM_PAD_INPUT, PADF_A
+        jr nz, .start_printing
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_IN_PROGRESS
 
-			; start the packet transfer sequence
-			PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
-			StartTimer
-		.start_printing
-	.accept_input
+            ; start the packet transfer sequence
+            PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
+            StartTimer
+        .start_printing
+    .accept_input
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

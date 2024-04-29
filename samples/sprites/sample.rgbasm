@@ -3,33 +3,33 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (2)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (2)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,56 +37,57 @@ endm
 section "sample", rom0
 
 InitSample:
-	; init the palettes
-	ld a, %11100100
-	ld [rBGP], a
-	ld [rOBP0], a
-	ld a, %00011011
-	ld [rOBP1], a
+    ; init the palettes
+    ld a, %11100100
+    ld [rBGP], a
+    ld [rOBP0], a
+    ld a, %00011011
+    ld [rOBP1], a
 
-	; init graphics data
-	LoadGraphicsDataIntoVRAM
+    ; init graphics data
+    LoadGraphicsDataIntoVRAM
 
-	; enable the vblank interrupt
-	ld a, IEF_VBLANK
-	ld [rIE], a
-	ei
+    ; enable the vblank interrupt
+    ld a, IEF_VBLANK
+    ld [rIE], a
+    ei
 
-	; place the window at the bottom of the LCD
-	ld a, 7
-	ld [rWX], a
-	ld a, 120
-	ld [rWY], a
+    ; place the window at the bottom of the LCD
+    ld a, 7
+    ld [rWX], a
+    ld a, 120
+    ld [rWY], a
 
-	; set the graphics parameters and turn back LCD on
-	ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
-	ld [rLCDC], a
+    ; set the graphics parameters and turn back LCD on
+    ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8800 | \
+          LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON
+    ld [rLCDC], a
 
-	ret
+    ret
 
 UpdateSample:
-	halt
+    halt
 
-	; set the background position
-	xor a
-	ld [rSCX], a
-	ld [rSCY], a
+    ; set the background position
+    xor a
+    ld [rSCX], a
+    ld [rSCY], a
 
-	; set the first sprite
+    ; set the first sprite
 def SPRITE_0_ADDRESS equ (_OAMRAM)
-	copy [SPRITE_0_ADDRESS + OAMA_X], 16
-	copy [SPRITE_0_ADDRESS + OAMA_Y], 32
-	copy [SPRITE_0_ADDRESS + OAMA_TILEID], 16
-	copy [SPRITE_0_ADDRESS + OAMA_FLAGS], OAMF_PAL0
+    copy [SPRITE_0_ADDRESS + OAMA_X], 16
+    copy [SPRITE_0_ADDRESS + OAMA_Y], 32
+    copy [SPRITE_0_ADDRESS + OAMA_TILEID], 16
+    copy [SPRITE_0_ADDRESS + OAMA_FLAGS], OAMF_PAL0
 
-	; set the second sprite
+    ; set the second sprite
 def SPRITE_1_ADDRESS equ (_OAMRAM + sizeof_OAM_ATTRS)
-	copy [SPRITE_1_ADDRESS + OAMA_Y], 80
-	copy [SPRITE_1_ADDRESS + OAMA_X], 80
-	copy [SPRITE_1_ADDRESS + OAMA_TILEID], 0
-	copy [SPRITE_1_ADDRESS + OAMA_FLAGS], OAMF_PAL0 | OAMF_XFLIP
+    copy [SPRITE_1_ADDRESS + OAMA_Y], 80
+    copy [SPRITE_1_ADDRESS + OAMA_X], 80
+    copy [SPRITE_1_ADDRESS + OAMA_TILEID], 0
+    copy [SPRITE_1_ADDRESS + OAMA_FLAGS], OAMF_PAL0 | OAMF_XFLIP
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

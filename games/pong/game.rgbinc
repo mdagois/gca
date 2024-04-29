@@ -8,18 +8,18 @@ def GAME_RGBINC equ 1
 
 ; initialize the score
 macro Game_Initialize
-	call _Game_Initialize
+    call _Game_Initialize
 endm
 
 ; update the game
 macro Game_Update
-	call _Game_Update
+    call _Game_Update
 endm
 
 ; update the game graphics
 ; must be used during vblank
 macro Game_UpdateGraphics
-	call _Game_UpdateGraphics
+    call _Game_UpdateGraphics
 endm
 
 endc

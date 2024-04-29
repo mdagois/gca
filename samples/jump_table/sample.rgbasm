@@ -2,138 +2,138 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsset _RAM
 
-def WRAM_PAD_INPUT					rb sizeof_PAD_INPUT
-def WRAM_FUNC_INDEX					rb 1
+def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
+def WRAM_FUNC_INDEX                 rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "sample", rom0
 
 InitSample:
-	; init the WRAM state
-	InitPadInput WRAM_PAD_INPUT
-	xor a
-	ld [WRAM_FUNC_INDEX], a
+    ; init the WRAM state
+    InitPadInput WRAM_PAD_INPUT
+    xor a
+    ld [WRAM_FUNC_INDEX], a
 
-	; init graphics
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def DISPLAY_ROW					equ (1)
-def DISPLAY_COLUMN				equ (1)
-def VRAM_DISPLAY_START			equ (_SCRN0 + SCRN_VX_B * DISPLAY_ROW + DISPLAY_COLUMN)
-def TILE_INDEX_SPACE			equ (64)
-def TILE_INDEX_A				equ (97)
+def DISPLAY_ROW                 equ (1)
+def DISPLAY_COLUMN              equ (1)
+def VRAM_DISPLAY_START          equ (_SCRN0 + SCRN_VX_B * DISPLAY_ROW + DISPLAY_COLUMN)
+def TILE_INDEX_SPACE            equ (64)
+def TILE_INDEX_A                equ (97)
 
 Update_0:
-	ld hl, VRAM_DISPLAY_START
-	ld a, TILE_INDEX_A + 25
-	ld [hli], a
-	ld a, TILE_INDEX_A + 4
-	ld [hli], a
-	ld a, TILE_INDEX_A + 17
-	ld [hli], a
-	ld a, TILE_INDEX_A + 14
-	ld [hli], a
-	ld a, TILE_INDEX_SPACE
-	ld [hli], a
-	ret
+    ld hl, VRAM_DISPLAY_START
+    ld a, TILE_INDEX_A + 25
+    ld [hli], a
+    ld a, TILE_INDEX_A + 4
+    ld [hli], a
+    ld a, TILE_INDEX_A + 17
+    ld [hli], a
+    ld a, TILE_INDEX_A + 14
+    ld [hli], a
+    ld a, TILE_INDEX_SPACE
+    ld [hli], a
+    ret
 
 Update_1:
-	ld hl, VRAM_DISPLAY_START
-	ld a, TILE_INDEX_A + 14
-	ld [hli], a
-	ld a, TILE_INDEX_A + 13
-	ld [hli], a
-	ld a, TILE_INDEX_A + 4
-	ld [hli], a
-	ld a, TILE_INDEX_SPACE
-	ld [hli], a
-	ld a, TILE_INDEX_SPACE
-	ld [hli], a
-	ret
+    ld hl, VRAM_DISPLAY_START
+    ld a, TILE_INDEX_A + 14
+    ld [hli], a
+    ld a, TILE_INDEX_A + 13
+    ld [hli], a
+    ld a, TILE_INDEX_A + 4
+    ld [hli], a
+    ld a, TILE_INDEX_SPACE
+    ld [hli], a
+    ld a, TILE_INDEX_SPACE
+    ld [hli], a
+    ret
 
 Update_2:
-	ld hl, VRAM_DISPLAY_START
-	ld a, TILE_INDEX_A + 19
-	ld [hli], a
-	ld a, TILE_INDEX_A + 22
-	ld [hli], a
-	ld a, TILE_INDEX_A + 14
-	ld [hli], a
-	ld a, TILE_INDEX_SPACE
-	ld [hli], a
-	ld a, TILE_INDEX_SPACE
-	ld [hli], a
-	ret
+    ld hl, VRAM_DISPLAY_START
+    ld a, TILE_INDEX_A + 19
+    ld [hli], a
+    ld a, TILE_INDEX_A + 22
+    ld [hli], a
+    ld a, TILE_INDEX_A + 14
+    ld [hli], a
+    ld a, TILE_INDEX_SPACE
+    ld [hli], a
+    ld a, TILE_INDEX_SPACE
+    ld [hli], a
+    ret
 
 Update_3:
-	ld hl, VRAM_DISPLAY_START
-	ld a, TILE_INDEX_A + 19
-	ld [hli], a
-	ld a, TILE_INDEX_A + 7
-	ld [hli], a
-	ld a, TILE_INDEX_A + 17
-	ld [hli], a
-	ld a, TILE_INDEX_A + 4
-	ld [hli], a
-	ld a, TILE_INDEX_A + 4
-	ld [hli], a
-	ret
+    ld hl, VRAM_DISPLAY_START
+    ld a, TILE_INDEX_A + 19
+    ld [hli], a
+    ld a, TILE_INDEX_A + 7
+    ld [hli], a
+    ld a, TILE_INDEX_A + 17
+    ld [hli], a
+    ld a, TILE_INDEX_A + 4
+    ld [hli], a
+    ld a, TILE_INDEX_A + 4
+    ld [hli], a
+    ret
 
 UpdateFuncTable:
 dw Update_0
@@ -142,44 +142,44 @@ dw Update_2
 dw Update_3
 
 UpdateSample:
-	halt
+    halt
 
-	; compute a pointer to the address of the function
-	; pointer = table address + (index * 2)
-	ld a, [WRAM_FUNC_INDEX]
-	ld d, 0
-	ld e, a
-	ld hl, UpdateFuncTable
-	add hl, de
-	add hl, de
+    ; compute a pointer to the address of the function
+    ; pointer = table address + (index * 2)
+    ld a, [WRAM_FUNC_INDEX]
+    ld d, 0
+    ld e, a
+    ld hl, UpdateFuncTable
+    add hl, de
+    add hl, de
 
-	; unpack the function address and call it
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
-	CallHL
+    ; unpack the function address and call it
+    ld a, [hli]
+    ld h, [hl]
+    ld l, a
+    CallHL
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	UpdatePadInput WRAM_PAD_INPUT
+    UpdatePadInput WRAM_PAD_INPUT
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
-	jr nz, .up
-		ld a, [WRAM_FUNC_INDEX]
-		inc a
-		and a, $03
-		ld [WRAM_FUNC_INDEX], a
-	.up
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_UP
+    jr nz, .up
+        ld a, [WRAM_FUNC_INDEX]
+        inc a
+        and a, $03
+        ld [WRAM_FUNC_INDEX], a
+    .up
 
-	TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
-	jr nz, .down
-		ld a, [WRAM_FUNC_INDEX]
-		dec a
-		and a, $03
-		ld [WRAM_FUNC_INDEX], a
-	.down
+    TestPadInput_Pressed WRAM_PAD_INPUT, PADF_DOWN
+    jr nz, .down
+        ld a, [WRAM_FUNC_INDEX]
+        dec a
+        and a, $03
+        ld [WRAM_FUNC_INDEX], a
+    .down
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 

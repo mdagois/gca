@@ -3,7 +3,7 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	reti
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -30,73 +30,73 @@ tilemap_parameters_end:
 section "sample", rom0
 
 InitSample:
-	; copy all the bg palettes
-	copy [rBCPS], 0 | BCPSF_AUTOINC
-	ld hl, palette_data
-	ld c, palette_data_end - palette_data
-	.palette_copy
-		copy [rBCPD], [hli]
-		dec c
-		jr nz, .palette_copy
+    ; copy all the bg palettes
+    copy [rBCPS], 0 | BCPSF_AUTOINC
+    ld hl, palette_data
+    ld c, palette_data_end - palette_data
+    .palette_copy
+        copy [rBCPD], [hli]
+        dec c
+        jr nz, .palette_copy
 
-	; copy the tileset
-	ld de, _VRAM8000
-	ld hl, tileset
-	.tileset_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tileset
+    ld de, _VRAM8000
+    ld hl, tileset
+    .tileset_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tileset_end)
-		jr nz, .tileset_copy
-		ld a, h
-		cp a, high(tileset_end)
-		jr nz, .tileset_copy
+        ld a, l
+        cp a, low(tileset_end)
+        jr nz, .tileset_copy
+        ld a, h
+        cp a, high(tileset_end)
+        jr nz, .tileset_copy
 
-	; copy the tile indices into VRAM bank 0
-	copy [rVBK], 0
-	ld de, _SCRN0
-	ld hl, tilemap_indices
-	.tilemap_indices_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tile indices into VRAM bank 0
+    copy [rVBK], 0
+    ld de, _SCRN0
+    ld hl, tilemap_indices
+    .tilemap_indices_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tilemap_indices_end)
-		jr nz, .tilemap_indices_copy
-		ld a, h
-		cp a, high(tilemap_indices_end)
-		jr nz, .tilemap_indices_copy
+        ld a, l
+        cp a, low(tilemap_indices_end)
+        jr nz, .tilemap_indices_copy
+        ld a, h
+        cp a, high(tilemap_indices_end)
+        jr nz, .tilemap_indices_copy
 
-	; copy the tile parameters into VRAM bank 1
-	copy [rVBK], 1
-	ld de, _SCRN0
-	ld hl, tilemap_parameters
-	.tilemap_parameters_copy
-		copy [de], [hli]
-		inc de
+    ; copy the tile parameters into VRAM bank 1
+    copy [rVBK], 1
+    ld de, _SCRN0
+    ld hl, tilemap_parameters
+    .tilemap_parameters_copy
+        copy [de], [hli]
+        inc de
 
-		ld a, l
-		cp a, low(tilemap_parameters_end)
-		jr nz, .tilemap_parameters_copy
-		ld a, h
-		cp a, high(tilemap_parameters_end)
-		jr nz, .tilemap_parameters_copy
+        ld a, l
+        cp a, low(tilemap_parameters_end)
+        jr nz, .tilemap_parameters_copy
+        ld a, h
+        cp a, high(tilemap_parameters_end)
+        jr nz, .tilemap_parameters_copy
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK
+    ei
 
-	; set LCD parameters
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
+    ; set LCD parameters
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_BGON
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	halt
-	ret
+    halt
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

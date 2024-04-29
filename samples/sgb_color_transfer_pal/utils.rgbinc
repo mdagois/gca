@@ -9,13 +9,13 @@ include "hardware.rgbinc"
 ; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def HARDWARE_MODEL_REGISTER		equ (_HRAM)
+def HARDWARE_MODEL_REGISTER     equ (_HRAM)
 
-def HARDWARE_MODEL_DMG			equ (1)
-def HARDWARE_MODEL_SGB			equ (2)
+def HARDWARE_MODEL_DMG          equ (1)
+def HARDWARE_MODEL_SGB          equ (2)
 
-def BYTES_PER_TILE				equ (16)
-def TILES_PER_BLOCK				equ (128)
+def BYTES_PER_TILE              equ (16)
+def TILES_PER_BLOCK             equ (128)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Macro-instructions
@@ -24,8 +24,8 @@ def TILES_PER_BLOCK				equ (128)
 ; copy \2 into \1 through (a)
 ; example: copy [$FF84], 10
 macro copy
-	ld a, \2
-	ld \1, a
+    ld a, \2
+    ld \1, a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,17 +36,17 @@ endm
 ; \1 = start address
 ; \2 = size
 macro ClearMemory
-	assert \2 > 0, "Clear size must be superior to zero"
-	ld hl, \1
-	.clear\@
-		xor a
-		ld [hli], a
-		ld a, low((\1) + (\2))
-		cp a, l
-		jr nz, .clear\@
-		ld a, high((\1) + (\2))
-		cp a, h
-		jr nz, .clear\@
+    assert \2 > 0, "Clear size must be superior to zero"
+    ld hl, \1
+    .clear\@
+        xor a
+        ld [hli], a
+        ld a, low((\1) + (\2))
+        cp a, l
+        jr nz, .clear\@
+        ld a, high((\1) + (\2))
+        cp a, h
+        jr nz, .clear\@
 endm
 
 ; copy memory from one address to another
@@ -54,20 +54,20 @@ endm
 ; \2 = source
 ; \3 = size
 macro CopyMemory
-	assert (\1 < \2) || (\1 >= \2 + \3), "Invalid memory range overlap"
-	ld hl, \1
-	ld de, \2
-	.copy\@
-		ld a, [de]
-		ld [hli], a
-		inc de
+    assert (\1 < \2) || (\1 >= \2 + \3), "Invalid memory range overlap"
+    ld hl, \1
+    ld de, \2
+    .copy\@
+        ld a, [de]
+        ld [hli], a
+        inc de
 
-		ld a, low((\1) + (\3))
-		cp a, l
-		jr nz, .copy\@
-		ld a, high((\1) + (\3))
-		cp a, h
-		jr nz, .copy\@
+        ld a, low((\1) + (\3))
+        cp a, l
+        jr nz, .copy\@
+        ld a, high((\1) + (\3))
+        cp a, h
+        jr nz, .copy\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -76,97 +76,97 @@ endm
 
 ; struct to hold the pad input (dpad + buttons)
 rsreset
-def PAD_INPUT_CURRENT	rb 1
-def PAD_INPUT_PREVIOUS	rb 1
-def PAD_INPUT_PRESSED	rb 1
-def PAD_INPUT_RELEASED	rb 1
-def sizeof_PAD_INPUT	rb 0
+def PAD_INPUT_CURRENT   rb 1
+def PAD_INPUT_PREVIOUS  rb 1
+def PAD_INPUT_PRESSED   rb 1
+def PAD_INPUT_RELEASED  rb 1
+def sizeof_PAD_INPUT    rb 0
 
 ; init a pad input struct at address \1
 ; expected to be used only once at initialization
 ; example: InitPadInput _RAM + 16
 macro InitPadInput
-	ld a, $FF
-	ld [\1 + PAD_INPUT_CURRENT], a
-	ld [\1 + PAD_INPUT_PREVIOUS], a
-	ld [\1 + PAD_INPUT_PRESSED], a
-	ld [\1 + PAD_INPUT_RELEASED], a
+    ld a, $FF
+    ld [\1 + PAD_INPUT_CURRENT], a
+    ld [\1 + PAD_INPUT_PREVIOUS], a
+    ld [\1 + PAD_INPUT_PRESSED], a
+    ld [\1 + PAD_INPUT_RELEASED], a
 endm
 
 ; read the keypad input into a pad input struct at address \1
 ; expected to be used only once in the main loop
 ; example: UpdatePadInput _HRAM + 4
 macro UpdatePadInput
-	; store the previous input into the struct and (c)
-	ld a, [\1 + PAD_INPUT_CURRENT]
-	ld [\1 + PAD_INPUT_PREVIOUS], a
-	ld c, a
+    ; store the previous input into the struct and (c)
+    ld a, [\1 + PAD_INPUT_CURRENT]
+    ld [\1 + PAD_INPUT_PREVIOUS], a
+    ld c, a
 
-	; read the dpad
-	ld a, P1F_GET_DPAD
-	ldh [rP1], a
-	ldh a, [rP1]
-	ldh a, [rP1]
+    ; read the dpad
+    ld a, P1F_GET_DPAD
+    ldh [rP1], a
+    ldh a, [rP1]
+    ldh a, [rP1]
 
-	; put the dpad input into (b)'s high nibble
-	swap a
-	and a, $F0
-	ld b, a
+    ; put the dpad input into (b)'s high nibble
+    swap a
+    and a, $F0
+    ld b, a
 
-	; read the buttons
-	ld a, P1F_GET_BTN
-	ldh [rP1], a
-	ldh a, [rP1]
-	ldh a, [rP1]
-	ldh a, [rP1]
-	ldh a, [rP1]
-	ldh a, [rP1]
-	ldh a, [rP1]
+    ; read the buttons
+    ld a, P1F_GET_BTN
+    ldh [rP1], a
+    ldh a, [rP1]
+    ldh a, [rP1]
+    ldh a, [rP1]
+    ldh a, [rP1]
+    ldh a, [rP1]
+    ldh a, [rP1]
 
-	; merge the buttons' input into (b)'s low nibble
-	and a, $0F
-	or a, b
-	ld b, a
+    ; merge the buttons' input into (b)'s low nibble
+    and a, $0F
+    or a, b
+    ld b, a
 
-	; store the current input
-	ld [\1 + PAD_INPUT_CURRENT], a
+    ; store the current input
+    ld [\1 + PAD_INPUT_CURRENT], a
 
-	; disable input polling
-	ld a, P1F_GET_NONE
-	ldh [rP1], a
+    ; disable input polling
+    ld a, P1F_GET_NONE
+    ldh [rP1], a
 
-	; compute and store pressed buttons
-	ld a, c
-	cpl
-	or a, b
-	ld [\1 + PAD_INPUT_PRESSED], a
+    ; compute and store pressed buttons
+    ld a, c
+    cpl
+    or a, b
+    ld [\1 + PAD_INPUT_PRESSED], a
 
-	; compute and store released buttons
-	ld a, b
-	cpl
-	or a, c
-	ld [\1 + PAD_INPUT_RELEASED], a
+    ; compute and store released buttons
+    ld a, b
+    cpl
+    or a, c
+    ld [\1 + PAD_INPUT_RELEASED], a
 endm
 
 ; raise the zero flag if all keys in \2 are held in the pad input struct \1
 ; example: TestPadInput_HeldAll _RAM + 4, PADF_LEFT | PADF_DOWN
 macro TestPadInput_HeldAll
-	ld a, [\1 + PAD_INPUT_CURRENT]
-	and a, \2
+    ld a, [\1 + PAD_INPUT_CURRENT]
+    and a, \2
 endm
 
 ; raise the zero flag if input \2 is pressed in the pad input struct \1
 ; example: TestPadInput_Pressed _HRAM + 12, PADF_LEFT
 macro TestPadInput_Pressed
-	ld a, [\1 + PAD_INPUT_PRESSED]
-	and a, \2
+    ld a, [\1 + PAD_INPUT_PRESSED]
+    and a, \2
 endm
 
 ; raise the zero flag if input \2 is released in the pad input struct \1
 ; example: TestPadInput_Released _RAM + 24, PADF_A
 macro TestPadInput_Released
-	ld a, [\1 + PAD_INPUT_RELEASED]
-	and a, \2
+    ld a, [\1 + PAD_INPUT_RELEASED]
+    and a, \2
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

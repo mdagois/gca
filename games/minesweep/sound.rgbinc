@@ -7,34 +7,34 @@ def SOUND_RGBINC equ 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rsreset
-def SOUND_OPEN_WINDOW		rb 1
-def SOUND_CLOSE_WINDOW		rb 1
-def SOUND_UNCOVER_TILE		rb 1
-def SOUND_PUT_FLAG			rb 1
-def SOUND_REMOVE_FLAG		rb 1
-def SOUND_LOSE				rb 1
-def SOUND_WIN				rb 1
-def SOUNDS_COUNT			rb 0
+def SOUND_OPEN_WINDOW       rb 1
+def SOUND_CLOSE_WINDOW      rb 1
+def SOUND_UNCOVER_TILE      rb 1
+def SOUND_PUT_FLAG          rb 1
+def SOUND_REMOVE_FLAG       rb 1
+def SOUND_LOSE              rb 1
+def SOUND_WIN               rb 1
+def SOUNDS_COUNT            rb 0
 
 ; initialize sound
 macro Sound_Initialize
-	call _Sound_Initialize
+    call _Sound_Initialize
 endm
 
 ; play preset sound \1
 macro Sound_Play
-	push af
-	ld a, \1
-	call _Sound_Play
-	pop af
+    push af
+    ld a, \1
+    call _Sound_Play
+    pop af
 endm
 
 ; update the sound system
 ; must be called during vblank
 macro Sound_Update
-	PushAllRegisters
-	call _Sound_Update
-	PopAllRegisters
+    PushAllRegisters
+    call _Sound_Update
+    PopAllRegisters
 endm
 
 endc

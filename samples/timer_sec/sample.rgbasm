@@ -3,73 +3,73 @@ include "utils.rgbinc"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section "vblank_interrupt", rom0[$0040]
-	push af
-	ld a, 1
-	ld [WRAM_IS_VBLANK], a
-	pop af
-	reti
+    push af
+    ld a, 1
+    ld [WRAM_IS_VBLANK], a
+    pop af
+    reti
 
 section "timer_interrupt", rom0[$0050]
 timer_interrupt:
-	push af
-	push hl
+    push af
+    push hl
 
-	ld hl, WRAM_TIMER_SCALER
-	dec [hl]
-	jr nz, .update_seconds
-		ld hl, WRAM_SECONDS
-		inc [hl]
-		copy [WRAM_TIMER_SCALER], TIMER_SCALING
-	.update_seconds
+    ld hl, WRAM_TIMER_SCALER
+    dec [hl]
+    jr nz, .update_seconds
+        ld hl, WRAM_SECONDS
+        inc [hl]
+        copy [WRAM_TIMER_SCALER], TIMER_SCALING
+    .update_seconds
 
-	pop hl
-	pop af
-	reti
+    pop hl
+    pop af
+    reti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TILE_UI_NUMBER_0				equ (80)
+def TILE_UI_NUMBER_0                equ (80)
 
-def TILES_COUNT						equ (384)
-def BYTES_PER_TILE					equ (16)
-def TILES_BYTE_SIZE					equ (TILES_COUNT * BYTES_PER_TILE)
+def TILES_COUNT                     equ (384)
+def BYTES_PER_TILE                  equ (16)
+def TILES_BYTE_SIZE                 equ (TILES_COUNT * BYTES_PER_TILE)
 
-def TILEMAPS_COUNT					equ (1)
-def BYTES_PER_TILEMAP				equ (1024)
-def TILEMAPS_BYTE_SIZE				equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
+def TILEMAPS_COUNT                  equ (1)
+def BYTES_PER_TILEMAP               equ (1024)
+def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
-def GRAPHICS_DATA_SIZE				equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
-def GRAPHICS_DATA_ADDRESS_END		equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START		equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
+def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
+def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
-	ld de, GRAPHICS_DATA_ADDRESS_START
-	ld hl, _VRAM8000
-	.load_tile\@
-		ld a, [de]
-		inc de
-		ld [hli], a
-		ld a, d
-		cp a, high(GRAPHICS_DATA_ADDRESS_END)
-		jr nz, .load_tile\@
+    ld de, GRAPHICS_DATA_ADDRESS_START
+    ld hl, _VRAM8000
+    .load_tile\@
+        ld a, [de]
+        inc de
+        ld [hli], a
+        ld a, d
+        cp a, high(GRAPHICS_DATA_ADDRESS_END)
+        jr nz, .load_tile\@
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-def TIMER_SCALING					equ (16)
+def TIMER_SCALING                   equ (16)
 
 rsset _RAM
 
-def WRAM_IS_VBLANK					rb 1
+def WRAM_IS_VBLANK                  rb 1
 
-def WRAM_SECONDS					rb 1
-def WRAM_TIMER_SCALER				rb 1
+def WRAM_SECONDS                    rb 1
+def WRAM_TIMER_SCALER               rb 1
 
-def WRAM_END						rb 0
+def WRAM_END                        rb 0
 
 ; sanity checks
-def WRAM_USAGE						equ (WRAM_END - _RAM)
+def WRAM_USAGE                      equ (WRAM_END - _RAM)
 println "WRAM usage: {d:WRAM_USAGE} bytes"
 assert WRAM_USAGE <= $2000, "Too many bytes used in WRAM"
 
@@ -79,11 +79,11 @@ section "sample", rom0
 
 ; convert (a) from hexadecimal to a tile index
 macro HexToTileA
-	ld h, 0
-	ld l, a
-	ld de, HexToTileTable
-	add hl, de
-	ld a, [hl]
+    ld h, 0
+    ld l, a
+    ld de, HexToTileTable
+    add hl, de
+    ld a, [hl]
 endm
 
 HexToTileTable:
@@ -94,62 +94,62 @@ db $63, $64, $65, $66
 
 ; \1 = line, \2 = offset x
 macro DisplayRegisterA
-	push af
-	swap a
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
-	pop af
-	and a, $0F
-	HexToTileA
-	ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
+    push af
+    swap a
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 0], a
+    pop af
+    and a, $0F
+    HexToTileA
+    ld [_SCRN0 + SCRN_VX_B * \1 + \2 + 1], a
 endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 InitSample:
-	; init the WRAM state
-	xor a
-	ld [WRAM_IS_VBLANK], a
-	ld [WRAM_SECONDS], a
-	copy [WRAM_TIMER_SCALER], TIMER_SCALING
+    ; init the WRAM state
+    xor a
+    ld [WRAM_IS_VBLANK], a
+    ld [WRAM_SECONDS], a
+    copy [WRAM_TIMER_SCALER], TIMER_SCALING
 
-	; enable interrupts
-	copy [rIE], IEF_VBLANK | IEF_TIMER
-	ei
+    ; enable interrupts
+    copy [rIE], IEF_VBLANK | IEF_TIMER
+    ei
 
-	; init graphics
-	copy [rBGP], %11100100
-	LoadGraphicsDataIntoVRAM
+    ; init graphics
+    copy [rBGP], %11100100
+    LoadGraphicsDataIntoVRAM
 
-	; set the graphics parameters and turn back LCD on
-	copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ; set the graphics parameters and turn back LCD on
+    copy [rLCDC], LCDCF_ON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
 
-	; set and start the timer
-	xor a
-	ld [rTMA], a
-	ld [rTIMA], a
-	ld [rDIV], a
-	ld a, TACF_START | TACF_4KHZ
-	ld [rTAC], a
+    ; set and start the timer
+    xor a
+    ld [rTMA], a
+    ld [rTIMA], a
+    ld [rDIV], a
+    ld a, TACF_START | TACF_4KHZ
+    ld [rTAC], a
 
-	ret
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 UpdateSample:
-	ld hl, WRAM_IS_VBLANK
-	xor a
-	.wait_vblank
-		halt
-		cp a, [hl]
-		jr z, .wait_vblank
-		ld [hl], a
+    ld hl, WRAM_IS_VBLANK
+    xor a
+    .wait_vblank
+        halt
+        cp a, [hl]
+        jr z, .wait_vblank
+        ld [hl], a
 
-	ld a, [WRAM_SECONDS]
-	DisplayRegisterA 3, 12
+    ld a, [WRAM_SECONDS]
+    DisplayRegisterA 3, 12
 
-	ret
+    ret
 
 export InitSample, UpdateSample
 
