@@ -9,7 +9,8 @@ section "data", rom0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 tile_data_start:
-incbin "res/tiles.chr"
+incbin "res/tiles.dmg-sp.chr"
+incbin "res/tiles.dmg-bg.chr"
 tile_data_end:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
