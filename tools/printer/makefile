@@ -2,7 +2,7 @@ projects = printer
 configurations = debug release
 default_target = all
 
-build_directory = build_test
+build_directory = build
 
 debug_description = build with debug features and extra checks enabled
 release_description = deliverable build
