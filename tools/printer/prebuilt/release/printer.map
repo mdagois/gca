@@ -1,0 +1,173 @@
+SUMMARY:
+	ROM0: 2820 bytes used / 29948 free
+
+ROM0 bank #0:
+	SECTION: $0000-$0022 ($0023 bytes) ["interrupt_handlers"]
+	         $0000 = LcdInterrupt
+	         $000b = TimerInterrupt
+	         $0017 = SerialInterrupt
+	SECTION: $0023-$0035 ($0013 bytes) ["main"]
+	         $0023 = main
+	         $0023 = main.wait_vblank_u1
+	         $0031 = main.loop
+	EMPTY: $0036-$003f ($000a bytes)
+	SECTION: $0040-$0047 ($0008 bytes) ["vblank_interrupt"]
+	SECTION: $0048-$004a ($0003 bytes) ["lcd_interrupt"]
+	EMPTY: $004b-$004f ($0005 bytes)
+	SECTION: $0050-$0052 ($0003 bytes) ["timer_interrupt"]
+	EMPTY: $0053-$0057 ($0005 bytes)
+	SECTION: $0058-$005a ($0003 bytes) ["serial_interrupt"]
+	SECTION: $005b-$00fe ($00a4 bytes) ["printer_initialize"]
+	         $005b = PrinterInitialize
+	         $0079 = PrinterInitialize.clear_u1
+	         $0088 = PrinterInitialize.clear_u2
+	         $0097 = PrinterInitialize.clear_u3
+	         $00bd = PrinterInitialize.set_line
+	EMPTY: $00ff-$00ff ($0001 byte)
+	SECTION: $0100-$014f ($0050 bytes) ["header"]
+	         $0100 = entrypoint
+	SECTION: $0150-$0ac5 ($0976 bytes) ["protocol"]
+	         $0150 = ProtocolInitialize
+	         $016e = DmgColors
+	         $0176 = RefreshPalette
+	         $01e1 = ProcessChunks
+	         $01fe = ProcessChunks.decompress_chunk_u1
+	         $0203 = ProcessChunks.repeat_byte_u1
+	         $0221 = ProcessChunks.copy_single_byte_u1
+	         $0228 = ProcessChunks.raw_bytes_u1
+	         $0242 = ProcessChunks.copy_raw_bytes_u1
+	         $0248 = ProcessChunks.byte_decompression_done_u1
+	         $0256 = ProcessChunks.chunk_decompression_done_u1
+	         $025e = ProcessChunks.copy_all_blocks_u1
+	         $0260 = ProcessChunks.copy_single_block_u1
+	         $026a = ProcessChunks.skip_chunk_decompression_u1
+	         $0287 = ProcessChunks.decompress_chunk_u2
+	         $028c = ProcessChunks.repeat_byte_u2
+	         $02aa = ProcessChunks.copy_single_byte_u2
+	         $02b1 = ProcessChunks.raw_bytes_u2
+	         $02cb = ProcessChunks.copy_raw_bytes_u2
+	         $02d1 = ProcessChunks.byte_decompression_done_u2
+	         $02df = ProcessChunks.chunk_decompression_done_u2
+	         $02e7 = ProcessChunks.copy_all_blocks_u2
+	         $02e9 = ProcessChunks.copy_single_block_u2
+	         $02f3 = ProcessChunks.skip_chunk_decompression_u2
+	         $0310 = ProcessChunks.decompress_chunk_u3
+	         $0315 = ProcessChunks.repeat_byte_u3
+	         $0333 = ProcessChunks.copy_single_byte_u3
+	         $033a = ProcessChunks.raw_bytes_u3
+	         $0354 = ProcessChunks.copy_raw_bytes_u3
+	         $035a = ProcessChunks.byte_decompression_done_u3
+	         $0368 = ProcessChunks.chunk_decompression_done_u3
+	         $0370 = ProcessChunks.copy_all_blocks_u3
+	         $0372 = ProcessChunks.copy_single_block_u3
+	         $037c = ProcessChunks.skip_chunk_decompression_u3
+	         $0399 = ProcessChunks.decompress_chunk_u4
+	         $039e = ProcessChunks.repeat_byte_u4
+	         $03bc = ProcessChunks.copy_single_byte_u4
+	         $03c3 = ProcessChunks.raw_bytes_u4
+	         $03dd = ProcessChunks.copy_raw_bytes_u4
+	         $03e3 = ProcessChunks.byte_decompression_done_u4
+	         $03f1 = ProcessChunks.chunk_decompression_done_u4
+	         $03f9 = ProcessChunks.copy_all_blocks_u4
+	         $03fb = ProcessChunks.copy_single_block_u4
+	         $0405 = ProcessChunks.skip_chunk_decompression_u4
+	         $0422 = ProcessChunks.decompress_chunk_u5
+	         $0427 = ProcessChunks.repeat_byte_u5
+	         $0445 = ProcessChunks.copy_single_byte_u5
+	         $044c = ProcessChunks.raw_bytes_u5
+	         $0466 = ProcessChunks.copy_raw_bytes_u5
+	         $046c = ProcessChunks.byte_decompression_done_u5
+	         $047a = ProcessChunks.chunk_decompression_done_u5
+	         $0482 = ProcessChunks.copy_all_blocks_u5
+	         $0484 = ProcessChunks.copy_single_block_u5
+	         $048e = ProcessChunks.skip_chunk_decompression_u5
+	         $04ab = ProcessChunks.decompress_chunk_u6
+	         $04b0 = ProcessChunks.repeat_byte_u6
+	         $04ce = ProcessChunks.copy_single_byte_u6
+	         $04d5 = ProcessChunks.raw_bytes_u6
+	         $04ef = ProcessChunks.copy_raw_bytes_u6
+	         $04f5 = ProcessChunks.byte_decompression_done_u6
+	         $0503 = ProcessChunks.chunk_decompression_done_u6
+	         $050b = ProcessChunks.copy_all_blocks_u6
+	         $050d = ProcessChunks.copy_single_block_u6
+	         $0517 = ProcessChunks.skip_chunk_decompression_u6
+	         $0534 = ProcessChunks.decompress_chunk_u7
+	         $0539 = ProcessChunks.repeat_byte_u7
+	         $0557 = ProcessChunks.copy_single_byte_u7
+	         $055e = ProcessChunks.raw_bytes_u7
+	         $0578 = ProcessChunks.copy_raw_bytes_u7
+	         $057e = ProcessChunks.byte_decompression_done_u7
+	         $058c = ProcessChunks.chunk_decompression_done_u7
+	         $0594 = ProcessChunks.copy_all_blocks_u7
+	         $0596 = ProcessChunks.copy_single_block_u7
+	         $05a0 = ProcessChunks.skip_chunk_decompression_u7
+	         $05bd = ProcessChunks.decompress_chunk_u8
+	         $05c2 = ProcessChunks.repeat_byte_u8
+	         $05e0 = ProcessChunks.copy_single_byte_u8
+	         $05e7 = ProcessChunks.raw_bytes_u8
+	         $0601 = ProcessChunks.copy_raw_bytes_u8
+	         $0607 = ProcessChunks.byte_decompression_done_u8
+	         $0615 = ProcessChunks.chunk_decompression_done_u8
+	         $061d = ProcessChunks.copy_all_blocks_u8
+	         $061f = ProcessChunks.copy_single_block_u8
+	         $0629 = ProcessChunks.skip_chunk_decompression_u8
+	         $0646 = ProcessChunks.decompress_chunk_u9
+	         $064b = ProcessChunks.repeat_byte_u9
+	         $0669 = ProcessChunks.copy_single_byte_u9
+	         $0670 = ProcessChunks.raw_bytes_u9
+	         $068a = ProcessChunks.copy_raw_bytes_u9
+	         $0690 = ProcessChunks.byte_decompression_done_u9
+	         $069e = ProcessChunks.chunk_decompression_done_u9
+	         $06a6 = ProcessChunks.copy_all_blocks_u9
+	         $06a8 = ProcessChunks.copy_single_block_u9
+	         $06b2 = ProcessChunks.skip_chunk_decompression_u9
+	         $06bc = ProcessChunks.compute_data_size
+	         $06d3 = ProcessChunks.has_chunk
+	         $06db = GenerateUserTriggeredErrors
+	         $06e9 = GenerateUserTriggeredErrors.low_battery
+	         $06f2 = GenerateUserTriggeredErrors.other_error
+	         $06fb = GenerateUserTriggeredErrors.paper_jam
+	         $0704 = GenerateUserTriggeredErrors.packet_error
+	         $0705 = ProtocolUpdate
+	         $0719 = TransferTiles
+	         $072d = TransferTiles.vram_transfer
+	         $0761 = ClearUnusedTiles
+	         $0773 = ClearUnusedTiles.clear_tiles
+	         $0782 = ClearUnusedTiles.vram_clear
+	         $079b = ClearUnusedTiles.clearing_over
+	         $07a8 = ProtocolUpdateVblank
+	         $07bf = Reset
+	         $07e7 = ProtocolCheckTimeout
+	         $07fb = ProtocolCheckTimeout.reset
+	         $07fc = ProcessFunctionTable
+	         $0814 = ProtocolHandlePacketByte
+	         $082c = ChunkPropertyAddresses
+	         $0840 = ChunkAddresses
+	         $0852 = ProcessMagicByte0
+	         $0868 = ProcessMagicByte1
+	         $0879 = ProcessHeaderPacketType
+	         $08a3 = ProcessHeaderPacketType.type_init
+	         $08aa = ProcessHeaderPacketType.type_print
+	         $08b1 = ProcessHeaderPacketType.type_data
+	         $08b7 = ProcessHeaderPacketType.type_break
+	         $08bd = ProcessHeaderPacketType.packet_type_done
+	         $08bd = ProcessHeaderPacketType.type_nul
+	         $08c7 = ProcessHeaderDataCompression
+	         $08fe = ProcessHeaderDataSizeLSB
+	         $0935 = ProcessHeaderDataSizeMSB
+	         $0989 = ProcessHeaderDataSizeMSB.has_data
+	         $099d = ProcessHeaderDataSizeMSB.packet_data
+	         $09a7 = ProcessHeaderDataSizeMSB.packet_print
+	         $09ad = ProcessPacketData
+	         $0a24 = ProcessPacketPrint
+	         $0a70 = ProcessPacketChecksumLSB
+	         $0a7f = ProcessPacketChecksumLSB.no_error
+	         $0a89 = ProcessPacketChecksumMSB
+	         $0a98 = ProcessPacketChecksumMSB.no_error
+	         $0aa3 = ProcessPacketAck
+	         $0abc = ProcessPacketStatus
+	SECTION: $0ac6-$0b18 ($0053 bytes) ["printer_update"]
+	         $0ac6 = PrinterUpdate
+	         $0aca = PrinterUpdate.wait_vblank
+	EMPTY: $0b19-$7fff ($74e7 bytes)
+	TOTAL EMPTY: $74fc bytes
