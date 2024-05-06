@@ -1,6 +1,24 @@
 # Game Boy Coding Adventure
 
-Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+This is the companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+
+
+
+
+
+TODO Link to prebuilt samples + link to how to build them
+TODO Link to prebuilt assets + link to how to build them
+TODO License 
+    • [Armando Montero](https://opengameart.org/users/armm1998)
+    • [Evan Amos](https://commons.wikimedia.org/wiki/User:Evan-Amos)
+    • [GX310](https://gx310.itch.io)
+    • [Oceans Dream](https://oceansdream.itch.io)
+    • [Patrick](https://opengameart.org/users/patvanmackelberg)
+    • [Sebastian Riedel](https://opengameart.org/users/ba%C5%9Dto)
+    • GNU make
+TODO Conversion tool prebuilt + how to build them + new built tool
+TODO Printer emulator
+TODO Games
 
 ## Samples
 

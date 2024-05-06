@@ -2,7 +2,7 @@ echo off
 Setlocal enabledelayedexpansion
 
 set SOURCE_DIR=samples
-set ROMS_DIR=generated\roms
+set ROMS_DIR=prebuilt\roms
 
 set /a success = 0
 set /a error = 0

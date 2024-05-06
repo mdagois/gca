@@ -7,7 +7,7 @@ cd "%~dp0"
 
 set BIN_DIR=bin\
 set ASSETS_DIR=assets\
-set GENERATED_DIR=generated\
+set GENERATED_DIR=prebuilt\assets\
 
 set ATR_EXTENSION=atr
 set CHR_EXTENSION=chr

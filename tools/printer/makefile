@@ -24,5 +24,5 @@ printer_sources = $(wildcard src/*.rgbasm)
 
 ########################################
 
-include gbbs.mk
+include ../gbbs.mk
 

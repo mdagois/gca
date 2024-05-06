@@ -78,7 +78,7 @@ build_directory = build
 
 release_description = deliverable build
 
-compile_options = -Werror -Weverything -Hl
+compile_options = -Werror -Weverything
 fix_options = --validate
 
 launch_options = --watch
@@ -384,5 +384,5 @@ window_fix_options = --pad-value 0
 
 ########################################
 
-include games/common/gbbs.mk
+include tools/gbbs.mk
 
