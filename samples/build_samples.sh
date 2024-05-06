@@ -3,8 +3,8 @@
 FULL_PATH=$(realpath "$0")
 BASE_DIR=$(dirname $FULL_PATH)
 
-SAMPLE_DIR=samples
-ROMS_DIR=$(realpath generated/roms)
+SAMPLE_DIR=./
+ROMS_DIR=$(realpath ../prebuilt/roms)
 
 echo ROMS: $ROMS_DIR
 

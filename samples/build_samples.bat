@@ -1,8 +1,8 @@
 echo off
 Setlocal enabledelayedexpansion
 
-set SOURCE_DIR=samples
-set ROMS_DIR=prebuilt\roms
+set SOURCE_DIR=.\
+set ROMS_DIR=..\prebuilt\roms
 
 set /a success = 0
 set /a error = 0

@@ -5,9 +5,9 @@ cd "%~dp0"
 :: Common
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set BIN_DIR=bin\
-set ASSETS_DIR=assets\
-set GENERATED_DIR=prebuilt\assets\
+set BIN_DIR=..\bin\
+set ASSETS_DIR=.\
+set GENERATED_DIR=..\prebuilt\assets\
 
 set ATR_EXTENSION=atr
 set CHR_EXTENSION=chr
