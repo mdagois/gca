@@ -1,21 +1,23 @@
 # Game Boy Coding Adventure
 
-This is the companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
 
+## License
 
+Most of the content in the repository is licensed under the CC0 1.0 Universal license, available [here](LICENSE.txt).
+This includes the [samples](samples), the [games](games), and the [tools](tools).
 
+However, there are two exceptions.
+First, the copy of GNU make, available [here](bin/make.exe), is licensed under the GPLv3+.
+Second, the vast majority of the [assets](assets) are from [Oceans Dream](https://oceansdream.itch.io)'s [Nostalgia Base Pack](https://oceansdream.itch.io/nostalgia-pack).
+You cannot use the assets in your own project without buying the pack first.
+Some of the assets from the pack were modified to match the purpose of the samples.
+There are assets from other sources as well.
+They all belong to the public domain and were authored by [Armando Montero](https://opengameart.org/users/armm1998), [GX310](https://gx310.itch.io), [Patrick](https://opengameart.org/users/patvanmackelberg), and [Sebastian Riedel](https://opengameart.org/users/ba%C5%9Dto).
 
 
 TODO Link to prebuilt samples + link to how to build them
 TODO Link to prebuilt assets + link to how to build them
-TODO License 
-    • [Armando Montero](https://opengameart.org/users/armm1998)
-    • [Evan Amos](https://commons.wikimedia.org/wiki/User:Evan-Amos)
-    • [GX310](https://gx310.itch.io)
-    • [Oceans Dream](https://oceansdream.itch.io)
-    • [Patrick](https://opengameart.org/users/patvanmackelberg)
-    • [Sebastian Riedel](https://opengameart.org/users/ba%C5%9Dto)
-    • GNU make
 TODO Conversion tool prebuilt + how to build them + new built tool
 TODO Printer emulator
 TODO Games
