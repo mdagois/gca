@@ -1,6 +1,9 @@
 # Game Boy Coding Adventure
 
-Companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+This is the companion repository for the book [**Game Boy Coding Adventure**](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+It contains all the samples and conversion tools presented in the book, as well as some fully commented games.
+The repository provides prebuilt ROMs for samples and games, so that it is possible to try them without setting up the necessary toolchain.
+Instructions to build the ROMs and tools, and to convert the assets are also provided.
 
 ## License
 
@@ -15,16 +18,65 @@ Some of the assets from the pack were modified to match the purpose of the sampl
 There are assets from other sources as well.
 They all belong to the public domain and were authored by [Armando Montero](https://opengameart.org/users/armm1998), [GX310](https://gx310.itch.io), [Patrick](https://opengameart.org/users/patvanmackelberg), and [Sebastian Riedel](https://opengameart.org/users/ba%C5%9Dto).
 
-
-TODO Link to prebuilt samples + link to how to build them
-TODO Link to prebuilt assets + link to how to build them
-TODO Conversion tool prebuilt + how to build them + new built tool
-TODO Printer emulator
-TODO Games
-
 ## Samples
 
-All the code samples referenced in the book are available in the [samples](samples) folder.
+The source code of all samples is available in the [samples](samples) folder.
+Prebuilt ROMs are available in the [prebuilt/roms](prebuilt/roms) folder.
+The steps to build the ROMs from source code are available in [samples/README.md](samples/README.md).
+
+## Assets
+
+The source assets for all the graphical resources used in the samples are available in the [assets](assets) folder.
+Pre-converted assets are available in the [prebuilt/assets](prebuilt/assets) folder.
+Copies of those pre-converted assets are already in the sample folders, so it is not necessary to convert them.
+The steps to convert the assets into graphical resources are available in [assets/README.md](assets/README.md).
+
+## Tools
+
+The source code for all the custom tools created for the purpose of this book is available in the [tools](tools) folder.
+Please check the [documentation](tools/README.md) in the folder for more details.
+Prebuilt Windows conversion tools, as well as a copy of GNU make, are available in the [bin](bin) directory.
+
+## Games
+
+The source code and prebuilt ROMs for the games are available in the [games](games) folder.
+Check the [documentation](games/README.md) to learn more.
+
+## Contributing
+
+If you wish to contribute fixes, tools, or games to the repository, please do a pull request.
+Contact the support at support@codingadventures.xyz for any question related to contributions.
+
+## Support
+
+Please report any repository issues [here](https://github.com/mdagois/gca/issues).
+For other topics, please contact the support at support@codingadventures.xyz.
+
+
+
+
+
+
+
+
+The [tools/conv](tools/conv) folder contains all the code for the conversion tools.
+
+The [tools/printer](tools/printer) folder contains the code for the printer simulator.
+
+The [color picker](tools/color_picker.html) is a simple HTML tool to convert RGB888 color to BGR555.
+
+The [tools/gbbs.mk](tools/gbbs.mk) file is a complete build system from the [GB tools](https://github.com/mdagois/gbtools) repository.
+It is used to build the samples, the printer simulator, and the games in the repository.
+It handles dependencies, multiple projects and much more.
+Check it out to manage complex projects.
+
+TODO Games
+TODO Contributing
+
+
+
+
+
 
 ### Building the samples
 
@@ -213,28 +265,6 @@ For other operating systems, it is necessary to rebuild the conversion tools and
 
 ## Printer Simulator
 
-The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) directory.
+The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) folder.
 Check the [README](tools/printer/README.md) file there to know more about the simulator.
-
-## Games
-
-Simple games are available in the [games](games) directory.
-Check the [README](games/README.md) file there for more details.
-
-## Makefile for custom project
-
-A makefile is available in the [tools/build](tools/build) directory.
-It is meant to make it easy to build ROMs.
-It is used to build the [Printer Simulator](tools/printer).
-Please follow the instructions in the makefile file itself to know how to leverage it, and use the Printer Simulator [makefile](tools/printer/makefile) as a reference.
-
-A more complete build system, [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs), is available in the [GB tools](https://github.com/mdagois/gbtools) repository.
-It is used to build the samples and [games](games) in the repository.
-It handles dependencies, multiple projects and much more.
-Check it out to manage complex projects.
-
-## Support
-
-Please report any repository issues [here](https://github.com/mdagois/gca/issues).
-For other topics, please contact the support at support@codingadventures.xyz.
 
