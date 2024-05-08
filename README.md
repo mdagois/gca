@@ -4,7 +4,7 @@ This is the companion repository for the book [Game Boy Coding Adventure](https:
 
 The repository contains all the samples and conversion tools presented in the book, as well as some fully commented games.
 Prebuilt ROMs are provided for the samples and games, so it is possible to try and use them right away.
-Instructions to build the ROMs and tools, and to convert the assets are also available in the repository.
+Instructions to build the ROMs and tools from source are available in the repository.
 
 ## License
 
@@ -15,7 +15,7 @@ However, there are three exceptions.
 
 First, the copy of GNU make, available [here](bin/make.exe), is licensed under the GPLv3+.
 
-Second, the [stb_image.h](tools/conv/third_party/stb_image.h) file is from the [stb](https://github.com/nothings/stb) repository, in public domain.
+Second, the [stb_image.h](tools/conv/third_party/stb_image.h) file, from the [stb](https://github.com/nothings/stb) repository, belongs to the public domain.
 
 Finally, the vast majority of the graphics [assets](assets) are from [Oceans Dream](https://oceansdream.itch.io)'s [Nostalgia Base Pack](https://oceansdream.itch.io/nostalgia-pack).
 Some of the assets from the pack were modified to match the purpose of the samples.
@@ -32,15 +32,15 @@ The instructions to build the ROMs are in [samples/README.md](samples/README.md)
 ## Assets
 
 The graphics assets used in the samples are available in the [assets](assets) folder.
-Converted assets (for example, tilesets and tilemaps) are available in the [prebuilt/assets](prebuilt/assets) folder.
-Each sample has a copy of the converted assets it uses in its own folder.
+Converted assets, such as tilesets and tilemaps, are available in the [prebuilt/assets](prebuilt/assets) folder.
+Each sample has copies of the converted assets it uses in its folder.
 The instructions to convert the assets are in [assets/README.md](assets/README.md).
 
 ## Tools
 
 The source code for all the custom tools created for the purpose of this book is available in the [tools](tools) folder.
 This includes all the data converters, an HTML color converter, and the printer simulator.
-Prebuilt Windows data conversion tools, as well as a copy of GNU make, are available in the [bin](bin) directory, for convenience.
+For Windows, prebuilt data conversion tools, as well as a copy of GNU make, are available in the [bin](bin) directory, for convenience.
 For other operating systems, it is necessary to rebuild the tools.
 The instructions to build and use the tools are in [tools/README.md](tools/README.md).
 
