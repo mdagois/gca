@@ -6,11 +6,23 @@ A bunch of simple games for Game Boy.
 
 [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs) is used as the main build system.
 Check the requirements to use it.
-Note that a copy of `make` is available in the [bin](../bin) directory of the repository.
+Note that a copy of `make` is available in the [bin](../bin) folder of the repository.
 
-Prebuilt binaries are also available in the [prebuilt](./prebuilt) directory.
+To build both release and debug versions of all games, just type `make -j`.
+Type `make help` to see all the available targets.
+Prebuilt release versions of the ROMs are also available in the [prebuilt/games](../prebuilt/games) folder at the root of the repository.
+
+## Projects
+
+Each game has its own folder, containing code and graphics assets.
+The `Initialize` and `Update` functions of each game is in a file named `<game_name>.rgbasm`.
+For example, for Minesweep, the file would be `minesweep.rgbasm`.
+This is a good place to start checking the code.
+The [common](common) folder contains all the code shared by all the games.
 
 ## List
+
+Here is a list of all games.
 
 ### Minesweep
 

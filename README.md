@@ -46,7 +46,8 @@ The instructions to build and use the tools are in [tools/README.md](tools/READM
 
 ## Games
 
-The source code and prebuilt ROMs for the games are available in the [games](games) folder.
+Prebuilt ROMs are available in the [prebuilt/games](prebuilt/games) folder.
+The source code for the games is in the [games](games) folder.
 More information is available in [games/README.md](games/README.md).
 
 ## Contributing
