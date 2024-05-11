@@ -18,9 +18,9 @@ Instead, its main goal is to help developers quickly test and iterate over the p
 
 The build system for the Printer Simulator is [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs).
 Check the documentation of GBBS to learn about the requirements.
-Type `make -j` to build both the release and debug ROMs.
+Type `make -j` to build both the release and debug versions of the simulator.
 The debug version emits logs in BGB for easier debugging.
-However, it is slower and more sensible to miss print data bytes if a ROM transfers them too fast.
+However, it is slower and more likely to miss print data bytes if a ROM transfers them too fast.
 
 ## Typical usage
 

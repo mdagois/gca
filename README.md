@@ -2,9 +2,20 @@
 
 This is the companion repository for the book [Game Boy Coding Adventure](https://mdagois.gumroad.com/l/CODQn) by [Maximilien Dagois](https://mdagois.gumroad.com/).
 
-The repository contains all the samples and conversion tools presented in the book, as well as some fully commented games.
-Prebuilt ROMs are provided for the samples and games, so it is possible to try and use them right away.
-Instructions to build the ROMs and tools from source are available in the repository.
+The repository contains all the samples, conversion tools, and assets used in the book, as well as some fully commented games.
+For convenience, the repository provides the prebuilt and converted files.
+* [ROMs](prebuilt/roms) for the samples
+* [Windows binaries](bin) for the conversion tools
+* A copy of [GNU Make 4.2](bin/make.exe) for Windows
+* [ROMs](prebuilt/games) for the games
+* [ROM](prebuilt/printer) of the printer simulator
+* Converted graphics [assets](prebuilt/assets)
+
+Instructions to build the ROMs and tools, and to convert assets, are available in the repository.
+* For samples, check [samples/README.md](samples/README.md)
+* For tools, check [tools/README.md](tools/README.md)
+* For games, check [games/README.md](games/README.md)
+* For assets, check [assets/README.md](assets/README.md)
 
 ## License
 
@@ -23,36 +34,9 @@ You cannot use any of these assets in your own project without buying the pack f
 There are assets from other sources as well.
 They all belong to the public domain and were authored by [Armando Montero](https://opengameart.org/users/armm1998), [GX310](https://gx310.itch.io), [Patrick](https://opengameart.org/users/patvanmackelberg), and [Sebastian Riedel](https://opengameart.org/users/ba%C5%9Dto).
 
-## Samples
-
-The source code of all samples is available in the [samples](samples) folder.
-Prebuilt ROMs are available in the [prebuilt/roms](prebuilt/roms) folder.
-The instructions to build the ROMs are in [samples/README.md](samples/README.md).
-
-## Assets
-
-The graphics assets used in the samples are available in the [assets](assets) folder.
-Converted assets, such as tilesets and tilemaps, are available in the [prebuilt/assets](prebuilt/assets) folder.
-Each sample has copies of the converted assets it uses in its folder.
-The instructions to convert the assets are in [assets/README.md](assets/README.md).
-
-## Tools
-
-The source code for all the custom tools created for the purpose of this book is available in the [tools](tools) folder.
-This includes all the data converters, an HTML color converter, and the printer simulator.
-For Windows, prebuilt data conversion tools, as well as a copy of GNU make, are available in the [bin](bin) directory, for convenience.
-For other operating systems, it is necessary to rebuild the tools.
-The instructions to build and use the tools are in [tools/README.md](tools/README.md).
-
-## Games
-
-Prebuilt ROMs are available in the [prebuilt/games](prebuilt/games) folder.
-The source code for the games is in the [games](games) folder.
-More information is available in [games/README.md](games/README.md).
-
 ## Contributing
 
-If you wish to contribute fixes, tools, or games to the repository, please do a pull request.
+If you wish to contribute bug fixes, tools, or games to the repository, please do a pull request.
 Contact the support at support@codingadventures.xyz for any question related to contributions.
 
 ## Support

@@ -1,7 +1,7 @@
 # Tools
 
 This folder contains all the custom tools created for the purpose of the book.
-The tools consist of conversion tools, an HTML color picker, and the printer simulator.
+The tools consist of data converters, an HTML color picker, and the printer simulator.
 This documentation explains how to build and use them.
 
 ## Conversion tools
@@ -149,7 +149,7 @@ The `packetize` tool converts tiles into print packet data.
 The tool takes one tileset CHR file as parameter.
 
 ```
-# Converting a tileset
+# Converting a tileset.
 # The output file is tileset.pkt.
 packetize tileset.chr
 ```
