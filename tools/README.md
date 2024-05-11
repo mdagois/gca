@@ -163,7 +163,7 @@ Open it in any browser to use it.
 
 ## Printer simulator
 
-The Game Boy Printer Simulator is available in the [printer](printer) folder.
+The Game Boy printer simulator is available in the [printer](printer) folder.
 Check the [README](printer/README.md) file to know more about the simulator.
 
 ## GBBS

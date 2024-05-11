@@ -74,7 +74,7 @@ projects = \
 configurations = release
 default_target = all
 
-build_directory = ../build
+build_directory = ../build-samples
 
 release_description = deliverable build
 
