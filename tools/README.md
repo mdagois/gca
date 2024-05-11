@@ -1,18 +1,24 @@
-## Assets
+# Tools
 
-All the sample assets are available in the [assets](assets) folder.
-The graphics assets (tilesets and tilemaps) are PNG files.
+This folder contains all the custom tools created for the purpose of the book.
+The tools consist of conversion tools, an HTML color picker, and the printer simulator.
+This documentation explains how to build and use them.
 
-### Converting assets
+## Conversion tools
 
-Assets are already converted and ready to use in the samples.
-However, it is possible to convert them again using the `gfxconv`, `cgbconv`, `sgbconv` and `sfcconv` tools.
+There are five conversion tools: `gfxconv`, `cgbconv`, `sgbconv`, `sfcconv`, and `packetize`.
+Windows binaries for all converters are available in the [bin](../bin) folder at the root of the repository.
+For other operating systems, it is necessary to build the tools.
 
-### The gfxconv tool
+### Building the tools
+
+A [cmake](https://cmake.org/) file is available in the [conv](conv) folder.
+As each tool's code fits into a single source file, it should be straightforward to use any other build system.
+The only dependency is the `stb_image.h` header, which is provided in the `third_party` folder.
+
+### The `gfxconv` tool
 
 The `gfxconv` tool converts PNG files into tilesets and tilemaps compatible with the DMG VRAM.
-
-#### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
 Here are a few examples of using `gfxconv`.
@@ -43,11 +49,9 @@ They are converted to TLM files.
 TLM files contain tile indices referring to tiles inside the tileset.
 They can be copied as is in VRAM.
 
-### The cgbconv tool
+### The `cgbconv` tool
 
 The `cgbconv` tool converts PNG files into tilesets, palettes, tilemap indices and tilemap parameters compatible with the CGB VRAM.
-
-#### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
 Here are a few examples of using `cgbconv`.
@@ -81,11 +85,9 @@ They are meant to be copied into bank 0 of the VRAM.
 PRM files contain tile parameters to control the tiles rendering (palette number, flip, etc.).
 They are meant to be copied into bank 1 of the VRAM.
 
-### The sgbconv tool
+### The `sgbconv` tool
 
 The `sgbconv` tool converts PNG files into tilesets, palettes, tilemaps and screen tile attributes compatible with the SGB.
-
-#### Usage
 
 The tool takes one tileset PNG and any number of tilemap PNG files as parameters.
 Here are a few examples of using `sgbconv`.
@@ -116,7 +118,7 @@ They are meant to be copied into VRAM.
 ATR files contain screen tile attributes.
 They are meant to be part of a `ATTR_CHR` or `ATTR_TRN` command.
 
-### The sfcconv tool
+### The `sfcconv` tool
 
 The `sfcconv` tool converts PNG files into tilesets, palettes and tilemaps compatible with the SGB border graphics (SNES format).
 
@@ -140,39 +142,33 @@ It is converted to a TLM file.
 A TLM file contains tile indices referring to tiles inside the tileset.
 It is meant to be part of a `PCT_TRN` command.
 
-### Tool binaries
+### The `packetize` tool
 
-Windows binaries for all converters are available in the [bin](bin) folder.
-For other operating systems, it is necessary to build the tools.
+The `packetize` tool converts tiles into print packet data.
 
-#### Building the tools
+The tool takes one tileset CHR file as parameter.
 
-A [cmake](https://cmake.org/) file is available in the [tools/conv](tools/conv) folder.
-As each tool's code fits into a single source file, it should be straightforward to use any other build system.
-The only dependency is the `stb_image.h` header, which is included in the `third_party` folder.
+```
+# Converting a tileset
+# The output file is tileset.pkt.
+packetize tileset.chr
+```
 
-### Conversion script
+The data from the CHR file is converted into print packet data for the Game Boy Printer.
 
-A Windows batch file, [build_assets.bat](build_assets.bat), is available to rebuild all the assets.
-It puts the converted files (tilesets, palettes, tilemaps, etc.) into the [generated](generated) folder.
-The batch uses the converter binaries from the [bin](bin) folder, so there is no need to rebuild them.
-
-For other operating systems, it is necessary to rebuild the conversion tools and write an equivalent script.
-
-## Printer Simulator
-
-The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) folder.
-Check the [README](tools/printer/README.md) file there to know more about the simulator.
-
-### TODO
-
-The [tools/conv](tools/conv) folder contains all the code for the conversion tools.
-
-The [tools/printer](tools/printer) folder contains the code for the printer simulator.
+## Color picker
 
 The [color picker](tools/color_picker.html) is a simple HTML tool to convert RGB888 color to BGR555.
+Open it in any browser to use it.
 
-The [tools/gbbs.mk](tools/gbbs.mk) file is a complete build system from the [GB tools](https://github.com/mdagois/gbtools) repository.
+## Printer simulator
+
+The Game Boy Printer Simulator is available in the [printer](printer) folder.
+Check the [README](printer/README.md) file to know more about the simulator.
+
+## GBBS
+
+The [gbbs.mk](gbbs.mk) file is a complete build system from the [GB tools](https://github.com/mdagois/gbtools) repository.
 It is used to build the samples, the printer simulator, and the games in the repository.
 It handles dependencies, multiple projects and much more.
 Check it out to manage complex projects.

@@ -16,12 +16,9 @@ Instead, its main goal is to help developers quickly test and iterate over the p
 
 ## Build instructions
 
-The build system for the Printer Simulator uses `make 4.0+`.
-A Windows binary of `make` is available [here](../../bin).
-For other operating systems, use the available package manager to get it if it is not already installed.
-
-Use the command `make` to build both release and debug versions.
-
+The build system for the Printer Simulator is [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs).
+Check the documentation of GBBS to learn about the requirements.
+Type `make -j` to build both the release and debug ROMs.
 The debug version emits logs in BGB for easier debugging.
 However, it is slower and more sensible to miss print data bytes if a ROM transfers them too fast.
 
