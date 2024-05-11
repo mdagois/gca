@@ -54,5 +54,5 @@ resource: $(resource_list)
 
 ########################################
 
-include common/gbbs.mk
+include ../tools/gbbs.mk
 

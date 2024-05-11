@@ -1,5 +1,6 @@
 build
-generated
+build-samples
+prebuilt
 *.gb
 *.gbc
 *.map
