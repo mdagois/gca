@@ -1,38 +1,3 @@
-The [tools/conv](tools/conv) folder contains all the code for the conversion tools.
-
-The [tools/printer](tools/printer) folder contains the code for the printer simulator.
-
-The [color picker](tools/color_picker.html) is a simple HTML tool to convert RGB888 color to BGR555.
-
-The [tools/gbbs.mk](tools/gbbs.mk) file is a complete build system from the [GB tools](https://github.com/mdagois/gbtools) repository.
-It is used to build the samples, the printer simulator, and the games in the repository.
-It handles dependencies, multiple projects and much more.
-Check it out to manage complex projects.
-
-### Building the samples
-
-#### RGBDS
-
-To build the samples, you need the [RGBDS](https://rgbds.gbdev.io/) toolchain.
-RGBDS executables (rgbasm, rgblink and rgbfix) are expected to be in your path for the provided build scripts to work.
-
-The samples have been tested with [RGBDS v0.7.0](https://github.com/gbdev/rgbds/releases/tag/v0.7.0).
-The samples will be updated if there are any compilation issues introduced with newer versions of the RGBDS toolchain.
-Older versions of the toolchain might work, but they are not actively supported.
-
-#### Scripts
-
-There are build scripts in each sample folder.
-For Windows, use the batch file named `build.bat`.
-For other operating systems, use the shell script named `build.sh`.
-
-There are also scripts to build all the samples at once.
-They are located at the root of the repository: [build_samples.bat](build_samples.bat) for Windows and [build_samples.sh](build_samples.sh) (a bash script) for the other operating systems.
-The built ROMs are gathered into the `generated/roms` folder at the root of the repository.
-
-Finally, it is possible to build the samples with [GBBS](https://github.com/mdagois/gbtools/tree/main/gbbs).
-Just type `make -j` at the root of the repository to build all samples.
-
 ## Assets
 
 All the sample assets are available in the [assets](assets) folder.
@@ -198,4 +163,17 @@ For other operating systems, it is necessary to rebuild the conversion tools and
 
 The Game Boy Printer Simulator referenced in the book is available in the [tools/printer](tools/printer) folder.
 Check the [README](tools/printer/README.md) file there to know more about the simulator.
+
+### TODO
+
+The [tools/conv](tools/conv) folder contains all the code for the conversion tools.
+
+The [tools/printer](tools/printer) folder contains the code for the printer simulator.
+
+The [color picker](tools/color_picker.html) is a simple HTML tool to convert RGB888 color to BGR555.
+
+The [tools/gbbs.mk](tools/gbbs.mk) file is a complete build system from the [GB tools](https://github.com/mdagois/gbtools) repository.
+It is used to build the samples, the printer simulator, and the games in the repository.
+It handles dependencies, multiple projects and much more.
+Check it out to manage complex projects.
 
