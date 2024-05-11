@@ -12,10 +12,7 @@ For convenience, the repository provides the prebuilt and converted files.
 * Converted graphics [assets](prebuilt/assets)
 
 Instructions to build the ROMs and tools, and to convert assets, are available in the repository.
-* For samples, check [samples/README.md](samples/README.md)
-* For tools, check [tools/README.md](tools/README.md)
-* For games, check [games/README.md](games/README.md)
-* For assets, check [assets/README.md](assets/README.md)
+Check the [samples](samples), [tools](tools), [games](games), and [assets](assets) folders for more details.
 
 ## License
 
