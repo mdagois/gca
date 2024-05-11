@@ -21,7 +21,7 @@ fix_options = --pad-value 199 --validate
 
 launch_options = --watch
 
-gfxconv = ./tools/conv
+gfxconv = ../bin/gbconv
 
 ########################################
 # minesweep
@@ -55,7 +55,10 @@ resource_common_options = -tileset-divisions 8x8k -tile-removal none -skip-expor
 
 resource_list = $(subst .png,.chr,$(foreach project,$(projects),$(wildcard $(project)/res/*.png)))
 .PHONY: resource
-resource: $(resource_list)
+resources: $(resource_list)
+
+clean_resources:
+	@rm -f $(resource_list)
 
 ########################################
 
