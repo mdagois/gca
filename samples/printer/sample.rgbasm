@@ -151,7 +151,8 @@ section "protocol", rom0
 ; create a simple packet definition with no payload
 ; \1 = packet type
 macro FixedPacket
-db PKT_MAGIC_0, PKT_MAGIC_1, \1, PKT_COMPRESSION_OFF, $00, $00, \1, $00, $00, $00
+db PKT_MAGIC_0, PKT_MAGIC_1, \1, PKT_COMPRESSION_OFF
+db $00, $00, \1, $00, $00, $00
 endm
 
 packet_init:
@@ -262,7 +263,10 @@ macro CheckForErrors
         bit PRINTER_STATUS_BIT_LOW_BATTERY, a
         jr z, .low_battery
             ; low battery
-            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_01
+            ld a, RESULT_ERROR_01
+            ld [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], a
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], \
+                 RESULT_ERROR_01
             ret
         .low_battery
 
@@ -270,7 +274,8 @@ macro CheckForErrors
         bit PRINTER_STATUS_BIT_PAPER_JAM, a
         jr z, .paper_jam
             ; paper jam
-            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_03
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], \
+                 RESULT_ERROR_03
             ret
         .paper_jam
 
@@ -280,14 +285,16 @@ macro CheckForErrors
                (1 << PRINTER_STATUS_BIT_OTHER_ERROR)
         jr z, .other_error
             ; other error
-            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_ERROR_04
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], \
+                 RESULT_ERROR_04
             ret
         .other_error
 endm
 
 SendPacketByte_Init:
     SendPacketByte_Common
-    PrepareNextPacket SendPacketByte_CheckConnection, NULL_POINTER, NULL_POINTER
+    PrepareNextPacket SendPacketByte_CheckConnection, \
+                      NULL_POINTER, NULL_POINTER
     ret
 
 SendPacketByte_CheckConnection:
@@ -465,10 +472,12 @@ UpdateSample:
     jr z, .accept_input
         TestPadInput_Released WRAM_PAD_INPUT, PADF_A
         jr nz, .start_printing
-            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], RESULT_IN_PROGRESS
+            copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], \
+                 RESULT_IN_PROGRESS
 
             ; start the packet transfer sequence
-            PrepareNextPacket SendPacketByte_Init, packet_init, packet_init_end
+            PrepareNextPacket SendPacketByte_Init, \
+                              packet_init, packet_init_end
             StartTimer
         .start_printing
     .accept_input
