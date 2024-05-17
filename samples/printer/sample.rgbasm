@@ -263,8 +263,6 @@ macro CheckForErrors
         bit PRINTER_STATUS_BIT_LOW_BATTERY, a
         jr z, .low_battery
             ; low battery
-            ld a, RESULT_ERROR_01
-            ld [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], a
             copy [WRAM_PRINT_STATE + PRINT_STATE_TRANSFER_RESULT], \
                  RESULT_ERROR_01
             ret
