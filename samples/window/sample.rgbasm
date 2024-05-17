@@ -17,7 +17,8 @@ def TILEMAPS_BYTE_SIZE              equ (TILEMAPS_COUNT * BYTES_PER_TILEMAP)
 
 def GRAPHICS_DATA_SIZE              equ (TILES_BYTE_SIZE + TILEMAPS_BYTE_SIZE)
 def GRAPHICS_DATA_ADDRESS_END       equ ($8000)
-def GRAPHICS_DATA_ADDRESS_START     equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
+def GRAPHICS_DATA_ADDRESS_START \
+    equ (GRAPHICS_DATA_ADDRESS_END - GRAPHICS_DATA_SIZE)
 
 ; load the graphics data from ROM to VRAM
 macro LoadGraphicsDataIntoVRAM
@@ -55,7 +56,8 @@ InitSample:
     ld [rWY], a
 
     ; set the graphics parameters and turn back LCD on
-    ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
+    ld a, LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINON | \
+          LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_BGON
     ld [rLCDC], a
 
     ret
