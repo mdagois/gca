@@ -21,7 +21,7 @@ fix_options = --pad-value 199 --validate
 
 launch_options = --watch
 
-gfxconv = ../bin/gbconv
+gfxconv = ../bin/gconv
 
 ########################################
 # minesweep
