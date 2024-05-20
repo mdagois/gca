@@ -13,11 +13,18 @@ Prebuilt release versions of the ROMs are also available in the [prebuilt/games]
 
 ## Projects
 
-Each game has its own folder, containing its specific code and graphics assets.
+Each game has its own folder, containing its specific code and graphics assets (in the `res` folder).
 The `Initialize` and `Update` functions of each game is in a file named `<game_name>.rgbasm`.
 For example, for Minesweep, the file is `minesweep.rgbasm`.
 This file is a good place to start checking the code.
 The [common](common) folder contains the generic code shared by all games.
+
+## Assets
+
+Converted assets are provided for all games.
+The original assets can be edited, and then converted with `make resources`.
+The conversion tool is from the [GB tools](https://github.com/mdagois/gbtools) repository.
+A Windows binary is provided in the [bin](../bin) folder, but for other platforms, rebuilding the tool is required.
 
 ## List
 

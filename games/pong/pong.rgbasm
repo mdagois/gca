@@ -10,9 +10,9 @@ section "pong", rom0
 
 InitGraphics:
     ; palettes
-    ld a, %11100100
+    ld a, %00011011
     ldh [rBGP], a
-    ld a, %00100100
+    ld a, %00011000
     ldh [rOBP0], a
     xor a, $FF
     ldh [rOBP1], a
@@ -72,7 +72,7 @@ Initialize:
     copy [rIE], IEF_VBLANK
     ei
 
-    copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ8 | LCDCF_BGON
+    copy [rLCDC], LCDCF_ON | LCDCF_WIN9C00 | LCDCF_WINOFF | LCDCF_BG8800 | LCDCF_BG9800 | LCDCF_OBJON | LCDCF_OBJ8 | LCDCF_BGON
 
     ret
 
