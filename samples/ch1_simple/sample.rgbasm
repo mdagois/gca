@@ -100,7 +100,7 @@ UpdateSample:
             copy [rNR13], $C1
             copy [rNR14], $87
 
-            ; desactivate the counter
+            ; deactivate the counter
             dec [hl]
 
     .no_trigger_sound_2
