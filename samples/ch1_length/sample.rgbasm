@@ -133,7 +133,7 @@ UpdateSample:
     .play_sound
     copy [rNR10], $00
 
-    ld a, AUDLEN_DUTY_50
+    ld a, $80
     or a, b
     ld [rNR11], a
 
