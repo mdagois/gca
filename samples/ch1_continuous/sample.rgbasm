@@ -40,7 +40,7 @@ rsset _RAM
 
 def WRAM_PAD_INPUT                  rb sizeof_PAD_INPUT
 def WRAM_FRAME_COUNTER              rb 1
-def NOTE_INDEX                      rb 1
+def WRAM_NOTE_INDEX                 rb 1
 
 def WRAM_END                        rb 0
 
@@ -58,7 +58,7 @@ InitSample:
     InitPadInput WRAM_PAD_INPUT
     copy [WRAM_FRAME_COUNTER], $FF
     xor a
-    ld [NOTE_INDEX], a
+    ld [WRAM_NOTE_INDEX], a
 
     ; init the sound
     copy [rNR52], AUDENA_ON
@@ -102,9 +102,9 @@ UpdateSample:
         ; decrease the timer and play the next sound when zero is reached
         dec [hl]
         jr nz, .sound_switch
-            ld a, [NOTE_INDEX]
+            ld a, [WRAM_NOTE_INDEX]
             inc a
-            ld [NOTE_INDEX], a
+            ld [WRAM_NOTE_INDEX], a
 
             sla a
             ld d, 0
@@ -137,7 +137,7 @@ UpdateSample:
     TestPadInput_Pressed WRAM_PAD_INPUT, PADF_A
     jr nz, .start_notes
         xor a
-        ld [NOTE_INDEX], a
+        ld [WRAM_NOTE_INDEX], a
 
         copy [rNR10], $00
         copy [rNR11], $80
