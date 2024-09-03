@@ -109,7 +109,7 @@ InitSample:
     ; init the WRAM state
     copy [WRAM_FRAME_COUNTER], ANIM_UPDATE_THRESHOLD
 
-    ; initialize line offsets arbitrary
+    ; initialize line offsets semi-randomly
     copy [WRAM_LINE_OFFSETS + 0], 0
     copy [WRAM_LINE_OFFSETS + 1], 1
     copy [WRAM_LINE_OFFSETS + 2], 2

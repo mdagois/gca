@@ -10,7 +10,8 @@ def VICTORY_ROWS_COUNT              equ (2)
 def VICTORY_SPRITES_PER_ROW         equ (10)
 def VICTORY_OAM_COUNT               equ (VICTORY_ROWS_COUNT * VICTORY_SPRITES_PER_ROW)
 
-rsreset
+; background tiles
+rsset 128
 ; squares
 def TILE_BOARD_SQUARE_HIDDEN        rb 1
 def TILE_BOARD_SQUARE_MINE          rb 1
@@ -27,13 +28,6 @@ def TILE_WALL_RIGHT                 rb 1
 def TILE_WALL_BOTTOM_LEFT           rb 1
 def TILE_WALL_BOTTOM                rb 1
 def TILE_WALL_BOTTOM_RIGHT          rb 1
-
-; cursor
-def TILE_CURSOR_ON                  rb 1
-def TILE_CURSOR_OFF                 rb 1
-
-; hidden square counter
-def TILE_UI_NUMBER_0                rb 10
 
 ; window
 def TILE_WINDOW_TOP_LEFT            rb 1
@@ -57,8 +51,16 @@ def TILE_WINDOW_FLAG_TILE           rb 5
 def TILE_WINDOW_UNCOVER_TILE        rb 6
 def TILE_WINDOW_NEW_GAME            rb 5
 
-; unused tile
-def TILE_UNUSED_TILES_0             rb 5
+; sprite tiles
+rsreset
+; cursor
+def TILE_CURSOR_ON                  rb 1
+def TILE_CURSOR_OFF                 rb 1
+
+; hidden square counter
+def TILE_UI_NUMBER_0                rb 10
+
+def TILE_UNUSED_SPRITE_TILES_0		rb 4
 
 ; victory
 def TILE_VICTORY_TOP_ROW            rb VICTORY_SPRITES_PER_ROW

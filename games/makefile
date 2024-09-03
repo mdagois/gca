@@ -21,7 +21,7 @@ fix_options = --pad-value 199 --validate
 
 launch_options = --watch
 
-gfxconv = ../bin/gfxconv
+gfxconv = ../bin/gconv
 
 ########################################
 # minesweep
@@ -45,12 +45,20 @@ pong_debug_compile_options = -DDEBUG_CONTROL_RIGHT_PAD
 # resource rules
 ########################################
 
-%.chr: %.png
-	$(gfxconv) $<
+resource_common_options = --tileset-divisions 8x8k --tile-removal none --skip-export-tileset-info --skip-export-palette
+
+%.dmg-sp.chr: %.dmg-sp.png
+	$(gfxconv) --hardware dmg-sp --tileset $< $(resource_common_options)
+
+%.dmg-bg.chr: %.dmg-bg.png
+	$(gfxconv) --hardware dmg-bg --tileset $< $(resource_common_options)
 
 resource_list = $(subst .png,.chr,$(foreach project,$(projects),$(wildcard $(project)/res/*.png)))
 .PHONY: resource
-resource: $(resource_list)
+resources: $(resource_list)
+
+clean_resources:
+	@rm -f $(resource_list)
 
 ########################################
 
