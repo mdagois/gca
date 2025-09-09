@@ -2,8 +2,6 @@ include "data.rgbinc"
 include "sound.rgbinc"
 include "window.rgbinc"
 
-export _Window_Initialize, _Window_Hide, _Window_Show, _Window_Update
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -163,4 +161,8 @@ _Window_Update:
     pop bc
     pop af
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Window_Initialize, _Window_Hide, _Window_Show, _Window_Update
 

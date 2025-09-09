@@ -1,8 +1,6 @@
 include "data.rgbinc"
 include "memory.rgbinc"
 
-export _Cursor_Initialize, _Cursor_Hide, _Cursor_Show, _Cursor_Disable, _Cursor_Enable, _Cursor_UpdateGraphics
-
 section "cursor", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,4 +44,8 @@ _Cursor_Enable:
 _Cursor_UpdateGraphics:
     CopyMemory OAM_CURSOR, vCursorOam, sizeof_OAM_ATTRS
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Cursor_Initialize, _Cursor_Hide, _Cursor_Show, _Cursor_Disable, _Cursor_Enable, _Cursor_UpdateGraphics
 

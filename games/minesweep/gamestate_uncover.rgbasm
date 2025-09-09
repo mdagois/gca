@@ -6,8 +6,6 @@ include "gamestate.rgbinc"
 include "memory.rgbinc"
 include "sound.rgbinc"
 
-export GameStateFunc_Uncover
-
 section "gamestate_uncover", rom0
 
 ; push an index into the uncover list
@@ -99,4 +97,8 @@ GameStateFunc_Uncover:
     Board_ProcessBoardTileChangeRequest
     Counter_UpdateGraphics
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_Uncover
 

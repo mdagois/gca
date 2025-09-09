@@ -5,8 +5,6 @@ include "data.rgbinc"
 include "gamestate.rgbinc"
 include "memory.rgbinc"
 
-export GameStateFunc_NewGame
-
 section "gamestate_newgame", rom0
 
 ; reset the board (no mines yet)
@@ -207,4 +205,8 @@ GameStateFunc_NewGame:
     Counter_UpdateGraphics
     InitBoardGraphics
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_NewGame
 

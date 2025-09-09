@@ -1,8 +1,6 @@
 include "data.rgbinc"
 include "memory.rgbinc"
 
-export _Counter_Initialize, _Counter_SetCount, _Counter_UpdateGraphics
-
 def COUNTER_X                   equ (OAM_X_OFS + TILE_SIDE * (BOARD_TILE_NUM_X + BOARD_TILE_OFFSET_X) + 6)
 def COUNTER_Y                   equ (OAM_Y_OFS + TILE_SIDE)
 def COUNTER_DIGIT_ADVANCE_X     equ (TILE_SIDE - 3)
@@ -90,4 +88,8 @@ _Counter_SetCount:
 _Counter_UpdateGraphics:
     CopyMemory OAM_COUNTER, vCounterOam, sizeof_OAM_ATTRS * COUNTER_DIGITS_COUNT
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Counter_Initialize, _Counter_SetCount, _Counter_UpdateGraphics
 

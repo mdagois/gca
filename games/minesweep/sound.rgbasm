@@ -2,8 +2,6 @@ include "memory.rgbinc"
 include "sound.rgbinc"
 include "utils.rgbinc"
 
-export _Sound_Initialize, _Sound_Play, _Sound_Update
-
 def PLAY_SOUND_BIT      equ (7)
 def PLAY_SOUND_FLAG     equ (1 << PLAY_SOUND_BIT)
 
@@ -90,4 +88,8 @@ _Sound_Update:
         copy [rNR44], [hli]
 
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Sound_Initialize, _Sound_Play, _Sound_Update
 

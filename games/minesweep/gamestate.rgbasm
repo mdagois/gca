@@ -2,8 +2,6 @@ include "gamestate.rgbinc"
 include "memory.rgbinc"
 include "utils.rgbinc"
 
-export _game_state_functions, _GameState_Initialize
-
 section "gamestate", rom0
 
 _game_state_functions:
@@ -76,4 +74,8 @@ _GameState_Initialize:
             jr nz, .victory_bottom_row_oam_setup
 
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _game_state_functions, _GameState_Initialize
 

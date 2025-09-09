@@ -4,8 +4,6 @@ include "data.rgbinc"
 include "gamestate.rgbinc"
 include "window.rgbinc"
 
-export GameStateFunc_Lose
-
 section "gamestate_lose", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -122,4 +120,8 @@ def sizeof_lose_TEMP                rb 0
 
     halt
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_Lose
 
