@@ -4,8 +4,6 @@ include "gamestate.rgbinc"
 include "memory.rgbinc"
 include "sound.rgbinc"
 
-export GameStateFunc_PutFlag
-
 section "gamestate_flag", rom0
 
 GameStateFunc_PutFlag:
@@ -73,4 +71,8 @@ endc
     Board_ProcessBoardTileChangeRequest
 
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_PutFlag
 

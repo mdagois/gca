@@ -2,11 +2,6 @@ include "board.rgbinc"
 include "data.rgbinc"
 include "memory.rgbinc"
 
-export _Board_Initialize
-export _Board_ConvertLogicalToBoardStateCoordinate, _Board_ConvertOamToBoardStateCoordinate
-export _Board_RequestBoardTileChange, _Board_ProcessBoardTileChangeRequest
-export _Board_ResetUncoverList, _Board_PushIntoUncoverList, _Board_PopFromUncoverList
-
 section "board", rom0
 
 _Board_Initialize:
@@ -228,4 +223,11 @@ _Board_PopFromUncoverList:
     .pop_done
 
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Board_Initialize
+export _Board_ConvertLogicalToBoardStateCoordinate, _Board_ConvertOamToBoardStateCoordinate
+export _Board_RequestBoardTileChange, _Board_ProcessBoardTileChangeRequest
+export _Board_ResetUncoverList, _Board_PushIntoUncoverList, _Board_PopFromUncoverList
 

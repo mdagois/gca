@@ -1,8 +1,6 @@
 include "gamestate.rgbinc"
 include "window.rgbinc"
 
-export GameStateFunc_WaitForNewGame
-
 section "gamestate_waitfornewgame", rom0
 
 GameStateFunc_WaitForNewGame:
@@ -16,4 +14,8 @@ GameStateFunc_WaitForNewGame:
 
     halt
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_WaitForNewGame
 

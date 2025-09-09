@@ -3,8 +3,6 @@ include "cursor.rgbinc"
 include "gamestate.rgbinc"
 include "memory.rgbinc"
 
-export GameStateFunc_Play
-
 section "gamestate_play", rom0
 
 ; move the cursor based on the player's input
@@ -90,4 +88,8 @@ GameStateFunc_Play:
     halt
     Cursor_UpdateGraphics
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export GameStateFunc_Play
 
