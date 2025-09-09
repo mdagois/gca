@@ -3,10 +3,6 @@ include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-export PrinterInitialize, PrinterUpdate
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 section "printer_initialize", rom0
 
 PrinterInitialize:
@@ -80,4 +76,9 @@ PrinterUpdate:
     call ProtocolUpdate
 
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export PrinterInitialize, PrinterUpdate
+
 
