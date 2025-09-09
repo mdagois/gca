@@ -1,8 +1,6 @@
 include "data.rgbinc"
 include "memory.rgbinc"
 
-export _Score_Initialize, _Score_Reset, _Score_UpdateGraphics
-
 section "score", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,4 +50,8 @@ _Score_UpdateGraphics:
     UpdateDigit SCORE_LEFT_START_TILE, [vScore + 0]
     UpdateDigit SCORE_RIGHT_START_TILE, [vScore + 1]
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Score_Initialize, _Score_UpdateGraphics
 

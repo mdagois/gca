@@ -5,8 +5,6 @@ include "memory.rgbinc"
 include "score.rgbinc"
 include "sound.rgbinc"
 
-export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
-
 section "game", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -623,4 +621,8 @@ _Game_UpdateGraphics:
 
     Score_UpdateGraphics
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _Game_Initialize, _Game_Update, _Game_UpdateGraphics
 
