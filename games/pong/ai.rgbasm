@@ -2,8 +2,6 @@ include "ai.rgbinc"
 include "math16.rgbinc"
 include "memory.rgbinc"
 
-export _AI_GetNextMove, _AI_Initialize, _AI_PickNextTarget
-
 section "ai", rom0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,4 +67,8 @@ _AI_GetNextMove:
     .move_none
         ld a, AI_MOVE_NONE
         ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export _AI_GetNextMove, _AI_Initialize, _AI_PickNextTarget
 
