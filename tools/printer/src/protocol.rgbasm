@@ -2,10 +2,6 @@ include "memory.rgbinc"
 include "utils.rgbinc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Debug
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -981,4 +977,8 @@ ProcessPacketStatus:
     reset [rSB]
     copy [vNextByte], BYTE_MAGIC_0
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+export ProtocolInitialize, ProtocolUpdate, ProtocolUpdateVblank, ProtocolHandlePacketByte, ProtocolCheckTimeout
 
