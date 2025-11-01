@@ -9,7 +9,7 @@ Each sample has copies of the converted assets it uses, so there is no need to c
 The [RGBDS](https://rgbds.gbdev.io/) toolchain in required to build the samples.
 RGBDS executables (`rgbasm`, `rgblink` and `rgbfix`) are expected to be in the path for any build method to work.
 
-The samples have been tested with [RGBDS v1.0.0-rc2](https://github.com/gbdev/rgbds/releases/tag/v1.0.0-rc2).
+The samples have been tested with [RGBDS v1.0.0](https://github.com/gbdev/rgbds/releases/tag/v1.0.0).
 Best effort will be done to support newer versions of the toolchain as they get released.
 Older versions of the toolchain might work, but they are not actively supported.
 
