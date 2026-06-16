@@ -5,7 +5,7 @@
 # Requirements:
 # - RGBDS toolchain (`rgbasm`, `rgblink` and `rgbfix`)
 # - make 4.0 or later
-# - Shell commands (`mkdir`, `rm` and `touch`)
+# - bash (for commands such as `mkdir`, `rm`, and `touch`)
 #
 #################################################################################
 
@@ -15,6 +15,9 @@
 # include the user configuration (e.g. to override the shell command directory)
 -include user.mk
 
+# force bash shell
+SHELL := bash
+
 ########################################
 # Helper functions
 ########################################
@@ -22,6 +25,9 @@
 # define true and false
 true := TRUE
 false :=
+
+# an operation that does nothing in shell
+noop := true
 
 # turn the relative path $1 into an absolute path
 expand_path = $(abspath $(strip $1))
@@ -37,6 +43,26 @@ assert = $(if $2,$(if $1,,$(call report_assert,Assertion failed: $2)),$(warning 
 # string comparison functions
 string_equal = $(if $(subst x$1,,x$2)$(subst x$2,,x$1),$(false),$(true))
 string_not_equal = $(call not,$(call string_equal,$1,$2))
+
+# get the path of executable $1 or the empty string if not found
+define get_path
+$(shell command -v $(1) 2>/dev/null)
+endef
+
+# return true if executable $1 is in the path, otherwise return false
+define has_path
+$(if $(call get_path,$(1)),$(true),$(false))
+endef
+
+# get the path of executable $1 or the default value $2 if not found
+define get_path_or_default
+$(if $(call has_path,$(1)),"$(call get_path,$(1))","$(2)")
+endef
+
+# get the path of executable $1 or a noop command if not found
+define get_path_or_noop
+$(call get_path_or_default,$(1),$(noop))
+endef
 
 ########################################
 # Default target
@@ -205,6 +231,8 @@ define target_variable_definitions_template
 
 $1_$2_sources_list = $$($1_sources) $$($1_$2_sources)
 
+$1_$2_prerequisites_list = $$($1_prerequisites) $$($1_$2_prerequisites)
+
 $1_$2_compile_options_list = -I$(root_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
 $1_$2_link_options_list = $(link_options) $$($1_link_options) $$($2_link_options) $$($1_$2_link_options)
 $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$($1_$2_fix_options)
@@ -264,7 +292,7 @@ $$($1_$2_binary): $$($1_$2_objects)
 	$(call signature_template,$1,$2,$$@,$$($1_$2_binary_signature),$$($1_$2_binary_force),$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@),$$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $$(call fix_command,$1,$2,$$@))
 	$(call link_command,$1,$2,$$@,$$($1_$2_objects)) && $(call fix_command,$1,$2,$$@)
 
-$$($1_$2_build_directory)/%$(object_extension): $$(root_directory)/% | $$$$(@D)/
+$$($1_$2_build_directory)/%$(object_extension): $$(root_directory)/% $$($1_$2_prerequisites_list) | $$$$(@D)/
 	$(call signature_template,$1,$2,$$@,$$($1_$2_build_directory)/$$*$(object_extension)$(signature_extension),$$($1_$2_build_directory)/$$*$(object_extension)$(force_extension),$(call compile_command,$1,$2,$$@,$$<),$$(call compile_command,$1,$2,$$@,$$<))
 	$(call compile_command,$1,$2,$$@,$$<)
 
