@@ -23,11 +23,11 @@ SHELL := bash
 ########################################
 
 # define true and false
-true := TRUE
-false :=
+true = TRUE
+false =
 
 # an operation that does nothing in shell
-noop := true
+noop = true
 
 # turn the relative path $1 into an absolute path
 expand_path = $(abspath $(strip $1))
@@ -229,7 +229,7 @@ define target_variable_definitions_template
 # Variables for '$1_$2'
 ########################################
 
-$1_$2_sources_list = $$($1_sources) $$($1_$2_sources)
+$1_$2_sources_list = $$($1_sources) $$($2_sources) $$($1_$2_sources)
 
 $1_$2_prerequisites_list = $$($1_prerequisites) $$($1_$2_prerequisites)
 
