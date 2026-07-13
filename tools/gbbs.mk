@@ -12,7 +12,7 @@
 # secondary expansion is heavily used in rule generation
 .SECONDEXPANSION:
 
-# include the user configuration (e.g. to override the shell command directory)
+# include the user configuration (e.g. to override the RGBDS directory)
 -include user.mk
 
 # force bash shell
@@ -108,10 +108,9 @@ signature_extension := .s
 force_extension := .f
 
 # file commands
-shell_command_directory_with_slash := $(if $(shell_command_directory),$(shell_command_directory)/,)
-mkdir_command=$(shell_command_directory_with_slash)mkdir -p
-rmdir_command=$(shell_command_directory_with_slash)rm -rf
-touch_command=$(shell_command_directory_with_slash)touch
+mkdir_command=mkdir -p
+rmdir_command=rm -rf
+touch_command=touch
 
 # toolchain commands
 rgbds_directory_with_slash := $(if $(rgbds_directory),$(rgbds_directory)/,)
@@ -153,7 +152,7 @@ link_command = $$(rgblink_command) $$($1_$2_link_options_list) --map $$($1_$2_ma
 
 # fix
 # $1 = project, $2 = configuration, $3 = rom file
-fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) --title $1 $3
+fix_command = $$(rgbfix_command) $$($1_$2_fix_options_list) $$($1_$2_old_licensee) --title $1 $3
 
 ########################################
 # Generation templates
@@ -229,18 +228,21 @@ define target_variable_definitions_template
 # Variables for '$1_$2'
 ########################################
 
-$1_$2_sources_list = $$($1_sources) $$($2_sources) $$($1_$2_sources)
+$1_$2_sources_list = $(sources) $$($1_sources) $$($2_sources) $$($1_$2_sources)
 
-$1_$2_prerequisites_list = $$($1_prerequisites) $$($1_$2_prerequisites)
+$1_$2_prerequisites_list = $(prerequisites) $$($1_prerequisites) $$($2_prerequisites) $$($1_$2_prerequisites)
 
-$1_$2_compile_options_list = -I$(root_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options)
+$1_$2_detect_hardware = $$(if $$(filter --sgb-compatible -s --color-compatible -c,$$($1_$2_fix_options_list)),-DDETECT_HARDWARE,)
+$1_$2_old_licensee = $$(if $$(filter --sgb-compatible -s,$$($1_$2_fix_options_list)),--old-licensee 0x33,)
+
+$1_$2_compile_options_list = -I$(root_directory) $(compile_options) $$($1_compile_options) $$($2_compile_options) $$($1_$2_compile_options) $$($1_$2_detect_hardware)
 $1_$2_link_options_list = $(link_options) $$($1_link_options) $$($2_link_options) $$($1_$2_link_options)
 $1_$2_fix_options_list = $(fix_options) $$($1_fix_options) $$($2_fix_options) $$($1_$2_fix_options)
 
 $1_$2_launch_options_list = $$(strip $(launch_options) $$($1_launch_options) $$($2_launch_options) $$($1_$2_launch_options))
 $1_$2_launch_options_list2 = $$(strip $(launch_options2) $$($1_launch_options2) $$($2_launch_options2) $$($1_$2_launch_options2))
 
-$1_$2_rom_extension := $$(if $$(filter --color-only --color-compatible -C -c,$$($1_$2_fix_options_list)),.gbc,.gb)
+$1_$2_rom_extension = $$(if $$(filter --color-only --color-compatible -C -c,$$($1_$2_fix_options_list)),.gbc,.gb)
 
 $1_$2_build_directory := $$($1_build_directory)/$2
 $1_$2_binary_directory := $$($2_binary_directory)/$1
