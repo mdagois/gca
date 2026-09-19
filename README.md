@@ -1,6 +1,6 @@
 # Game Boy Coding Adventure
 
-This is the companion repository for the book [Game Boy Coding Adventure](https://nostarch.com/game-boy-coding-adventure) by [Maximilien Dagois](https://mdagois.gumroad.com/).
+This is the companion repository for the book [Game Boy Coding Adventure](https://nostarch.com/game-boy-coding-adventure) by [Maximilien Dagois](https://mdagois.github.io/about.html).
 
 The repository contains all the samples, conversion tools, and assets used in the book, as well as some fully commented games.
 For convenience, the repository provides the prebuilt and converted files.
