@@ -18,19 +18,21 @@ ERROR=0
 
 for sample_dir in *
 do
-	pushd "$sample_dir"
-	echo Building [$sample_dir]...
-	sh build.sh
-	if [ $? -eq 0 ]; then
-		echo SUCCESS
-		SUCCESS=`expr $SUCCESS + 1`
-		cp *.gb* $ROMS_DIR
-	else
-		echo ERROR
-		ERROR=`expr $ERROR + 1`
+	if [ -d "$sample_dir" ]; then
+		pushd "$sample_dir"
+		echo Building [$sample_dir]...
+		sh build.sh
+		if [ $? -eq 0 ]; then
+			echo SUCCESS
+			SUCCESS=`expr $SUCCESS + 1`
+			cp *.gb* $ROMS_DIR
+		else
+			echo ERROR
+			ERROR=`expr $ERROR + 1`
+		fi
+		popd
+		echo " "
 	fi
-	popd
-	echo " "
 done
 
 popd
